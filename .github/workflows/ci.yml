@@ -33,12 +33,9 @@ jobs:
             eureka-server: 'infrastructure/eureka-server/**'
             api-gateway: 'infrastructure/api-gateway/**'
             user-service: 'services/user-service/**'
-            company-service: 'services/company-service/**'
-            hub-service: 'services/hub-service/**'
-            product-service: 'services/product-service/**'
+            logistics-service: 'services/logistics-service/**'
+            catalog-service: 'services/catalog-service/**'
             order-service: 'services/order-service/**'
-            delivery-service: 'services/delivery-service/**'
-            slack-ai-service: 'services/slack-ai-service/**'
 
   # 2. 감지된 프로젝트들만 타겟팅해서 빌드 및 Docker 검증 수행
   build-and-test:
