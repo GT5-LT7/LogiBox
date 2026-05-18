@@ -1,0 +1,35 @@
+### Gradle ###
+.gradle/
+build/
+**/build/
+*.bin
+*.uniqueId*
+
+### IntelliJ IDEA ###
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+**/out/
+
+### Eclipse ###
+.metadata/
+.classpath
+.project
+.settings/
+*.launch
+
+### OS 임시 파일 ###
+.DS_Store
+Thumbs.db
+
+### 시스템 및 환경 설정 파일 ###
+*.env
+*.properties
+!**/gradle-wrapper.properties
+
+### 빌드 메타데이터 및 아티팩트 ###
+MANIFEST.MF
+*.jar
+!**/gradle-wrapper.jar  # gradle-wrapper.jar는 예외로 허용

@@ -1,0 +1,97 @@
+name: CI - Infrastructure & Microservices
+
+permissions:
+  contents: read
+  pull-requests: read
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+    paths:
+      - 'infrastructure/**'
+      - 'services/**'
+      - 'module/**'
+  pull_request:
+    branches: [ "develop" ]
+    paths:
+      - 'infrastructure/**'
+      - 'services/**'
+      - 'module/**'
+
+jobs:
+  # 1. 어떤 프로젝트가 변경되었는지 감지
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      projects: ${{ steps.filter.outputs.changes }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            eureka-server: 'infrastructure/eureka-server/**'
+            api-gateway: 'infrastructure/api-gateway/**'
+            user-service: 'services/user-service/**'
+            company-service: 'services/company-service/**'
+            hub-service: 'services/hub-service/**'
+            product-service: 'services/product-service/**'
+            order-service: 'services/order-service/**'
+            delivery-service: 'services/delivery-service/**'
+            slack-ai-service: 'services/slack-ai-service/**'
+
+  # 2. 감지된 프로젝트들만 타겟팅해서 빌드 및 Docker 검증 수행
+  build-and-test:
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.projects != '[]' && needs.detect-changes.outputs.projects != '' }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        project: ${{ fromJSON(needs.detect-changes.outputs.projects) }}
+
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: JDK 17 설정
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Gradle 캐시
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ matrix.project }}-${{ hashFiles('**/*.gradle*') }}
+          restore-keys: gradle-
+
+      # 3. Gradle 멀티모듈 및 프로젝트 경로를 환경변수로 정의
+      - name: 빌드 타겟 및 경로 변수 설정
+        id: vars
+        run: |
+          if [[ "${{ matrix.project }}" == *"eureka-server"* || "${{ matrix.project }}" == *"api-gateway"* ]]; then
+            echo "target=:infrastructure:${{ matrix.project }}" >> $GITHUB_OUTPUT
+            echo "dir=infrastructure/${{ matrix.project }}" >> $GITHUB_OUTPUT
+          else
+            echo "target=:services:${{ matrix.project }}" >> $GITHUB_OUTPUT
+            echo "dir=services/${{ matrix.project }}" >> $GITHUB_OUTPUT
+          fi
+
+      # 4. 루트의 gradlew를 사용해 특정 모듈만 빌드
+      - name: 빌드 및 테스트
+        run: ./gradlew ${{ steps.vars.outputs.target }}:build --no-daemon
+
+      - name: 테스트 결과 업로드
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.project }}
+          path: ${{ steps.vars.outputs.dir }}/build/reports/tests/
+
+      # 5. 특정 프로젝트의 Dockerfile 위치 명시
+      - name: Dockerfile 문법 및 빌드 검증
+        run: |
+          docker build -t ${{ matrix.project }}:latest -f ${{ steps.vars.outputs.dir }}/Dockerfile .
