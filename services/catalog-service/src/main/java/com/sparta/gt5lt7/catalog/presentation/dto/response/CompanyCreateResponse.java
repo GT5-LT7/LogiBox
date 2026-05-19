@@ -25,7 +25,7 @@ public final class CompanyCreateResponse {
     private BigDecimal longitude;
     private LocalDateTime createdAt;
 
-    public static CompanyCreateResponse from(Company company, HubResponse hubResponse) {
+    public static CompanyCreateResponse of(Company company, HubResponse hubResponse) {
         return CompanyCreateResponse.builder()
                 .companyId(company.getCompanyId())
                 .name(company.getName())

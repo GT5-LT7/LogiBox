@@ -26,7 +26,7 @@ public class CompanyResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    public static CompanyResponse from(Company company, HubResponse hubResponse) {
+    public static CompanyResponse of(Company company, HubResponse hubResponse) {
         return CompanyResponse.builder()
                 .companyId(company.getCompanyId())
                 .name(company.getName())

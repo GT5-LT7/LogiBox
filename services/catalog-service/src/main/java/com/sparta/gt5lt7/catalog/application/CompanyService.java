@@ -49,7 +49,7 @@ public class CompanyService {
                 .build();
 
         Company savedCompany = companyRepository.save(company);
-        return CompanyCreateResponse.from(savedCompany, hubResponse);
+        return CompanyCreateResponse.of(savedCompany, hubResponse);
     }
 
     public PageResponse<CompanyResponse> searchCompanies(String keyword, CompanyType type, UUID hubId, Pageable pageable) {
@@ -65,9 +65,9 @@ public class CompanyService {
         Map<UUID, HubResponse> hubMap = hubResponses.stream()
                 .collect(Collectors.toMap(HubResponse::getId, Function.identity()));
 
-        return PageResponse.from(companiePage, company -> {
+        return PageResponse.of(companiePage, company -> {
             HubResponse hubResponse = hubMap.get(company.getHubId());
-            return CompanyResponse.from(company, hubResponse);
+            return CompanyResponse.of(company, hubResponse);
         });
     }
 }

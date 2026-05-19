@@ -18,7 +18,7 @@ public class PageResponse<T> {
     private int totalPages;
     private String sort;
 
-    public static <T, E> PageResponse<T> from(Page<E> page, Function<E, T> converter) {
+    public static <T, E> PageResponse<T> of(Page<E> page, Function<E, T> converter) {
         List<T> convertedContent = page.getContent().stream()
                 .map(converter)
                 .collect(Collectors.toList());
