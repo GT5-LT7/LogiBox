@@ -8,7 +8,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.util.Objects;
 import java.util.UUID;
 
 @Entity
@@ -63,5 +62,12 @@ public class Company extends BaseEntity {
         this.zipcode = zipcode;
         this.latitude = latitude;
         this.longitude = longitude;
+    }
+
+    public String getFullAddress() {
+        if (this.detailAddress == null || this.detailAddress.isBlank()) {
+            return String.format("%s (%s)", this.baseAddress, this.zipcode);
+        }
+        return String.format("%s, %s (%s)", this.baseAddress, this.detailAddress, this.zipcode);
     }
 }

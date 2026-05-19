@@ -14,7 +14,7 @@ import java.util.UUID;
 @Getter
 @Builder
 @AllArgsConstructor
-public final class CompanyCreateResponse {
+public class CompanyResponse {
     private UUID companyId;
     private String name;
     private CompanyType type;
@@ -24,9 +24,10 @@ public final class CompanyCreateResponse {
     private BigDecimal latitude;
     private BigDecimal longitude;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
-    public static CompanyCreateResponse from(Company company, HubResponse hubResponse) {
-        return CompanyCreateResponse.builder()
+    public static CompanyResponse from(Company company, HubResponse hubResponse) {
+        return CompanyResponse.builder()
                 .companyId(company.getCompanyId())
                 .name(company.getName())
                 .type(company.getType())
@@ -36,6 +37,7 @@ public final class CompanyCreateResponse {
                 .latitude(company.getLatitude())
                 .longitude(company.getLongitude())
                 .createdAt(company.getCreatedAt())
+                .createdAt(company.getUpdatedAt())
                 .build();
     }
 }
