@@ -7,6 +7,6 @@ import org.springframework.data.domain.Pageable;
 
 import java.util.UUID;
 
-public interface CustomCompanyRepository {
+public interface CompanyRepositoryCustom {
     Page<Company> searchCompanies(String keyword, CompanyType type, UUID hubId, Pageable pageable);
 }

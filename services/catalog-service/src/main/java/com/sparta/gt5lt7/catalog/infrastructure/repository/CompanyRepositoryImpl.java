@@ -7,7 +7,7 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.sparta.gt5lt7.catalog.domain.entity.Company;
 import com.sparta.gt5lt7.catalog.domain.entity.CompanyType;
 import com.sparta.gt5lt7.catalog.domain.entity.QCompany;
-import com.sparta.gt5lt7.catalog.domain.repository.CustomCompanyRepository;
+import com.sparta.gt5lt7.catalog.domain.repository.CompanyRepositoryCustom;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,7 +21,7 @@ import java.util.UUID;
 
 @Repository
 @RequiredArgsConstructor
-public class CustomCompanyRepositoryImpl implements CustomCompanyRepository {
+public class CompanyRepositoryImpl implements CompanyRepositoryCustom {
     private final JPAQueryFactory queryFactory;
 
     @Override
