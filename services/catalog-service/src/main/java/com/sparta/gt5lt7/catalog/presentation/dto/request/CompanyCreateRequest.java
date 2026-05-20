@@ -6,6 +6,9 @@ import lombok.*;
 
 import java.util.UUID;
 
+/**
+ * 업체 생성 요청 DTO 클래스입니다.
+ */
 @Getter
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

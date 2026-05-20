@@ -11,6 +11,9 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+/**
+ * 업체 생성 응답 DTO 클래스입니다.
+ */
 @Getter
 @Builder
 @AllArgsConstructor

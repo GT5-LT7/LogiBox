@@ -6,7 +6,6 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Component
 public class HubClientFallback implements HubClient {
@@ -21,6 +20,6 @@ public class HubClientFallback implements HubClient {
         // TODO: /internal/hubs 구현이 완료되면 실제 에러 로깅 및 예외 처리 로직으로 대체
         return ids.stream()
                 .map(id -> new HubResponse(id, "임시 허브"))
-                .collect(Collectors.toList());
+                .toList();
     }
 }
