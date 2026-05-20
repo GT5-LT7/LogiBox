@@ -26,10 +26,15 @@ public class CompanyController {
     private final CompanyService companyService;
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('MASTER', 'HUB_MANAGER')")
     public ResponseEntity<ApiResponse<CompanyResponse.Create>> createCompany(
-            @Valid @RequestBody CompanyRequest request
+            @Valid @RequestBody CompanyRequest request,
+            Authentication authentication
     ) {
-        CompanyResponse.Create response = companyService.createCompany(request);
+        UUID hubId = SecurityUtil.getCurrentUser(authentication);
+        List<String> roles = SecurityUtil.getCurrentUserRoles(authentication);
+
+        CompanyResponse.Create response = companyService.createCompany(request, hubId, roles);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(response));
     }
 
@@ -52,12 +57,17 @@ public class CompanyController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    @PostMapping("/{id}")
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('MASTER', 'HUB_MANAGER', 'COMPANY_MANAGER')")
     public ResponseEntity<ApiResponse<CompanyResponse.Update>> updateCompany(
             @PathVariable UUID id,
-            @Valid @RequestBody CompanyRequest request
+            @Valid @RequestBody CompanyRequest request,
+            Authentication authentication
     ) {
-        CompanyResponse.Update response = companyService.updateCompany(id, request);
+        UUID hubOrCompanyId = SecurityUtil.getCurrentUser(authentication);
+        List<String> roles = SecurityUtil.getCurrentUserRoles(authentication);
+
+        CompanyResponse.Update response = companyService.updateCompany(id, request, hubOrCompanyId, roles);
         return ResponseEntity.ok(ApiResponse.updated(response));
     }
 

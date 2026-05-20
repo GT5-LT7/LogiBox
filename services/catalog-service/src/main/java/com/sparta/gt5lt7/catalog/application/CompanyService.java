@@ -35,7 +35,15 @@ public class CompanyService {
     private final CompanyRepository companyRepository;
 
     @Transactional
-    public CompanyResponse.Create createCompany(CompanyRequest request) {
+    public CompanyResponse.Create createCompany(CompanyRequest request, UUID hubId, List<String> roles) {
+        // Master가 아니면 담당 허브인지 검증
+        if (!roles.contains("ROLE_MASTER")) {
+            // TODO: CustomUserDetails 구현이 완료되면 허브 ID를 기반으로 검증 로직 수정
+            if (!request.getHubId().equals(hubId)) {
+                throw new BaseException(CompanyErrorCode.COMPANY_CREATE_DENIED);
+            }
+        }
+
         // Hub Service로 허브 정보 요청
         HubResponse hubResponse = hubClient.getHub(request.getHubId());
 
@@ -103,8 +111,17 @@ public class CompanyService {
     }
 
     @Transactional
-    public CompanyResponse.Update updateCompany(UUID id, CompanyRequest request) {
+    public CompanyResponse.Update updateCompany(UUID id, CompanyRequest request, UUID hubOrCompanyId, List<String> roles) {
         Company company = getCompanyById(id);
+
+        // Master가 아니면 담당 허브 또는 본인 업체인지 검증
+        if (!roles.contains("ROLE_MASTER")) {
+            // TODO: CustomUserDetails 구현이 완료되면 허브 또는 업체 ID를 기반으로 검증 로직 수정
+            if (!company.getHubId().equals(hubOrCompanyId)) {
+                throw new BaseException(CompanyErrorCode.COMPANY_UPDATE_DENIED);
+            }
+        }
+
         // TODO: 지도 API 연동 후, 기본 주소를 기반으로 실제 위경도 좌표 추출
         company.update(request, BigDecimal.valueOf(37.503), BigDecimal.valueOf(127.044));
 
