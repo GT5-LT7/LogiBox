@@ -47,7 +47,7 @@ public class CompanyService {
                 .baseAddress(request.getBaseAddress())
                 .detailAddress(request.getDetailAddress())
                 .zipcode(request.getZipcode())
-                // TODO: 지도 API 연동 후, BaseAddress를 기반으로 실제 위경도 좌표를 추출해야 함
+                // TODO: 지도 API 연동 후, 기본 주소를 기반으로 실제 위경도 좌표 추출
                 .latitude(BigDecimal.valueOf(37.503))
                 .longitude(BigDecimal.valueOf(127.044))
                 .build();
@@ -96,8 +96,8 @@ public class CompanyService {
 
     public HubUsageStatusResponse checkHubUsage(UUID hubId) {
         boolean isCompanyInUse = companyRepository.existsByHubId(hubId);
-        // TODO: ProductRepository.existsByHubId() 구현이 완료되면 주석 해제
-        // boolean isProductInUse = productRepository.existsByHubId(hubId);
+        // TODO: ProductService.checkHubUsage() 구현이 완료되면 주석 해제
+        // boolean isProductInUse = ProductService.checkHubUsage(hubId);
 
         return new HubUsageStatusResponse(isCompanyInUse);
     }
@@ -105,7 +105,7 @@ public class CompanyService {
     @Transactional
     public CompanyResponse.Update updateCompany(UUID id, CompanyRequest request) {
         Company company = getCompanyById(id);
-        // TODO: 지도 API 연동 후, BaseAddress를 기반으로 실제 위경도 좌표를 추출해야 함
+        // TODO: 지도 API 연동 후, 기본 주소를 기반으로 실제 위경도 좌표 추출
         company.update(request, BigDecimal.valueOf(37.503), BigDecimal.valueOf(127.044));
 
         // Hub Service로 허브 정보 요청
@@ -114,7 +114,27 @@ public class CompanyService {
         return CompanyResponse.Update.of(company, hubResponse);
     }
 
-    // 공통 Company 조회 메서드
+    @Transactional
+    public CompanyResponse.Delete deleteCompany(UUID id, UUID userId, List<String> roles) {
+        Company company = getCompanyById(id);
+
+        // Master가 아니면 담당 허브인지 검증
+        if (!roles.contains("ROLE_MASTER")) {
+            // TODO: CustomUserDetails 구현이 완료되면 허브 ID를 기반으로 검증 로직 수정
+            if (!company.getHubId().equals(userId)) {
+                throw new BaseException(CompanyErrorCode.COMPANY_DELETE_DENIED);
+            }
+        }
+
+        // Soft Delete 처리
+        company.softDelete(userId);
+        // TODO: ProductService.deleteProducts() 구현이 완료되면 주석 해제
+        // ProductService.deleteProducts(company.getCompanyId());
+
+        return CompanyResponse.Delete.from(company);
+    }
+
+    // 업체 조회 공통 메서드
     private Company getCompanyById(UUID id) {
         return companyRepository.findById(id)
                 .orElseThrow(() -> new BaseException(CompanyErrorCode.COMPANY_NOT_FOUND));

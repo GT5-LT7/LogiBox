@@ -45,4 +45,10 @@ public class CompanyResponse {
             return new Update(Info.of(company, hub), company.getUpdatedAt());
         }
     }
+
+    public record Delete(UUID companyId, String name, LocalDateTime deletedAt) {
+        public static Delete from(Company company) {
+            return new Delete(company.getCompanyId(), company.getName(), company.getDeletedAt());
+        }
+    }
 }

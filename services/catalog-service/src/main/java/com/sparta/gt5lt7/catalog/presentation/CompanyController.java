@@ -11,8 +11,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import com.sparta.gt5lt7.common.security.SecurityUtil;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -55,5 +59,18 @@ public class CompanyController {
     ) {
         CompanyResponse.Update response = companyService.updateCompany(id, request);
         return ResponseEntity.ok(ApiResponse.updated(response));
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('MASTER', 'HUB_MANAGER')")
+    public ResponseEntity<ApiResponse<CompanyResponse.Delete>> deleteCompany(
+            @PathVariable UUID id,
+            Authentication authentication
+    ) {
+        UUID userId = SecurityUtil.getCurrentUser(authentication);
+        List<String> roles = SecurityUtil.getCurrentUserRoles(authentication);
+
+        CompanyResponse.Delete response = companyService.deleteCompany(id, userId, roles);
+        return ResponseEntity.ok(ApiResponse.deleted(response));
     }
 }

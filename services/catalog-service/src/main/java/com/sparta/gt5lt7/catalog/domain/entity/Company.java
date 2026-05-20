@@ -3,11 +3,11 @@ package com.sparta.gt5lt7.catalog.domain.entity;
 import com.sparta.gt5lt7.catalog.presentation.dto.request.CompanyRequest;
 import com.sparta.gt5lt7.common.entity.BaseEntity;
 import jakarta.persistence.*;
-import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -16,6 +16,7 @@ import java.util.UUID;
 @Table(name = "p_companies")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@SQLRestriction("deleted_at IS NULL")
 public class Company extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

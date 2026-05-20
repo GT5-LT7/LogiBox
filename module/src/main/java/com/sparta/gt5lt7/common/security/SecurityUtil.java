@@ -11,7 +11,7 @@ public final class SecurityUtil {
     private SecurityUtil() {}
 
     // TODO [User 담당자 필독]: 실체 CustomUserDetails(업체 또는 허브 ID 포함)에 맞게 수정하셔야 합니다.
-    public static UUID getCurrentUserId(Authentication authentication) {
+    public static UUID getCurrentUser(Authentication authentication) {
         if (authentication == null || authentication.getPrincipal() == null) {
             throw new IllegalArgumentException("인증 정보가 존재하지 않습니다.");
         }
