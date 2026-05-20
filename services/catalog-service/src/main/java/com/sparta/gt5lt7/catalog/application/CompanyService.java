@@ -96,11 +96,22 @@ public class CompanyService {
 
     public HubUsageStatusResponse checkHubUsage(UUID hubId) {
         boolean isCompanyInUse = companyRepository.existsByHubId(hubId);
-
         // TODO: ProductRepository.existsByHubId() 구현이 완료되면 주석 해제
         // boolean isProductInUse = productRepository.existsByHubId(hubId);
 
         return new HubUsageStatusResponse(isCompanyInUse);
+    }
+
+    @Transactional
+    public CompanyResponse.Update updateCompany(UUID id, CompanyRequest request) {
+        Company company = getCompanyById(id);
+        // TODO: 지도 API 연동 후, BaseAddress를 기반으로 실제 위경도 좌표를 추출해야 함
+        company.update(request, BigDecimal.valueOf(37.503), BigDecimal.valueOf(127.044));
+
+        // Hub Service로 허브 정보 요청
+        HubResponse hubResponse = hubClient.getHub(company.getHubId());
+
+        return CompanyResponse.Update.of(company, hubResponse);
     }
 
     // 공통 Company 조회 메서드

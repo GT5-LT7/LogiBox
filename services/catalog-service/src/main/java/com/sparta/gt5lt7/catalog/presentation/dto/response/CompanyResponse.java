@@ -39,4 +39,10 @@ public class CompanyResponse {
             return new Detail(Summary.of(company, hub), createdBy, updatedBy);
         }
     }
+
+    public record Update(Info info, LocalDateTime updatedAt) {
+        public static Update of(Company company, HubResponse hub) {
+            return new Update(Info.of(company, hub), company.getUpdatedAt());
+        }
+    }
 }

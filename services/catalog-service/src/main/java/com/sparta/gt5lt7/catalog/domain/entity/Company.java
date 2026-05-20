@@ -1,7 +1,9 @@
 package com.sparta.gt5lt7.catalog.domain.entity;
 
+import com.sparta.gt5lt7.catalog.presentation.dto.request.CompanyRequest;
 import com.sparta.gt5lt7.common.entity.BaseEntity;
 import jakarta.persistence.*;
+import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -69,5 +71,19 @@ public class Company extends BaseEntity {
             return String.format("%s (%s)", this.baseAddress, this.zipcode);
         }
         return String.format("%s, %s (%s)", this.baseAddress, this.detailAddress, this.zipcode);
+    }
+
+    public void update(CompanyRequest request, BigDecimal latitude, BigDecimal longitude) {
+        String detailAddress = request.getDetailAddress();
+
+        this.name = request.getName().trim();
+        this.type = request.getType();
+        this.phone = request.getPhone();
+        this.hubId = request.getHubId();
+        this.baseAddress = request.getBaseAddress().trim();
+        this.detailAddress = (detailAddress != null && !detailAddress.isBlank()) ? detailAddress.trim() : null;
+        this.zipcode = request.getZipcode();
+        this.latitude = latitude;
+        this.longitude = longitude;
     }
 }

@@ -1,9 +1,10 @@
 package com.sparta.gt5lt7.catalog.global.exception;
 
+import com.sparta.gt5lt7.common.exception.ErrorCode;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
-import com.sparta.gt5lt7.common.exception.ErrorCode;
 
 @Getter
 @AllArgsConstructor

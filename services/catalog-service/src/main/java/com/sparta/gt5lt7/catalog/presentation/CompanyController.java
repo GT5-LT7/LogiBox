@@ -47,4 +47,13 @@ public class CompanyController {
         CompanyResponse.Detail response = companyService.getCompany(id);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
+
+    @PostMapping("/{id}")
+    public ResponseEntity<ApiResponse<CompanyResponse.Update>> updateCompany(
+            @PathVariable UUID id,
+            @Valid @RequestBody CompanyRequest request
+    ) {
+        CompanyResponse.Update response = companyService.updateCompany(id, request);
+        return ResponseEntity.ok(ApiResponse.updated(response));
+    }
 }
