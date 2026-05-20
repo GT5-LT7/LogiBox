@@ -9,9 +9,7 @@ import com.sparta.gt5lt7.catalog.infrastructure.client.UserClient;
 import com.sparta.gt5lt7.catalog.infrastructure.client.dto.HubResponse;
 import com.sparta.gt5lt7.catalog.infrastructure.client.dto.UserResponse;
 import com.sparta.gt5lt7.catalog.presentation.dto.request.CompanyCreateRequest;
-import com.sparta.gt5lt7.catalog.presentation.dto.response.CompanyCreateResponse;
-import com.sparta.gt5lt7.catalog.presentation.dto.response.CompanyDetailResponse;
-import com.sparta.gt5lt7.catalog.presentation.dto.response.CompanyResponse;
+import com.sparta.gt5lt7.catalog.presentation.dto.response.*;
 import com.sparta.gt5lt7.common.dto.PageResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -94,6 +92,15 @@ public class CompanyService {
         return CompanyDetailResponse.of(
                 company, hubResponse, userMap.get(company.getCreatedBy()), userMap.get(company.getUpdatedBy())
         );
+    }
+
+    public HubUsageStatusResponse checkHubUsage(UUID hubId) {
+        boolean isCompanyInUse = companyRepository.existsByHubId(hubId);
+
+        // TODO: ProductRepository.existsByHubId() 구현이 완료되면 주석 해제
+        // boolean isProductInUse = productRepository.existsByHubId(hubId);
+
+        return new HubUsageStatusResponse(isCompanyInUse);
     }
 
     // 공통 Company 조회 메서드
