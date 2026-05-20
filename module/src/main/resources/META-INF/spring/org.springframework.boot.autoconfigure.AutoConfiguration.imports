@@ -1,3 +1,4 @@
 # 공통 모듈의 설정 클래스 경로
 com.sparta.gt5lt7.common.config.JpaConfig
+com.sparta.gt5lt7.common.config.WebConfig
 com.sparta.gt5lt7.common.advice.GlobalExceptionHandler
