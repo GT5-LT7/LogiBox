@@ -4,6 +4,7 @@ import com.sparta.gt5lt7.catalog.application.CompanyService;
 import com.sparta.gt5lt7.catalog.domain.entity.CompanyType;
 import com.sparta.gt5lt7.catalog.presentation.dto.request.CompanyCreateRequest;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.CompanyCreateResponse;
+import com.sparta.gt5lt7.catalog.presentation.dto.response.CompanyDetailResponse;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.CompanyResponse;
 import com.sparta.gt5lt7.common.dto.ApiResponse;
 import com.sparta.gt5lt7.common.dto.PageResponse;
@@ -38,6 +39,14 @@ public class CompanyController {
             Pageable pageable
     ) {
         PageResponse<CompanyResponse> response = companyService.searchCompanies(keyword, type, hubId, pageable);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<CompanyDetailResponse>> getCompany(
+            @PathVariable UUID id
+    ) {
+        CompanyDetailResponse response = companyService.getCompany(id);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 }

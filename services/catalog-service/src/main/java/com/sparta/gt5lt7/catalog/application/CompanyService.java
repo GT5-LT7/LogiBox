@@ -3,17 +3,20 @@ package com.sparta.gt5lt7.catalog.application;
 import com.sparta.gt5lt7.catalog.domain.entity.Company;
 import com.sparta.gt5lt7.catalog.domain.entity.CompanyType;
 import com.sparta.gt5lt7.catalog.domain.repository.CompanyRepository;
+import com.sparta.gt5lt7.catalog.global.exception.CompanyErrorCode;
 import com.sparta.gt5lt7.catalog.infrastructure.client.HubClient;
+import com.sparta.gt5lt7.catalog.infrastructure.client.UserClient;
 import com.sparta.gt5lt7.catalog.infrastructure.client.dto.HubResponse;
+import com.sparta.gt5lt7.catalog.infrastructure.client.dto.UserResponse;
 import com.sparta.gt5lt7.catalog.presentation.dto.request.CompanyCreateRequest;
-import com.sparta.gt5lt7.catalog.presentation.dto.response.CompanyCreateResponse;
-import com.sparta.gt5lt7.catalog.presentation.dto.response.CompanyResponse;
+import com.sparta.gt5lt7.catalog.presentation.dto.response.*;
 import com.sparta.gt5lt7.common.dto.PageResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.sparta.gt5lt7.common.exception.BaseException;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -28,6 +31,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class CompanyService {
     private final HubClient hubClient;
+    private final UserClient userClient;
     private final CompanyRepository companyRepository;
 
     @Transactional
@@ -69,5 +73,39 @@ public class CompanyService {
             HubResponse hubResponse = hubMap.get(company.getHubId());
             return CompanyResponse.of(company, hubResponse);
         });
+    }
+
+    public CompanyDetailResponse getCompany(UUID id) {
+        Company company = getCompanyById(id);
+
+        // Hub Service로 허브 정보 요청
+        HubResponse hubResponse = hubClient.getHub(company.getHubId());
+
+        // 사용자 ID를 중복 없이 추출 → User Service로 사용자 정보 요청
+        Set<UUID> userIds = Set.of(company.getCreatedBy(), company.getUpdatedBy());
+        List<UserResponse> userResponses = userClient.getUsers(userIds);
+
+        // O(1) 조회를 위한 사용자 Map 생성
+        Map<UUID, UserResponse> userMap = userResponses.stream()
+                .collect(Collectors.toMap(UserResponse::getId, user -> user));
+
+        return CompanyDetailResponse.of(
+                company, hubResponse, userMap.get(company.getCreatedBy()), userMap.get(company.getUpdatedBy())
+        );
+    }
+
+    public HubUsageStatusResponse checkHubUsage(UUID hubId) {
+        boolean isCompanyInUse = companyRepository.existsByHubId(hubId);
+
+        // TODO: ProductRepository.existsByHubId() 구현이 완료되면 주석 해제
+        // boolean isProductInUse = productRepository.existsByHubId(hubId);
+
+        return new HubUsageStatusResponse(isCompanyInUse);
+    }
+
+    // 공통 Company 조회 메서드
+    private Company getCompanyById(UUID id) {
+        return companyRepository.findById(id)
+                .orElseThrow(() -> new BaseException(CompanyErrorCode.COMPANY_NOT_FOUND));
     }
 }
