@@ -5,6 +5,6 @@ rootProject.name = 'logibox'
 
 include ':module'
 //include ':services:user-service'
-//include ':services:logistics-service'
+include ':services:logistics-service'
 include ':services:catalog-service'
 //include ':services:order-service'
