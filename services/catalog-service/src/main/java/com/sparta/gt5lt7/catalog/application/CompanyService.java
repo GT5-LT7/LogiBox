@@ -8,7 +8,7 @@ import com.sparta.gt5lt7.catalog.infrastructure.client.HubClient;
 import com.sparta.gt5lt7.catalog.infrastructure.client.UserClient;
 import com.sparta.gt5lt7.catalog.infrastructure.client.dto.HubResponse;
 import com.sparta.gt5lt7.catalog.infrastructure.client.dto.UserResponse;
-import com.sparta.gt5lt7.catalog.presentation.dto.request.CompanyCreateRequest;
+import com.sparta.gt5lt7.catalog.presentation.dto.request.CompanyRequest;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.*;
 import com.sparta.gt5lt7.common.dto.PageResponse;
 import lombok.RequiredArgsConstructor;
@@ -35,7 +35,7 @@ public class CompanyService {
     private final CompanyRepository companyRepository;
 
     @Transactional
-    public CompanyCreateResponse createCompany(CompanyCreateRequest request) {
+    public CompanyResponse.Create createCompany(CompanyRequest request) {
         // Hub Service로 허브 정보 요청
         HubResponse hubResponse = hubClient.getHub(request.getHubId());
 
@@ -53,10 +53,10 @@ public class CompanyService {
                 .build();
 
         Company savedCompany = companyRepository.save(company);
-        return CompanyCreateResponse.of(savedCompany, hubResponse);
+        return CompanyResponse.Create.of(savedCompany, hubResponse);
     }
 
-    public PageResponse<CompanyResponse> searchCompanies(String keyword, CompanyType type, UUID hubId, Pageable pageable) {
+    public PageResponse<CompanyResponse.Summary> searchCompanies(String keyword, CompanyType type, UUID hubId, Pageable pageable) {
         Page<Company> companiePage = companyRepository.searchCompanies(keyword, type, hubId, pageable);
 
         // 허브 ID를 중복 없이 추출 → Hub Service로 허브 정보 요청
@@ -71,11 +71,11 @@ public class CompanyService {
 
         return PageResponse.of(companiePage, company -> {
             HubResponse hubResponse = hubMap.get(company.getHubId());
-            return CompanyResponse.of(company, hubResponse);
+            return CompanyResponse.Summary.of(company, hubResponse);
         });
     }
 
-    public CompanyDetailResponse getCompany(UUID id) {
+    public CompanyResponse.Detail getCompany(UUID id) {
         Company company = getCompanyById(id);
 
         // Hub Service로 허브 정보 요청
@@ -89,7 +89,7 @@ public class CompanyService {
         Map<UUID, UserResponse> userMap = userResponses.stream()
                 .collect(Collectors.toMap(UserResponse::getId, user -> user));
 
-        return CompanyDetailResponse.of(
+        return CompanyResponse.Detail.of(
                 company, hubResponse, userMap.get(company.getCreatedBy()), userMap.get(company.getUpdatedBy())
         );
     }

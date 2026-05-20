@@ -44,7 +44,7 @@ class CompanyControllerTest {
         @DisplayName("정상 케이스")
         void test1() throws Exception {
             // given
-            PageResponse<CompanyResponse> mockResponse = PageResponse.<CompanyResponse>builder()
+            PageResponse<CompanyResponse.Summary> mockResponse = PageResponse.<CompanyResponse.Summary>builder()
                     .content(List.of())
                     .page(0)
                     .size(30)
@@ -75,7 +75,7 @@ class CompanyControllerTest {
         @DisplayName("비정상 케이스 - 기본값 적용")
         void test2() throws Exception {
             // given
-            PageResponse<CompanyResponse> mockResponse = PageResponse.<CompanyResponse>builder()
+            PageResponse<CompanyResponse.Summary> mockResponse = PageResponse.<CompanyResponse.Summary>builder()
                     .content(List.of())
                     .page(0)
                     .size(10)

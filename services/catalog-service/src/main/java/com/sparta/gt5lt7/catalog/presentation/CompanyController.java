@@ -2,9 +2,7 @@ package com.sparta.gt5lt7.catalog.presentation;
 
 import com.sparta.gt5lt7.catalog.application.CompanyService;
 import com.sparta.gt5lt7.catalog.domain.entity.CompanyType;
-import com.sparta.gt5lt7.catalog.presentation.dto.request.CompanyCreateRequest;
-import com.sparta.gt5lt7.catalog.presentation.dto.response.CompanyCreateResponse;
-import com.sparta.gt5lt7.catalog.presentation.dto.response.CompanyDetailResponse;
+import com.sparta.gt5lt7.catalog.presentation.dto.request.CompanyRequest;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.CompanyResponse;
 import com.sparta.gt5lt7.common.dto.ApiResponse;
 import com.sparta.gt5lt7.common.dto.PageResponse;
@@ -24,29 +22,29 @@ public class CompanyController {
     private final CompanyService companyService;
 
     @PostMapping
-    public ResponseEntity<ApiResponse<CompanyCreateResponse>> createCompany(
-            @Valid @RequestBody CompanyCreateRequest request
+    public ResponseEntity<ApiResponse<CompanyResponse.Create>> createCompany(
+            @Valid @RequestBody CompanyRequest request
     ) {
-        CompanyCreateResponse response = companyService.createCompany(request);
+        CompanyResponse.Create response = companyService.createCompany(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(response));
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<PageResponse<CompanyResponse>>> searchCompanies(
+    public ResponseEntity<ApiResponse<PageResponse<CompanyResponse.Summary>>> searchCompanies(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) CompanyType type,
             @RequestParam(required = false) UUID hubId,
             Pageable pageable
     ) {
-        PageResponse<CompanyResponse> response = companyService.searchCompanies(keyword, type, hubId, pageable);
+        PageResponse<CompanyResponse.Summary> response = companyService.searchCompanies(keyword, type, hubId, pageable);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<CompanyDetailResponse>> getCompany(
+    public ResponseEntity<ApiResponse<CompanyResponse.Detail>> getCompany(
             @PathVariable UUID id
     ) {
-        CompanyDetailResponse response = companyService.getCompany(id);
+        CompanyResponse.Detail response = companyService.getCompany(id);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 }
