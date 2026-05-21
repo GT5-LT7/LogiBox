@@ -191,7 +191,10 @@ class CompanyServiceTest {
             given(companyRepository.findById(companyId)).willReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> companyService.getCompany(companyId)).isInstanceOf(BaseException.class);
+            assertThatThrownBy(() -> companyService.getCompany(companyId))
+                    .isInstanceOf(BaseException.class)
+                    .hasMessageContaining(CompanyErrorCode.COMPANY_NOT_FOUND.getMessage());
+
 
             verify(hubClient, never()).getHub(any());
             verify(userClient, never()).getUsers(any());
@@ -280,7 +283,8 @@ class CompanyServiceTest {
 
             // when & then
             assertThatThrownBy(() -> companyService.updateCompany(companyId, companyRequest, UUID.randomUUID(), roles))
-                    .isInstanceOf(BaseException.class);
+                    .isInstanceOf(BaseException.class)
+                    .hasMessageContaining(CompanyErrorCode.COMPANY_UPDATE_DENIED.getMessage());
         }
 
         @Test
@@ -293,7 +297,8 @@ class CompanyServiceTest {
 
             // when & then
             assertThatThrownBy(() -> companyService.updateCompany(companyId, companyRequest, UUID.randomUUID(), roles))
-                    .isInstanceOf(BaseException.class);
+                    .isInstanceOf(BaseException.class)
+                    .hasMessageContaining(CompanyErrorCode.COMPANY_UPDATE_DENIED.getMessage());
         }
     }
 
@@ -346,7 +351,8 @@ class CompanyServiceTest {
 
             // when & then
             assertThatThrownBy(() -> companyService.deleteCompany(companyId, wrongUserId, roles))
-                    .isInstanceOf(BaseException.class);
+                    .isInstanceOf(BaseException.class)
+                    .hasMessageContaining(CompanyErrorCode.COMPANY_DELETE_DENIED.getMessage());
         }
     }
 

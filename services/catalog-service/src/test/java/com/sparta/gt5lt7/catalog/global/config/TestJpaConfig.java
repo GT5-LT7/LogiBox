@@ -11,8 +11,10 @@ import java.util.UUID;
 @TestConfiguration
 @EnableJpaAuditing(auditorAwareRef = "loginUserAuditorAware")
 public class TestJpaConfig {
+    private static final UUID TEST_AUDITOR_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
+
     @Bean
     public AuditorAware<UUID> loginUserAuditorAware() {
-        return () -> Optional.of(UUID.randomUUID());
+        return () -> Optional.of(TEST_AUDITOR_ID);
     }
 }
