@@ -1,4 +1,4 @@
 package com.sparta.gt5lt7.logisticsservice.infrastructure.repository;
 
-public class CompanyRepositoryCustomImpl {
+public class HubRepositoryCustomImpl {
 }
