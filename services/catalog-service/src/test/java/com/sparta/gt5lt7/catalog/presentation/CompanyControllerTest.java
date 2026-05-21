@@ -41,17 +41,10 @@ class CompanyControllerTest {
     @DisplayName("커스텀 페이징 리졸버 동작 테스트")
     class CustomPageableArgumentResolverTest {
         @Test
-        @DisplayName("정상 케이스")
+        @DisplayName("정상")
         void test1() throws Exception {
             // given
-            PageResponse<CompanyResponse.Summary> mockResponse = PageResponse.<CompanyResponse.Summary>builder()
-                    .content(List.of())
-                    .page(0)
-                    .size(30)
-                    .totalElements(0L)
-                    .totalPages(0)
-                    .sort("updatedAt: ASC")
-                    .build();
+            PageResponse<CompanyResponse.Summary> mockResponse = createSummaryResponse(30, "updatedAt: DESC");
             given(companyService.searchCompanies(any(), any(), any(), any())).willReturn(mockResponse);
 
             // when & then
@@ -72,18 +65,10 @@ class CompanyControllerTest {
         }
 
         @Test
-        @DisplayName("비정상 케이스 - 기본값 적용")
+        @DisplayName("비정상: 기본값 적용")
         void test2() throws Exception {
             // given
-            PageResponse<CompanyResponse.Summary> mockResponse = PageResponse.<CompanyResponse.Summary>builder()
-                    .content(List.of())
-                    .page(0)
-                    .size(10)
-                    .totalElements(0L)
-                    .totalPages(0)
-                    .sort("createdAt: DESC")
-                    .build();
-
+            PageResponse<CompanyResponse.Summary> mockResponse = createSummaryResponse(10, "createdAt: DESC");
             given(companyService.searchCompanies(any(), any(), any(), any())).willReturn(mockResponse);
 
             // when & then
@@ -100,6 +85,17 @@ class CompanyControllerTest {
             assertThat(capturedPageable.getPageSize()).isEqualTo(10);
             assertThat(Objects.requireNonNull(capturedPageable.getSort().getOrderFor("createdAt")).getDirection())
                     .isEqualTo(Sort.Direction.DESC);
+        }
+
+        private PageResponse<CompanyResponse.Summary> createSummaryResponse(int size, String sort) {
+            return PageResponse.<CompanyResponse.Summary>builder()
+                    .content(List.of())
+                    .page(0)
+                    .size(size)
+                    .totalElements(0L)
+                    .totalPages(0)
+                    .sort(sort)
+                    .build();
         }
     }
 }
