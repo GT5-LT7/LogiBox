@@ -25,4 +25,10 @@ public class ProductResponse {
             return new Create(Info.from(product), product.getCreatedAt());
         }
     }
+
+    public record Update(Info info, LocalDateTime updatedAt) {
+        public static Update from(Product product) {
+            return new Update(Info.from(product), product.getUpdatedAt());
+        }
+    }
 }

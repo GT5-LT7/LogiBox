@@ -1,5 +1,6 @@
 package com.sparta.gt5lt7.catalog.domain.entity;
 
+import com.sparta.gt5lt7.catalog.presentation.dto.request.ProductRequest;
 import com.sparta.gt5lt7.common.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -53,5 +54,14 @@ public class Product extends BaseEntity {
         this.category = category;
         this.price = price;
         this.quantity = quantity;
+    }
+
+    public void update(ProductRequest.Update request, Category category) {
+        String description = request.getDescription();
+
+        this.name = request.getName().trim();
+        this.description = (description != null && !description.isBlank()) ? description.trim() : null;
+        this.category = category;
+        this.price = request.getPrice();
     }
 }
