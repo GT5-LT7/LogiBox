@@ -1,0 +1,30 @@
+server:
+  port: 19091
+
+spring:
+  application:
+    name: user-service
+  datasource:
+    url: jdbc:postgresql://user-db:5432/userdb
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka/
+
+jwt:
+  secret: "your-secret-key-here-must-be-long-enough"
+  expiration: 3600000
+
+logging:
+  level:
+    com.spatra.gt5lt7: INFO
+  file:
+    name: logs/user-service.log

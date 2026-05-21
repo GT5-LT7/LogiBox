@@ -1,0 +1,43 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        - id: user-public
+          uri: lb://user-service
+          predicates:
+            - Path=/api/users/signup, /api/users/login
+          filters:
+            - name: JwtAuthFilter
+              args:
+                requireAuth: false
+
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/api/users/**
+          filters:
+            - name: JwtAuthFilter
+              args:
+                requireAuth: true
+
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+            - Path=/api/orders/**
+          filters:
+            - name: JwtAuthFilter
+              args:
+                requireAuth: true
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka/
+
+jwt:
+  secret: "your-secret-key-here-must-be-long-enough"
