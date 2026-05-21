@@ -212,7 +212,7 @@ class CompanyServiceTest {
 
         // then
         assertThat(response).isNotNull();
-        assertThat(response.isUsed()).isTrue();
+        assertThat(response.used()).isTrue();
         verify(companyRepository).existsByHubId(hubId);
     }
 
@@ -306,7 +306,7 @@ class CompanyServiceTest {
     @DisplayName("업체 삭제 테스트")
     class DeleteCompanyTest {
         private final Company mockCompany = createCompany(companyId, createCompanyRequest("수정 예정 물류"));
-        private final UUID userId = hubId;
+        private final UUID userOrHubId = hubId;
 
         @Test
         @DisplayName("성공: MASTER - 허브 상관 없음")
@@ -317,7 +317,7 @@ class CompanyServiceTest {
             given(companyRepository.findById(companyId)).willReturn(Optional.of(mockCompany));
 
             // when
-            CompanyResponse.Delete response = companyService.deleteCompany(companyId, userId, roles);
+            CompanyResponse.Delete response = companyService.deleteCompany(companyId, userOrHubId, roles);
 
             // then
             assertThat(response.deletedAt()).isNotNull();
@@ -332,7 +332,7 @@ class CompanyServiceTest {
             given(companyRepository.findById(companyId)).willReturn(Optional.of(mockCompany));
 
             // when
-            CompanyResponse.Delete response = companyService.deleteCompany(companyId, userId, roles);
+            CompanyResponse.Delete response = companyService.deleteCompany(companyId, userOrHubId, roles);
 
             // then
             assertThat(response.deletedAt()).isNotNull();

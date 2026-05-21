@@ -104,9 +104,6 @@ public class CompanyService {
 
     public HubUsageStatusResponse checkHubUsage(UUID hubId) {
         boolean isCompanyInUse = companyRepository.existsByHubId(hubId);
-        // TODO: ProductService.checkHubUsage() 구현이 완료되면 주석 해제
-        // boolean isProductInUse = ProductService.checkHubUsage(hubId);
-
         return new HubUsageStatusResponse(isCompanyInUse);
     }
 
@@ -132,19 +129,19 @@ public class CompanyService {
     }
 
     @Transactional
-    public CompanyResponse.Delete deleteCompany(UUID id, UUID userId, List<String> roles) {
+    public CompanyResponse.Delete deleteCompany(UUID id, UUID userAndHubId, List<String> roles) {
         Company company = getCompanyById(id);
 
         // Master가 아니면 담당 허브인지 검증
         if (!roles.contains("ROLE_MASTER")) {
             // TODO: CustomUserDetails 구현이 완료되면 허브 ID를 기반으로 검증 로직 수정
-            if (!company.getHubId().equals(userId)) {
+            if (!company.getHubId().equals(userAndHubId)) {
                 throw new BaseException(CompanyErrorCode.COMPANY_DELETE_DENIED);
             }
         }
 
         // Soft Delete 처리
-        company.softDelete(userId);
+        company.softDelete(userAndHubId);
         // TODO: ProductService.deleteProducts() 구현이 완료되면 주석 해제
         // ProductService.deleteProducts(company.getCompanyId());
 

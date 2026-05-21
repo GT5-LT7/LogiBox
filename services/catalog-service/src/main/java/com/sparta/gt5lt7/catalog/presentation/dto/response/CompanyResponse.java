@@ -10,6 +10,12 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 public class CompanyResponse {
+    public record Simple(UUID companyId, String name) {
+        public static Simple from(Company company) {
+            return new Simple(company.getCompanyId(), company.getName());
+        }
+    }
+
     public record Info(
             UUID companyId, String name, CompanyType type, String phone,
             HubResponse hub, String address,  BigDecimal latitude, BigDecimal longitude
