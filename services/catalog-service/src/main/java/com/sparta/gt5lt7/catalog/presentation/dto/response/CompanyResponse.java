@@ -34,9 +34,12 @@ public class CompanyResponse {
         }
     }
 
-    public record Detail(Summary summary, UserResponse createdBy, UserResponse updatedBy) {
+    public record Detail(
+            Info info, LocalDateTime createdAt, LocalDateTime updatedAt,
+            UserResponse createdBy, UserResponse updatedBy
+    ) {
         public static Detail of(Company company, HubResponse hub, UserResponse createdBy, UserResponse updatedBy) {
-            return new Detail(Summary.of(company, hub), createdBy, updatedBy);
+            return new Detail(Info.of(company, hub), company.getCreatedAt(), company.getUpdatedAt(), createdBy, updatedBy);
         }
     }
 
