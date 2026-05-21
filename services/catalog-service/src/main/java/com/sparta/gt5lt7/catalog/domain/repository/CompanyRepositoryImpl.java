@@ -1,4 +1,4 @@
-package com.sparta.gt5lt7.catalog.infrastructure.repository;
+package com.sparta.gt5lt7.catalog.domain.repository;
 
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Order;
@@ -7,7 +7,6 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.sparta.gt5lt7.catalog.domain.entity.Company;
 import com.sparta.gt5lt7.catalog.domain.entity.CompanyType;
 import com.sparta.gt5lt7.catalog.domain.entity.QCompany;
-import com.sparta.gt5lt7.catalog.domain.repository.CompanyRepositoryCustom;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -63,6 +62,7 @@ public class CompanyRepositoryImpl implements CompanyRepositoryCustom {
         return PageableExecutionUtils.getPage(content, pageable, () -> totalCount);
     }
 
+    // 정렬 조건 처리 메서드
     private List<OrderSpecifier<?>> getOrderSpecifiers(Pageable pageable, QCompany company) {
         List<OrderSpecifier<?>> orders = new ArrayList<>();
 
