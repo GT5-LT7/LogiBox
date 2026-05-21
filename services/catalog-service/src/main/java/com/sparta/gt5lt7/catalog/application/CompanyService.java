@@ -149,7 +149,7 @@ public class CompanyService {
     }
 
     // 업체 조회 공통 메서드
-    private Company getCompanyById(UUID id) {
+    public Company getCompanyById(UUID id) {
         return companyRepository.findById(id)
                 .orElseThrow(() -> new BaseException(CompanyErrorCode.COMPANY_NOT_FOUND));
     }
