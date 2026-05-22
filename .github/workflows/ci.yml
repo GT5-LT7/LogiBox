@@ -79,6 +79,8 @@ jobs:
 
       # 4. 루트의 gradlew를 사용해 특정 모듈만 빌드
       - name: 빌드 및 테스트
+        env:
+          KAKAO_MAP_API_KEY: ${{ secrets.KAKAO_MAP_API_KEY }}
         run: ./gradlew ${{ steps.vars.outputs.target }}:build --no-daemon
 
       - name: 테스트 결과 업로드
