@@ -41,7 +41,13 @@ def querydslDir = layout.buildDirectory.dir("generated/querydsl").get().asFile
 sourceSets {
     main {
         java {
+            // 1. catalog-service의 소스 경로 유지
             srcDirs = ['src/main/java']
+
+            // 2. 공통 모듈의 소스 경로 추가
+            srcDirs += file("${project(':module').projectDir}/src/main/java")
+
+            // 3. Q클래스 생성 경로 추가
             srcDirs += [querydslDir]
         }
     }
