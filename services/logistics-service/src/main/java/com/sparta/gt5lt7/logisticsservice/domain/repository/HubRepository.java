@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface HubRepository extends JpaRepository<Hub, UUID> {
+public interface HubRepository extends JpaRepository<Hub, UUID>, HubRepositoryCustom {
 
     /**
  * Finds an active Hub by its hubId (only hubs with deletedAt equal to null).
