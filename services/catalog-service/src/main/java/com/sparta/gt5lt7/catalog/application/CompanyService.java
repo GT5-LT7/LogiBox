@@ -85,7 +85,7 @@ public class CompanyService {
 
         // O(1) 조회를 위한 허브 Map 생성
         Map<UUID, HubResponse> hubMap = hubResponses.stream()
-                .collect(Collectors.toMap(HubResponse::getId, Function.identity()));
+                .collect(Collectors.toMap(HubResponse::id, Function.identity()));
 
         return PageResponse.of(companiePage, company -> {
             HubResponse hubResponse = hubMap.get(company.getHubId());
@@ -105,7 +105,7 @@ public class CompanyService {
 
         // O(1) 조회를 위한 사용자 Map 생성
         Map<UUID, UserResponse> userMap = userResponses.stream()
-                .collect(Collectors.toMap(UserResponse::getId, user -> user));
+                .collect(Collectors.toMap(UserResponse::id, user -> user));
 
         return CompanyResponse.Detail.of(
                 company, hubResponse, userMap.get(company.getCreatedBy()), userMap.get(company.getUpdatedBy())

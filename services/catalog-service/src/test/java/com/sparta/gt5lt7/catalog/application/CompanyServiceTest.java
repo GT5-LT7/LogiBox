@@ -81,7 +81,7 @@ class CompanyServiceTest {
 
             // then
             assertThat(response.info().name()).isEqualTo(companyRequest.getName());
-            assertThat(response.info().hub().getName()).isEqualTo("서울 중앙 허브");
+            assertThat(response.info().hub().name()).isEqualTo("서울 중앙 허브");
 
             // 레포지토리 저장 및 외부 클라이언트 호출 검증
             verify(hubClient).getHub(companyRequest.getHubId());
@@ -144,7 +144,7 @@ class CompanyServiceTest {
 
         // then
         assertThat(response.getContent()).hasSize(1);
-        assertThat(response.getContent().get(0).info().hub().getName()).isEqualTo("서울 중앙 허브");
+        assertThat(response.getContent().get(0).info().hub().name()).isEqualTo("서울 중앙 허브");
         verify(companyRepository).searchCompanies(keyword, type, hubId, pageable);
         verify(hubClient).getHubs(Set.of(hubId));
     }
