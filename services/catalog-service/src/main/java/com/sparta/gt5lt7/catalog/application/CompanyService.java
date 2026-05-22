@@ -11,7 +11,7 @@ import com.sparta.gt5lt7.catalog.infrastructure.client.dto.UserResponse;
 import com.sparta.gt5lt7.catalog.presentation.dto.request.CompanyRequest;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.*;
 import com.sparta.gt5lt7.common.dto.PageResponse;
-import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -28,11 +28,21 @@ import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
-@RequiredArgsConstructor
 public class CompanyService {
     private final HubClient hubClient;
     private final UserClient userClient;
+    private final ProductService productService;
     private final CompanyRepository companyRepository;
+
+    public CompanyService(HubClient hubClient,
+                          UserClient userClient,
+                          @Lazy ProductService productService,
+                          CompanyRepository companyRepository) {
+        this.hubClient = hubClient;
+        this.userClient = userClient;
+        this.productService = productService;
+        this.companyRepository = companyRepository;
+    }
 
     @Transactional
     public CompanyResponse.Create createCompany(CompanyRequest request, UUID hubId, List<String> roles) {
@@ -104,9 +114,6 @@ public class CompanyService {
 
     public HubUsageStatusResponse checkHubUsage(UUID hubId) {
         boolean isCompanyInUse = companyRepository.existsByHubId(hubId);
-        // TODO: ProductService.checkHubUsage() 구현이 완료되면 주석 해제
-        // boolean isProductInUse = ProductService.checkHubUsage(hubId);
-
         return new HubUsageStatusResponse(isCompanyInUse);
     }
 
@@ -132,27 +139,26 @@ public class CompanyService {
     }
 
     @Transactional
-    public CompanyResponse.Delete deleteCompany(UUID id, UUID userId, List<String> roles) {
+    public CompanyResponse.Delete deleteCompany(UUID id, UUID userAndHubId, List<String> roles) {
         Company company = getCompanyById(id);
 
         // Master가 아니면 담당 허브인지 검증
         if (!roles.contains("ROLE_MASTER")) {
             // TODO: CustomUserDetails 구현이 완료되면 허브 ID를 기반으로 검증 로직 수정
-            if (!company.getHubId().equals(userId)) {
+            if (!company.getHubId().equals(userAndHubId)) {
                 throw new BaseException(CompanyErrorCode.COMPANY_DELETE_DENIED);
             }
         }
 
         // Soft Delete 처리
-        company.softDelete(userId);
-        // TODO: ProductService.deleteProducts() 구현이 완료되면 주석 해제
-        // ProductService.deleteProducts(company.getCompanyId());
+        company.softDelete(userAndHubId);
+        productService.deleteProducts(company.getCompanyId(), userAndHubId);
 
         return CompanyResponse.Delete.from(company);
     }
 
     // 업체 조회 공통 메서드
-    private Company getCompanyById(UUID id) {
+    public Company getCompanyById(UUID id) {
         return companyRepository.findById(id)
                 .orElseThrow(() -> new BaseException(CompanyErrorCode.COMPANY_NOT_FOUND));
     }

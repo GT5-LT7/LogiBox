@@ -77,10 +77,10 @@ public class CompanyController {
             @PathVariable UUID id,
             Authentication authentication
     ) {
-        UUID userId = SecurityUtil.getCurrentUser(authentication);
+        UUID userAndHubId = SecurityUtil.getCurrentUser(authentication);
         List<String> roles = SecurityUtil.getCurrentUserRoles(authentication);
 
-        CompanyResponse.Delete response = companyService.deleteCompany(id, userId, roles);
+        CompanyResponse.Delete response = companyService.deleteCompany(id, userAndHubId, roles);
         return ResponseEntity.ok(ApiResponse.deleted(response));
     }
 }

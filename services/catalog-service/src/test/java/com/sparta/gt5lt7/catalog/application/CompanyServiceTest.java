@@ -37,8 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class CompanyServiceTest {
@@ -47,6 +46,9 @@ class CompanyServiceTest {
 
     @Mock
     private CompanyRepository companyRepository;
+
+    @Mock
+    private ProductService productService;
 
     @Mock
     private HubClient hubClient;
@@ -212,7 +214,7 @@ class CompanyServiceTest {
 
         // then
         assertThat(response).isNotNull();
-        assertThat(response.isUsed()).isTrue();
+        assertThat(response.used()).isTrue();
         verify(companyRepository).existsByHubId(hubId);
     }
 
@@ -306,7 +308,7 @@ class CompanyServiceTest {
     @DisplayName("업체 삭제 테스트")
     class DeleteCompanyTest {
         private final Company mockCompany = createCompany(companyId, createCompanyRequest("수정 예정 물류"));
-        private final UUID userId = hubId;
+        private final UUID userOrHubId = hubId;
 
         @Test
         @DisplayName("성공: MASTER - 허브 상관 없음")
@@ -317,11 +319,12 @@ class CompanyServiceTest {
             given(companyRepository.findById(companyId)).willReturn(Optional.of(mockCompany));
 
             // when
-            CompanyResponse.Delete response = companyService.deleteCompany(companyId, userId, roles);
+            CompanyResponse.Delete response = companyService.deleteCompany(companyId, userOrHubId, roles);
 
             // then
             assertThat(response.deletedAt()).isNotNull();
             verify(companyRepository).findById(companyId);
+            verify(productService).deleteProducts(companyId, userOrHubId);
         }
 
         @Test
@@ -332,12 +335,13 @@ class CompanyServiceTest {
             given(companyRepository.findById(companyId)).willReturn(Optional.of(mockCompany));
 
             // when
-            CompanyResponse.Delete response = companyService.deleteCompany(companyId, userId, roles);
+            CompanyResponse.Delete response = companyService.deleteCompany(companyId, userOrHubId, roles);
 
             // then
             assertThat(response.deletedAt()).isNotNull();
 
             verify(companyRepository).findById(companyId);
+            verify(productService).deleteProducts(companyId, userOrHubId);
         }
 
         @Test
@@ -353,6 +357,7 @@ class CompanyServiceTest {
             assertThatThrownBy(() -> companyService.deleteCompany(companyId, wrongUserId, roles))
                     .isInstanceOf(BaseException.class)
                     .hasMessageContaining(CompanyErrorCode.COMPANY_DELETE_DENIED.getMessage());
+            verify(productService, never()).deleteProducts(any(UUID.class), any(UUID.class));
         }
     }
 
