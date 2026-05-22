@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 public class CompanyService {
     private final HubClient hubClient;
     private final UserClient userClient;
+    private final ProductService productService;
     private final CompanyRepository companyRepository;
 
     @Transactional
@@ -142,8 +143,7 @@ public class CompanyService {
 
         // Soft Delete 처리
         company.softDelete(userAndHubId);
-        // TODO: ProductService.deleteProducts() 구현이 완료되면 주석 해제
-        // ProductService.deleteProducts(company.getCompanyId());
+        productService.deleteProducts(company.getCompanyId(), userAndHubId);
 
         return CompanyResponse.Delete.from(company);
     }

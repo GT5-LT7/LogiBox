@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -89,6 +90,12 @@ public class ProductService {
         product.softDelete(userAndHubId);
 
         return ProductResponse.Delete.from(product);
+    }
+
+    // 업체 ID 기반 연쇄 삭제 메서드
+    @Transactional
+    public void deleteProducts(UUID companyId, UUID deletedBy) {
+        productRepository.softDeleteByProductId(companyId, deletedBy, LocalDateTime.now());
     }
 
     // 상품 조회 공통 메서드
