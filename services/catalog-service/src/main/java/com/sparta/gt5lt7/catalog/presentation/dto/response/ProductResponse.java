@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.sparta.gt5lt7.catalog.domain.entity.Product;
 import com.sparta.gt5lt7.catalog.domain.entity.ProductStatus;
 import com.sparta.gt5lt7.catalog.infrastructure.client.dto.HubResponse;
+import com.sparta.gt5lt7.catalog.infrastructure.client.dto.UserResponse;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -40,6 +41,15 @@ public class ProductResponse {
     public record Summary(Info info, LocalDateTime createdAt, LocalDateTime updatedAt) {
         public static Summary of(Product product, HubResponse hub) {
             return new Summary(Info.of(product, hub), product.getCreatedAt(), product.getUpdatedAt());
+        }
+    }
+
+    public record Detail(
+            Info info, LocalDateTime createdAt, LocalDateTime updatedAt,
+            UserResponse createdBy, UserResponse updatedBy
+    ) {
+        public static Detail of(Product product, HubResponse hub, UserResponse createdBy, UserResponse updatedBy) {
+            return new Detail(Info.of(product, hub), product.getCreatedAt(), product.getUpdatedAt(), createdBy, updatedBy);
         }
     }
 

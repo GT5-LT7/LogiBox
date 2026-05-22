@@ -1,6 +1,7 @@
 package com.sparta.gt5lt7.catalog.presentation;
 
 import com.sparta.gt5lt7.catalog.presentation.dto.request.ProductRequest;
+import com.sparta.gt5lt7.catalog.presentation.dto.response.CompanyResponse;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.ProductResponse;
 import com.sparta.gt5lt7.common.dto.ApiResponse;
 import com.sparta.gt5lt7.common.dto.PageResponse;
@@ -48,6 +49,14 @@ public class ProductController {
         PageResponse<ProductResponse.Summary> response = productService.searchProducts(
                 keyword, companyId, hubId, categoryId, pageable
         );
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<ProductResponse.Detail>> getProduct(
+            @PathVariable UUID id
+    ) {
+        ProductResponse.Detail response = productService.getProduct(id);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 

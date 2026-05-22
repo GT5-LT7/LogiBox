@@ -4,7 +4,10 @@ import com.sparta.gt5lt7.catalog.domain.entity.Category;
 import com.sparta.gt5lt7.catalog.domain.entity.Product;
 import com.sparta.gt5lt7.catalog.global.exception.ProductErrorCode;
 import com.sparta.gt5lt7.catalog.infrastructure.client.HubClient;
+import com.sparta.gt5lt7.catalog.infrastructure.client.UserClient;
 import com.sparta.gt5lt7.catalog.infrastructure.client.dto.HubResponse;
+import com.sparta.gt5lt7.catalog.infrastructure.client.dto.UserResponse;
+import com.sparta.gt5lt7.catalog.presentation.dto.response.CompanyResponse;
 import com.sparta.gt5lt7.common.exception.BaseException;
 import com.sparta.gt5lt7.common.dto.PageResponse;
 import com.sparta.gt5lt7.catalog.domain.entity.Company;
@@ -30,6 +33,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ProductService {
     private final HubClient hubClient;
+    private final UserClient userClient;
     private final CompanyService companyService;
     private final CategoryService categoryService;
     private final ProductRepository productRepository;
@@ -79,6 +83,25 @@ public class ProductService {
             HubResponse hubResponse = hubMap.get(product.getCompany().getHubId());
             return ProductResponse.Summary.of(product, hubResponse);
         });
+    }
+
+    public ProductResponse.Detail getProduct(UUID id) {
+        Product product = getProductById(id);
+
+        // Hub Service로 허브 정보 요청
+        HubResponse hubResponse = hubClient.getHub(product.getCompany().getHubId());
+
+        // 사용자 ID를 중복 없이 추출 → User Service로 사용자 정보 요청
+        Set<UUID> userIds = Set.of(product.getCreatedBy(), product.getUpdatedBy());
+        List<UserResponse> userResponses = userClient.getUsers(userIds);
+
+        // O(1) 조회를 위한 사용자 Map 생성
+        Map<UUID, UserResponse> userMap = userResponses.stream()
+                .collect(Collectors.toMap(UserResponse::id, user -> user));
+
+        return ProductResponse.Detail.of(
+                product, hubResponse, userMap.get(product.getCreatedBy()), userMap.get(product.getUpdatedBy())
+        );
     }
 
     @Transactional
