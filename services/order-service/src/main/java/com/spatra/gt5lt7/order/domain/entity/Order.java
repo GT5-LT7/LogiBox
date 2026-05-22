@@ -8,6 +8,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.core.SpringVersion;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Getter
@@ -31,10 +33,6 @@ public class Order extends BaseEntity {
     private UUID addressId;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "order_type", nullable = false, length = 20)
-    private OrderType orderType;
-
-    @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
     private OrderStatus status;
 
@@ -43,6 +41,13 @@ public class Order extends BaseEntity {
 
     @Column(name = "request", columnDefinition = "TEXT")
     private String request;
+
+    @OneToMany(
+            mappedBy = "order",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    private List<OrderItem> orderItems = new ArrayList<>();
 
     private Order(
             String customerId,
@@ -81,6 +86,10 @@ public class Order extends BaseEntity {
 
     public void updateStatus(OrderStatus status) {
         this.status = status;
+    }
+
+    public void addOrderItem(OrderItem orderItem) {
+        this.orderItems.add(orderItem);
     }
 
     public void cancel() {
