@@ -79,6 +79,9 @@ jobs:
 
       # 4. 루트의 gradlew를 사용해 특정 모듈만 빌드
       - name: 빌드 및 테스트
+        env:
+          # catalog-service 일 때만 주입
+          KAKAO_MAP_API_KEY: ${{ matrix.project == 'catalog-service' && secrets.KAKAO_MAP_API_KEY || '' }}
         run: ./gradlew ${{ steps.vars.outputs.target }}:build --no-daemon
 
       - name: 테스트 결과 업로드

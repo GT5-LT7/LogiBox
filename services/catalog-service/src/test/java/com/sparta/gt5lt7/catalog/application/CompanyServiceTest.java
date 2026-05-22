@@ -10,6 +10,7 @@ import com.sparta.gt5lt7.catalog.infrastructure.client.dto.HubResponse;
 import com.sparta.gt5lt7.catalog.infrastructure.client.dto.UserResponse;
 import com.sparta.gt5lt7.catalog.presentation.dto.request.CompanyRequest;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.CompanyResponse;
+import com.sparta.gt5lt7.catalog.presentation.dto.response.CoordinateResponse;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.HubUsageStatusResponse;
 import com.sparta.gt5lt7.common.exception.BaseException;
 import com.sparta.gt5lt7.common.dto.PageResponse;
@@ -51,6 +52,9 @@ class CompanyServiceTest {
     private ProductService productService;
 
     @Mock
+    private KakaoMapService kakaoMapService;
+
+    @Mock
     private HubClient hubClient;
 
     @Mock
@@ -66,6 +70,9 @@ class CompanyServiceTest {
     class CreateCompanyTest {
         private final CompanyRequest companyRequest = createCompanyRequest("스파르타 물류");
         private final Company mockCompany = createCompany(companyId, companyRequest);
+        private final CoordinateResponse mockCoordinate = new CoordinateResponse(
+                new BigDecimal("37.5"), new BigDecimal("127.0")
+        );
 
         @Test
         @DisplayName("성공: MASTER - 허브 상관 없음")
@@ -75,17 +82,19 @@ class CompanyServiceTest {
 
             given(hubClient.getHub(companyRequest.getHubId())).willReturn(hubResponse);
             given(companyRepository.save(any(Company.class))).willReturn(mockCompany);
+            given(kakaoMapService.getCoordinates(anyString())).willReturn(mockCoordinate);
 
             // when
             CompanyResponse.Create response = companyService.createCompany(companyRequest, null, roles);
 
             // then
             assertThat(response.info().name()).isEqualTo(companyRequest.getName());
-            assertThat(response.info().hub().getName()).isEqualTo("서울 중앙 허브");
+            assertThat(response.info().hub().name()).isEqualTo("서울 중앙 허브");
 
             // 레포지토리 저장 및 외부 클라이언트 호출 검증
             verify(hubClient).getHub(companyRequest.getHubId());
             verify(companyRepository).save(any(Company.class));
+            verify(kakaoMapService).getCoordinates(companyRequest.getBaseAddress());
         }
 
         @Test
@@ -96,6 +105,7 @@ class CompanyServiceTest {
 
             given(hubClient.getHub(companyRequest.getHubId())).willReturn(hubResponse);
             given(companyRepository.save(any(Company.class))).willReturn(mockCompany);
+            given(kakaoMapService.getCoordinates(anyString())).willReturn(mockCoordinate);
 
             // when
             CompanyResponse.Create response = companyService.createCompany(companyRequest, hubId, roles); // hubId 일치
@@ -104,6 +114,7 @@ class CompanyServiceTest {
             assertThat(response).isNotNull();
             verify(hubClient).getHub(companyRequest.getHubId());
             verify(companyRepository).save(any(Company.class));
+            verify(kakaoMapService).getCoordinates(companyRequest.getBaseAddress());
         }
 
         @Test
@@ -144,7 +155,7 @@ class CompanyServiceTest {
 
         // then
         assertThat(response.getContent()).hasSize(1);
-        assertThat(response.getContent().get(0).info().hub().getName()).isEqualTo("서울 중앙 허브");
+        assertThat(response.getContent().get(0).info().hub().name()).isEqualTo("서울 중앙 허브");
         verify(companyRepository).searchCompanies(keyword, type, hubId, pageable);
         verify(hubClient).getHubs(Set.of(hubId));
     }
