@@ -21,6 +21,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ProductService {
     private final CompanyService companyService;
+    private final CategoryService categoryService;
     private final ProductRepository productRepository;
 
     @Transactional
@@ -35,14 +36,12 @@ public class ProductService {
             }
         }
 
-        // TODO: CategoryService.getCategoryById 구현이 완료되면 주석 해제 후 상품 생성에 사용
-        // Category category = categoryService.getCategoryById(request.getCategoryId());
-
+        Category category = categoryService.getCategoryById(request.getCategoryId());
         Product product = Product.builder()
                 .name(request.getName())
                 .description(request.getDescription())
                 .company(company)
-                .category(null)
+                .category(category)
                 .price(request.getPrice())
                 .quantity(request.getQuantity())
                 .build();
@@ -63,10 +62,10 @@ public class ProductService {
             }
         }
 
+        // 변경된 카테고리 처리
         Category category = product.getCategory();
         if (category.getCategoryId() != request.getCategoryId()) {
-            // TODO: CategoryService.getCategoryById 구현이 완료되면 주석 해제
-            // category = categoryService.getCategoryById(request.getCategoryId());
+             category = categoryService.getCategoryById(request.getCategoryId());
         }
 
         product.update(request, category);
