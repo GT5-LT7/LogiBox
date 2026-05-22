@@ -56,6 +56,15 @@ public class Hub {
     private String deletedBy;
 
 
+    /**
+     * Creates a Hub populated with the provided name, address, latitude, and longitude.
+     *
+     * @param name the hub's display name
+     * @param address the hub's postal address
+     * @param latitude the hub's latitude coordinate
+     * @param longitude the hub's longitude coordinate
+     * @return a Hub instance with the given properties; identifier and audit fields are not set
+     */
     public static Hub create(String name, String address, Double latitude, Double longitude) {
         return Hub.builder()
                 .name(name)

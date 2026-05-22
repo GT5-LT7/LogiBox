@@ -11,6 +11,14 @@ import java.util.Optional;
 @Configuration
 public class AuditConfig {
 
+    /**
+     * Supplies the current auditor's identifier for Spring Data auditing.
+     *
+     * <p>When an authenticated principal is present, returns an Optional containing the principal's
+     * username; otherwise returns an Optional containing "system".</p>
+     *
+     * @return an Optional with the current auditor's username, or an Optional containing "system"
+     */
     @Bean
     public AuditorAware<String> auditorProvider() {
         return () -> {
