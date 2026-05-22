@@ -17,12 +17,6 @@ public class HubController {
 
     private final HubService hubService;
 
-    /**
-     * Create a new hub from the provided request and return its representation.
-     *
-     * @param request the hub creation request payload
-     * @return a ResponseEntity containing the created HubResponse and HTTP 201 (Created) status
-     */
     @PostMapping
     @PreAuthorize("hasRole('MASTER')")
     public ResponseEntity<HubResponse> createHub(

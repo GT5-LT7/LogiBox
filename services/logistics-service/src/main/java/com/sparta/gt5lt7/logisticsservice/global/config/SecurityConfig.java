@@ -14,14 +14,6 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    /**
-     * Configures and builds the application's SecurityFilterChain with CSRF disabled,
-     * session management set to STATELESS, and all HTTP requests permitted.
-     *
-     * @param http the HttpSecurity instance used to configure the filter chain
-     * @return the configured SecurityFilterChain
-     * @throws Exception if an error occurs while building the security filter chain
-     */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
