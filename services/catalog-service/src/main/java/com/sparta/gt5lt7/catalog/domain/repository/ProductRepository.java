@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface ProductRepository extends JpaRepository<Product, UUID> {
+public interface ProductRepository extends JpaRepository<Product, UUID>, ProductRepositoryCustom {
     @Query("SELECT p FROM Product p JOIN FETCH p.company WHERE p.productId = :productId")
     Optional<Product> findByIdWithCompany(@Param("productId") UUID productId);
 
