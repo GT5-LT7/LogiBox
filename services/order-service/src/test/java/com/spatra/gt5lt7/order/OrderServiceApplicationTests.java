@@ -1,4 +1,4 @@
-package com.spatra.gt5lt7.orderservice;
+package com.spatra.gt5lt7.order;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
