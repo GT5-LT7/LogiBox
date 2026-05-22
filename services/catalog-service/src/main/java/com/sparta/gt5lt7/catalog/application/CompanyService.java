@@ -11,7 +11,7 @@ import com.sparta.gt5lt7.catalog.infrastructure.client.dto.UserResponse;
 import com.sparta.gt5lt7.catalog.presentation.dto.request.CompanyRequest;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.*;
 import com.sparta.gt5lt7.common.dto.PageResponse;
-import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -28,12 +28,21 @@ import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
-@RequiredArgsConstructor
 public class CompanyService {
     private final HubClient hubClient;
     private final UserClient userClient;
     private final ProductService productService;
     private final CompanyRepository companyRepository;
+
+    public CompanyService(HubClient hubClient,
+                          UserClient userClient,
+                          @Lazy ProductService productService,
+                          CompanyRepository companyRepository) {
+        this.hubClient = hubClient;
+        this.userClient = userClient;
+        this.productService = productService;
+        this.companyRepository = companyRepository;
+    }
 
     @Transactional
     public CompanyResponse.Create createCompany(CompanyRequest request, UUID hubId, List<String> roles) {

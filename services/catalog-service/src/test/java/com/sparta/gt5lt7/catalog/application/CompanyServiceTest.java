@@ -357,6 +357,7 @@ class CompanyServiceTest {
             assertThatThrownBy(() -> companyService.deleteCompany(companyId, wrongUserId, roles))
                     .isInstanceOf(BaseException.class)
                     .hasMessageContaining(CompanyErrorCode.COMPANY_DELETE_DENIED.getMessage());
+            verify(productService, never()).deleteProducts(any(UUID.class), any(UUID.class));
         }
     }
 
