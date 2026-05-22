@@ -56,5 +56,14 @@ public class Hub {
     private String deletedBy;
 
 
+    public static Hub create(String name, String address, Double latitude, Double longitude) {
+        return Hub.builder()
+                .name(name)
+                .address(address)
+                .latitude(latitude)
+                .longitude(longitude)
+                .build();
+    }
+
 
 }
