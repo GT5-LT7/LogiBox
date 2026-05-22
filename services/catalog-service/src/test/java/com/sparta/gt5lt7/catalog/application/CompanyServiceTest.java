@@ -37,8 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class CompanyServiceTest {
@@ -47,6 +46,9 @@ class CompanyServiceTest {
 
     @Mock
     private CompanyRepository companyRepository;
+
+    @Mock
+    private ProductService productService;
 
     @Mock
     private HubClient hubClient;
@@ -322,6 +324,7 @@ class CompanyServiceTest {
             // then
             assertThat(response.deletedAt()).isNotNull();
             verify(companyRepository).findById(companyId);
+            verify(productService).deleteProducts(companyId, userOrHubId);
         }
 
         @Test
@@ -338,6 +341,7 @@ class CompanyServiceTest {
             assertThat(response.deletedAt()).isNotNull();
 
             verify(companyRepository).findById(companyId);
+            verify(productService).deleteProducts(companyId, userOrHubId);
         }
 
         @Test
