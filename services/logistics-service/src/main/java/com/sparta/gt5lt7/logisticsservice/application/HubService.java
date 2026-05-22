@@ -18,6 +18,13 @@ public class HubService {
 
     private final HubRepository hubRepository;
 
+    /**
+     * Creates a new hub from the given request and persists it.
+     *
+     * @param request the hub creation request containing name, address, latitude, and longitude
+     * @return a {@code HubResponse} representing the persisted hub
+     * @throws HubException if a non-deleted hub with the same name already exists (HubErrorCode.HUB_NAME_DUPLICATED)
+     */
     @Transactional
     public HubResponse createHub(HubRequest request) {
 
