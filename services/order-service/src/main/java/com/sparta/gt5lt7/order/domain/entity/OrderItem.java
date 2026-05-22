@@ -1,4 +1,4 @@
-package com.spatra.gt5lt7.order.domain.entity;
+package com.sparta.gt5lt7.order.domain.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;

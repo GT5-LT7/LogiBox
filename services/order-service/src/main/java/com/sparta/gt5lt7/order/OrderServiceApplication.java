@@ -1,4 +1,4 @@
-package com.spatra.gt5lt7.order;
+package com.sparta.gt5lt7.order;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

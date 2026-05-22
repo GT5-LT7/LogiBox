@@ -1,6 +1,4 @@
-package com.spatra.gt5lt7.order.domain.entity;
-
-import javax.annotation.processing.ProcessingEnvironment;
+package com.sparta.gt5lt7.order.domain.entity;
 
 public enum OrderStatus {
     PENDING,

@@ -1,4 +1,4 @@
-package com.spatra.gt5lt7.order.domain.entity;
+package com.sparta.gt5lt7.order.domain.entity;
 
 import com.sparta.gt5lt7.common.entity.BaseEntity;
 import jakarta.persistence.Entity;
@@ -6,7 +6,6 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.core.SpringVersion;
 
 import java.util.ArrayList;
 import java.util.List;
