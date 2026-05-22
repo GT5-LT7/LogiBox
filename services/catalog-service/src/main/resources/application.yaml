@@ -8,7 +8,7 @@ feign:
       kakao-map-client:
         connectTimeout: 5000
         readTimeout: 5000
-        loggerLevel: full
+        loggerLevel: basic  # 운영 환경에서 API Key가 로그에 찍히는 보안 취약점 방어
 
 kakao:
   map:

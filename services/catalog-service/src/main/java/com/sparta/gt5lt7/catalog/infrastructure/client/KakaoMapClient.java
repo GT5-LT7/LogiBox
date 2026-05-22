@@ -9,5 +9,5 @@ import org.springframework.web.bind.annotation.RequestParam;
 @FeignClient(name = "kakao-map-client", url = "https://dapi.kakao.com")
 public interface KakaoMapClient {
     @GetMapping("/v2/local/search/address.json")
-    KakaoMapResponse searchCoordinates(@RequestParam String query, @RequestHeader("Authorization") String authorization);
+    KakaoMapResponse searchCoordinates(@RequestParam("query") String query, @RequestHeader("Authorization") String authorization);
 }

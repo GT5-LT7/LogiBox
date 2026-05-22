@@ -94,6 +94,7 @@ class CompanyServiceTest {
             // 레포지토리 저장 및 외부 클라이언트 호출 검증
             verify(hubClient).getHub(companyRequest.getHubId());
             verify(companyRepository).save(any(Company.class));
+            verify(kakaoMapService).getCoordinates(companyRequest.getBaseAddress());
         }
 
         @Test
@@ -113,6 +114,7 @@ class CompanyServiceTest {
             assertThat(response).isNotNull();
             verify(hubClient).getHub(companyRequest.getHubId());
             verify(companyRepository).save(any(Company.class));
+            verify(kakaoMapService).getCoordinates(companyRequest.getBaseAddress());
         }
 
         @Test
