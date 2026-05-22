@@ -18,7 +18,7 @@ public class KakaoMapService {
     private String kakaoAuthHeader;
 
     public CoordinateResponse getCoordinates(String address) {
-        KakaoMapResponse response = kakaoMapClient.searchCoordinates(address, kakaoAuthHeader);
+        KakaoMapResponse response = kakaoMapClient.searchCoordinates(address.trim(), kakaoAuthHeader);
 
         if (response.documents() == null || response.documents().isEmpty()) {
             throw new BaseException(KakaoMapErrorCode.ADDRESS_NOT_FOUND);

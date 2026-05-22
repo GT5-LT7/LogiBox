@@ -18,7 +18,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.sparta.gt5lt7.common.exception.BaseException;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -32,15 +31,18 @@ public class CompanyService {
     private final HubClient hubClient;
     private final UserClient userClient;
     private final ProductService productService;
+    private final KakaoMapService kakaoMapService;
     private final CompanyRepository companyRepository;
 
-    public CompanyService(HubClient hubClient,
-                          UserClient userClient,
-                          @Lazy ProductService productService,
-                          CompanyRepository companyRepository) {
+    public CompanyService(
+            HubClient hubClient, UserClient userClient,
+            @Lazy ProductService productService, KakaoMapService kakaoMapService,
+            CompanyRepository companyRepository
+    ) {
         this.hubClient = hubClient;
         this.userClient = userClient;
         this.productService = productService;
+        this.kakaoMapService = kakaoMapService;
         this.companyRepository = companyRepository;
     }
 
@@ -57,6 +59,9 @@ public class CompanyService {
         // Hub Service로 허브 정보 요청
         HubResponse hubResponse = hubClient.getHub(request.getHubId());
 
+        // Kakao Map Service로 좌표 정보 요청
+        CoordinateResponse coordinateResponse = kakaoMapService.getCoordinates(request.getBaseAddress());
+
         Company company = Company.builder()
                 .name(request.getName())
                 .type(request.getType())
@@ -65,9 +70,8 @@ public class CompanyService {
                 .baseAddress(request.getBaseAddress())
                 .detailAddress(request.getDetailAddress())
                 .zipcode(request.getZipcode())
-                // TODO: 지도 API 연동 후, 기본 주소를 기반으로 실제 위경도 좌표 추출
-                .latitude(BigDecimal.valueOf(37.503))
-                .longitude(BigDecimal.valueOf(127.044))
+                .latitude(coordinateResponse.latitude())
+                .longitude(coordinateResponse.longitude())
                 .build();
 
         Company savedCompany = companyRepository.save(company);
@@ -129,8 +133,13 @@ public class CompanyService {
             }
         }
 
-        // TODO: 지도 API 연동 후, 기본 주소를 기반으로 실제 위경도 좌표 추출
-        company.update(request, BigDecimal.valueOf(37.503), BigDecimal.valueOf(127.044));
+        // 주소 변경 시 Kakao Map Service로 좌표 정보 요청
+        if (!company.getBaseAddress().equals(request.getBaseAddress())) {
+            CoordinateResponse coordinateResponse = kakaoMapService.getCoordinates(request.getBaseAddress());
+            company.updateCoordinate(coordinateResponse.latitude(), coordinateResponse.longitude());
+        }
+
+        company.update(request);
 
         // Hub Service로 허브 정보 요청
         HubResponse hubResponse = hubClient.getHub(company.getHubId());

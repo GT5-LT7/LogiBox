@@ -74,7 +74,7 @@ public class Company extends BaseEntity {
         return String.format("%s, %s (%s)", this.baseAddress, this.detailAddress, this.zipcode);
     }
 
-    public void update(CompanyRequest request, BigDecimal latitude, BigDecimal longitude) {
+    public void update(CompanyRequest request) {
         String detailAddress = request.getDetailAddress();
 
         this.name = request.getName().trim();
@@ -84,6 +84,9 @@ public class Company extends BaseEntity {
         this.baseAddress = request.getBaseAddress().trim();
         this.detailAddress = (detailAddress != null && !detailAddress.isBlank()) ? detailAddress.trim() : null;
         this.zipcode = request.getZipcode();
+    }
+
+    public void updateCoordinate(BigDecimal latitude, BigDecimal longitude) {
         this.latitude = latitude;
         this.longitude = longitude;
     }
