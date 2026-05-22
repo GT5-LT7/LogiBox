@@ -28,6 +28,7 @@ Thumbs.db
 *.env
 *.properties
 !**/gradle-wrapper.properties
+application-local.yml
 
 ### 빌드 메타데이터 및 아티팩트 ###
 MANIFEST.MF
