@@ -1,3 +1,15 @@
 spring:
   application:
     name: catalog-service
+
+feign:
+  client:
+    config:
+      kakao-map-client:
+        connectTimeout: 5000
+        readTimeout: 5000
+        loggerLevel: full
+
+kakao:
+  map:
+    auth-header: "KakaoAK ${KAKAO_MAP_API_KEY}"
