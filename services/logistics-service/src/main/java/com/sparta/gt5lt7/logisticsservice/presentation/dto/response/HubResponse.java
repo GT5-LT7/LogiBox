@@ -18,14 +18,8 @@ public class HubResponse implements Serializable {
     private Double latitude;
     private Double longitude;
     private LocalDateTime createdAt;
-    private String createdBy;
+    private UUID createdBy;
 
-    /**
-     * Create a HubResponse DTO populated from the given domain Hub entity.
-     *
-     * @param hub the source Hub entity whose properties will be copied into the response
-     * @return a HubResponse containing values copied from the provided Hub
-     */
     public static HubResponse from(Hub hub) {
         return HubResponse.builder()
                 .hubId(hub.getHubId())
