@@ -31,9 +31,7 @@ public class GlobalExceptionHandler {
                 .map(error -> new ApiResponse.ValidationError(error.getField(), error.getDefaultMessage()))
                 .toList();
 
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(message, errors));
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.error(message, errors));
     }
 
     // 접근 권한 없음 (403)
@@ -61,9 +59,6 @@ public class GlobalExceptionHandler {
 
     private ResponseEntity<ApiResponse<Void>> buildResponse(ErrorCode errorCode) {
         String message = String.format("[%s] %s", errorCode.getCode(), errorCode.getMessage());
-
-        return ResponseEntity
-                .status(errorCode.getStatus())
-                .body(ApiResponse.error(message));
+        return ResponseEntity.status(errorCode.getStatus()).body(ApiResponse.error(message));
     }
 }

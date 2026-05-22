@@ -52,7 +52,7 @@ public class ProductService {
 
     @Transactional
     public ProductResponse.Update updateProduct(UUID id, ProductRequest.Update request, UUID hubOrCompanyId, List<String> roles) {
-        Product product = getCompanyById(id);
+        Product product = getProductById(id);
 
         // Master가 아니면 담당 허브 또는 본인 업체인지 검증
         if (!roles.contains("ROLE_MASTER")) {
@@ -73,8 +73,26 @@ public class ProductService {
         return ProductResponse.Update.from(product);
     }
 
+    @Transactional
+    public ProductResponse.Delete deleteProduct(UUID id, UUID userAndHubId, List<String> roles) {
+        Product product = getProductById(id);
+
+        // Master가 아니면 담당 허브인지 검증
+        if (!roles.contains("ROLE_MASTER")) {
+            // TODO: CustomUserDetails 구현이 완료되면 허브 ID를 기반으로 검증 로직 수정
+            if (!product.getCompany().getHubId().equals(userAndHubId)) {
+                throw new BaseException(ProductErrorCode.PRODUCT_DELETE_DENIED);
+            }
+        }
+
+        // Soft Delete 처리
+        product.softDelete(userAndHubId);
+
+        return ProductResponse.Delete.from(product);
+    }
+
     // 상품 조회 공통 메서드
-    public Product getCompanyById(UUID id) {
+    public Product getProductById(UUID id) {
         return productRepository.findByIdWithCompany(id)
                 .orElseThrow(() -> new BaseException(ProductErrorCode.PRODUCT_NOT_FOUND));
     }

@@ -2,7 +2,7 @@ package com.sparta.gt5lt7.catalog.presentation;
 
 import com.sparta.gt5lt7.catalog.presentation.dto.request.ProductRequest;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.ProductResponse;
-import com.sparta.gt5lt7.common.response.ApiResponse;
+import com.sparta.gt5lt7.common.dto.ApiResponse;
 import com.sparta.gt5lt7.common.security.SecurityUtil;
 import com.sparta.gt5lt7.catalog.application.ProductService;
 import jakarta.validation.Valid;
@@ -47,5 +47,18 @@ public class ProductController {
 
         ProductResponse.Update response = productService.updateProduct(id, request, hubOrCompanyId, roles);
         return ResponseEntity.ok(ApiResponse.updated(response));
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('MASTER', 'HUB_MANAGER')")
+    public ResponseEntity<ApiResponse<ProductResponse.Delete>> deleteProduct(
+            @PathVariable UUID id,
+            Authentication authentication
+    ) {
+        UUID userAndHubId = SecurityUtil.getCurrentUser(authentication);
+        List<String> roles = SecurityUtil.getCurrentUserRoles(authentication);
+
+        ProductResponse.Delete response = productService.deleteProduct(id, userAndHubId, roles);
+        return ResponseEntity.ok(ApiResponse.deleted(response));
     }
 }

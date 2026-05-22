@@ -31,4 +31,10 @@ public class ProductResponse {
             return new Update(Info.from(product), product.getUpdatedAt());
         }
     }
+
+    public record Delete(UUID productId, String name, LocalDateTime deletedAt) {
+        public static Delete from(Product product) {
+            return new Delete(product.getProductId(), product.getName(), product.getDeletedAt());
+        }
+    }
 }
