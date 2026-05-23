@@ -1,5 +1,6 @@
 package com.sparta.gt5lt7.catalog.application;
 
+import com.sparta.gt5lt7.common.security.CustomUserPrincipal;
 import com.sparta.gt5lt7.catalog.domain.entity.Company;
 import com.sparta.gt5lt7.catalog.domain.entity.CompanyType;
 import com.sparta.gt5lt7.catalog.domain.repository.CompanyRepository;
@@ -47,13 +48,10 @@ public class CompanyService {
     }
 
     @Transactional
-    public CompanyResponse.Create createCompany(CompanyRequest request, UUID hubId, List<String> roles) {
+    public CompanyResponse.Create createCompany(CompanyRequest request, CustomUserPrincipal principal) {
         // Master가 아니면 담당 허브인지 검증
-        if (!roles.contains("ROLE_MASTER")) {
-            // TODO: CustomUserDetails 구현이 완료되면 허브 ID를 기반으로 검증 로직 수정
-            if (!request.getHubId().equals(hubId)) {
-                throw new BaseException(CompanyErrorCode.COMPANY_CREATE_DENIED);
-            }
+        if (!principal.isAccessibleHub(request.getHubId())) {
+            throw new BaseException(CompanyErrorCode.COMPANY_CREATE_DENIED);
         }
 
         // Hub Service로 허브 정보 요청
@@ -122,15 +120,12 @@ public class CompanyService {
     }
 
     @Transactional
-    public CompanyResponse.Update updateCompany(UUID id, CompanyRequest request, UUID hubOrCompanyId, List<String> roles) {
+    public CompanyResponse.Update updateCompany(UUID id, CompanyRequest request, CustomUserPrincipal principal) {
         Company company = getCompanyById(id);
 
         // Master가 아니면 담당 허브 또는 본인 업체인지 검증
-        if (!roles.contains("ROLE_MASTER")) {
-            // TODO: CustomUserDetails 구현이 완료되면 허브 또는 업체 ID를 기반으로 검증 로직 수정
-            if (!company.getHubId().equals(hubOrCompanyId)) {
-                throw new BaseException(CompanyErrorCode.COMPANY_UPDATE_DENIED);
-            }
+        if (!principal.isAccessibleHub(company.getHubId()) && !principal.isAccessibleCompany(id)) {
+            throw new BaseException(CompanyErrorCode.COMPANY_UPDATE_DENIED);
         }
 
         // 주소 변경 시 Kakao Map Service로 좌표 정보 요청
@@ -148,20 +143,18 @@ public class CompanyService {
     }
 
     @Transactional
-    public CompanyResponse.Delete deleteCompany(UUID id, UUID userAndHubId, List<String> roles) {
+    public CompanyResponse.Delete deleteCompany(UUID id, CustomUserPrincipal principal) {
         Company company = getCompanyById(id);
 
         // Master가 아니면 담당 허브인지 검증
-        if (!roles.contains("ROLE_MASTER")) {
-            // TODO: CustomUserDetails 구현이 완료되면 허브 ID를 기반으로 검증 로직 수정
-            if (!company.getHubId().equals(userAndHubId)) {
-                throw new BaseException(CompanyErrorCode.COMPANY_DELETE_DENIED);
-            }
+        if (!principal.isAccessibleHub(company.getHubId())) {
+            throw new BaseException(CompanyErrorCode.COMPANY_DELETE_DENIED);
         }
 
         // Soft Delete 처리
-        company.softDelete(userAndHubId);
-        productService.deleteProducts(company.getCompanyId(), userAndHubId);
+        UUID deletedBy = principal.userId();
+        company.softDelete(deletedBy);
+        productService.deleteProducts(company.getCompanyId(), deletedBy);
 
         return CompanyResponse.Delete.from(company);
     }

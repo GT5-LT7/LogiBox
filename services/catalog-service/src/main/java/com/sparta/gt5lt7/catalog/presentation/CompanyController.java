@@ -1,5 +1,6 @@
 package com.sparta.gt5lt7.catalog.presentation;
 
+import com.sparta.gt5lt7.common.security.CustomUserPrincipal;
 import com.sparta.gt5lt7.catalog.application.CompanyService;
 import com.sparta.gt5lt7.catalog.domain.entity.CompanyType;
 import com.sparta.gt5lt7.catalog.presentation.dto.request.CompanyRequest;
@@ -12,11 +13,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import com.sparta.gt5lt7.common.security.SecurityUtil;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -29,12 +28,9 @@ public class CompanyController {
     @PreAuthorize("hasAnyRole('MASTER', 'HUB_MANAGER')")
     public ResponseEntity<ApiResponse<CompanyResponse.Create>> createCompany(
             @Valid @RequestBody CompanyRequest request,
-            Authentication authentication
+            @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
-        UUID hubId = SecurityUtil.getCurrentUser(authentication);
-        List<String> roles = SecurityUtil.getCurrentUserRoles(authentication);
-
-        CompanyResponse.Create response = companyService.createCompany(request, hubId, roles);
+        CompanyResponse.Create response = companyService.createCompany(request, principal);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(response));
     }
 
@@ -62,12 +58,9 @@ public class CompanyController {
     public ResponseEntity<ApiResponse<CompanyResponse.Update>> updateCompany(
             @PathVariable UUID id,
             @Valid @RequestBody CompanyRequest request,
-            Authentication authentication
+            @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
-        UUID hubOrCompanyId = SecurityUtil.getCurrentUser(authentication);
-        List<String> roles = SecurityUtil.getCurrentUserRoles(authentication);
-
-        CompanyResponse.Update response = companyService.updateCompany(id, request, hubOrCompanyId, roles);
+        CompanyResponse.Update response = companyService.updateCompany(id, request, principal);
         return ResponseEntity.ok(ApiResponse.updated(response));
     }
 
@@ -75,12 +68,9 @@ public class CompanyController {
     @PreAuthorize("hasAnyRole('MASTER', 'HUB_MANAGER')")
     public ResponseEntity<ApiResponse<CompanyResponse.Delete>> deleteCompany(
             @PathVariable UUID id,
-            Authentication authentication
+            @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
-        UUID userAndHubId = SecurityUtil.getCurrentUser(authentication);
-        List<String> roles = SecurityUtil.getCurrentUserRoles(authentication);
-
-        CompanyResponse.Delete response = companyService.deleteCompany(id, userAndHubId, roles);
+        CompanyResponse.Delete response = companyService.deleteCompany(id, principal);
         return ResponseEntity.ok(ApiResponse.deleted(response));
     }
 }

@@ -1,5 +1,6 @@
 package com.sparta.gt5lt7.catalog.application;
 
+import com.sparta.gt5lt7.common.security.CustomUserPrincipal;
 import com.sparta.gt5lt7.catalog.domain.entity.Category;
 import com.sparta.gt5lt7.catalog.domain.entity.Product;
 import com.sparta.gt5lt7.catalog.global.exception.ProductErrorCode;
@@ -39,15 +40,12 @@ public class ProductService {
     private final ProductRepository productRepository;
 
     @Transactional
-    public ProductResponse.Create createProduct(ProductRequest.Create request, UUID hubOrCompanyId, List<String> roles) {
+    public ProductResponse.Create createProduct(ProductRequest.Create request, CustomUserPrincipal principal) {
         Company company = companyService.getCompanyById(request.getCompanyId());
 
         // Master가 아니면 담당 허브 또는 본인 업체인지 검증
-        if (!roles.contains("ROLE_MASTER")) {
-            // TODO: CustomUserDetails 구현이 완료되면 허브 또는 업체 ID를 기반으로 검증 로직 수정
-            if (!company.getHubId().equals(hubOrCompanyId)) {
-                throw new BaseException(ProductErrorCode.PRODUCT_CREATE_DENIED);
-            }
+        if (!principal.isAccessibleHub(company.getHubId()) && !principal.isAccessibleCompany(request.getCompanyId())) {
+            throw new BaseException(ProductErrorCode.PRODUCT_CREATE_DENIED);
         }
 
         Category category = categoryService.getCategoryById(request.getCategoryId());
@@ -105,15 +103,12 @@ public class ProductService {
     }
 
     @Transactional
-    public ProductResponse.Update updateProduct(UUID id, ProductRequest.Update request, UUID hubOrCompanyId, List<String> roles) {
+    public ProductResponse.Update updateProduct(UUID id, ProductRequest.Update request, CustomUserPrincipal principal) {
         Product product = getProductById(id);
 
         // Master가 아니면 담당 허브 또는 본인 업체인지 검증
-        if (!roles.contains("ROLE_MASTER")) {
-            // TODO: CustomUserDetails 구현이 완료되면 허브 또는 업체 ID를 기반으로 검증 로직 수정
-            if (!product.getCompany().getHubId().equals(hubOrCompanyId)) {
-                throw new BaseException(ProductErrorCode.PRODUCT_UPDATE_DENIED);
-            }
+        if (!principal.isAccessibleHub(product.getCompany().getHubId()) && !principal.isAccessibleCompany(product.getCompany().getCompanyId())) {
+            throw new BaseException(ProductErrorCode.PRODUCT_UPDATE_DENIED);
         }
 
         // 변경된 카테고리 처리
@@ -128,19 +123,16 @@ public class ProductService {
     }
 
     @Transactional
-    public ProductResponse.Delete deleteProduct(UUID id, UUID userAndHubId, List<String> roles) {
+    public ProductResponse.Delete deleteProduct(UUID id, CustomUserPrincipal principal) {
         Product product = getProductById(id);
 
         // Master가 아니면 담당 허브인지 검증
-        if (!roles.contains("ROLE_MASTER")) {
-            // TODO: CustomUserDetails 구현이 완료되면 허브 ID를 기반으로 검증 로직 수정
-            if (!product.getCompany().getHubId().equals(userAndHubId)) {
-                throw new BaseException(ProductErrorCode.PRODUCT_DELETE_DENIED);
-            }
+        if (!principal.isAccessibleHub(product.getCompany().getHubId())) {
+            throw new BaseException(ProductErrorCode.PRODUCT_DELETE_DENIED);
         }
 
         // Soft Delete 처리
-        product.softDelete(userAndHubId);
+        product.softDelete(principal.userId());
 
         return ProductResponse.Delete.from(product);
     }
