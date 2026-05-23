@@ -86,7 +86,7 @@ class ProductControllerTest {
             // when & then
             mockMvc.perform(MockMvcRequestBuilders.post("/api/products")
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(String.valueOf(request)))
+                            .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isForbidden());
         }
     }

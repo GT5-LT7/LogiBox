@@ -27,18 +27,22 @@ public class GatewayAuthenticationFilter extends GenericFilterBean {
         String managementIdStr = httpRequest.getHeader("X-User-Management-Id");
 
         if (userIdStr != null && roleStr != null) {
-            CustomUserPrincipal principal = new CustomUserPrincipal(
-                    UUID.fromString(userIdStr),
-                    UserRole.fromString(roleStr),
-                    (managementIdStr != null) ? UUID.fromString(managementIdStr) : null
-            );
+            try {
+                CustomUserPrincipal principal = new CustomUserPrincipal(
+                        UUID.fromString(userIdStr),
+                        UserRole.fromString(roleStr),
+                        managementIdStr != null ? UUID.fromString(managementIdStr) : null
+                );
 
-            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                    principal, null, principal.getAuthorities()
-            );
+                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                        principal, null, principal.getAuthorities()
+                );
 
-            // Spring Security 컨텍스트에 저장
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+                // Spring Security 컨텍스트에 저장
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            } catch (IllegalArgumentException ex) {
+                SecurityContextHolder.clearContext();
+            }
         }
 
         chain.doFilter(request, response);

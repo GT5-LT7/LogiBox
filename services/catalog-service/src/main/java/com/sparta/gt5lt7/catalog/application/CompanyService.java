@@ -124,7 +124,7 @@ public class CompanyService {
         Company company = getCompanyById(id);
 
         // Master가 아니면 담당 허브 또는 본인 업체인지 검증
-        if (!principal.isAccessibleHub(request.getHubId()) && !principal.isAccessibleCompany(id)) {
+        if (!principal.isAccessibleHub(company.getHubId()) && !principal.isAccessibleCompany(id)) {
             throw new BaseException(CompanyErrorCode.COMPANY_UPDATE_DENIED);
         }
 
