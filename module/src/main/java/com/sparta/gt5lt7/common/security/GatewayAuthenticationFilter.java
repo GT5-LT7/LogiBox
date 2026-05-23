@@ -22,17 +22,19 @@ public class GatewayAuthenticationFilter extends GenericFilterBean {
 
         // TODO [Gateway 담당자 필독]: 실제 헤더 이름에 맞게 수정하셔야 합니다.
         // Gateway가 헤더에 넣어준 정보 추출
-        String userId = httpRequest.getHeader("X-User-Id");
-        String role = httpRequest.getHeader("X-User-Role");
-        String managementId = httpRequest.getHeader("X-User-Management-Id");
+        String userIdStr = httpRequest.getHeader("X-User-Id");
+        String roleStr = httpRequest.getHeader("X-User-Role");
+        String managementIdStr = httpRequest.getHeader("X-User-Management-Id");
 
-        if (userId != null && role != null) {
+        if (userIdStr != null && roleStr != null) {
             CustomUserPrincipal principal = new CustomUserPrincipal(
-                    UUID.fromString(userId), UserRole.fromString(role), UUID.fromString(managementId)
+                    UUID.fromString(userIdStr),
+                    UserRole.fromString(roleStr),
+                    (managementIdStr != null) ? UUID.fromString(managementIdStr) : null
             );
 
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                    principal, null, List.of(new SimpleGrantedAuthority(role))
+                    principal, null, principal.getAuthorities()
             );
 
             // Spring Security 컨텍스트에 저장
