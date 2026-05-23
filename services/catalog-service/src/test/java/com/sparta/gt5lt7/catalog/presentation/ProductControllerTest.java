@@ -3,6 +3,7 @@ package com.sparta.gt5lt7.catalog.presentation;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sparta.gt5lt7.catalog.application.ProductService;
 import com.sparta.gt5lt7.catalog.presentation.dto.request.ProductRequest;
+import com.sparta.gt5lt7.catalog.presentation.dto.response.CategoryResponse;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.ProductResponse;
 import com.sparta.gt5lt7.common.config.WebConfig;
 import com.sparta.gt5lt7.common.security.SecurityConfig;
@@ -37,11 +38,11 @@ class ProductControllerTest {
     private ProductService productService;
 
     @Nested
-    @DisplayName("게이트웨어 인증 필터 동작 테스트")
+    @DisplayName("게이트웨이 인증 필터 동작 테스트")
     class GatewayAuthenticationFilterTest {
         @Test
         @DisplayName("성공: 게이트웨이 보안 헤더가 있으면 인증에 성공해 201 반환")
-        void gatewayHeaderAuthSuccess() throws Exception {
+        void test1() throws Exception {
             // given
             String userId = UUID.randomUUID().toString();
             ProductRequest.Create request = ProductRequest.Create.builder()
@@ -52,11 +53,12 @@ class ProductControllerTest {
                     .quantity(100)
                     .build();
 
-            ProductResponse.Info fakeInfo = new ProductResponse.Info(
+            CategoryResponse.Simple category = new CategoryResponse.Simple(UUID.randomUUID(), "테스트 카테고리");
+            ProductResponse.Info info = new ProductResponse.Info(
                     UUID.randomUUID(), "테스트 상품", "설명", null,
-                    null, null, 10000L, 100
+                    null, null, category, 10000L, 100
             );
-            ProductResponse.Create response = new ProductResponse.Create(fakeInfo, LocalDateTime.now());
+            ProductResponse.Create response = new ProductResponse.Create(info, LocalDateTime.now());
 
             when(productService.createProduct(any(), any())).thenReturn(response);
 
@@ -71,7 +73,7 @@ class ProductControllerTest {
 
         @Test
         @DisplayName("실패: 보안 헤더가 없으면 시큐리티 필터에서 인증에 실패해 403 반환")
-        void gatewayHeaderAuthFail() throws Exception {
+        void test2() throws Exception {
             // given
             ProductRequest.Create request = ProductRequest.Create.builder()
                     .name("테스트 상품")
