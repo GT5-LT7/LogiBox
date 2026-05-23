@@ -85,7 +85,7 @@ public class CompanyService {
         Set<UUID> hubIds = companyPage.stream()
                 .map(Company::getHubId)
                 .collect(Collectors.toSet());
-        List<HubResponse> hubResponses = hubClient.getHubs(hubIds);
+        List<HubResponse> hubResponses = hubIds.isEmpty() ? List.of() : hubClient.getHubs(hubIds);
 
         // O(1) 조회를 위한 허브 Map 생성
         Map<UUID, HubResponse> hubMap = hubResponses.stream()

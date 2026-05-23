@@ -77,7 +77,7 @@ class CompanyRepositoryImplTest {
         assertThat(result.getTotalElements()).isEqualTo(1);
         assertThat(result.getContent())
                 .extracting(Company::getName)
-                .containsExactly("삼성SDS");
+                .containsExactlyInAnyOrder("삼성SDS");
     }
 
     @Test

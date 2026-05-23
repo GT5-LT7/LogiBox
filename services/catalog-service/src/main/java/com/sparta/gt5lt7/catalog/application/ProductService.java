@@ -73,7 +73,7 @@ public class ProductService {
         Set<UUID> hubIds = productPage.stream()
                 .map(product -> product.getCompany().getHubId())
                 .collect(Collectors.toSet());
-        List<HubResponse> hubResponses = hubClient.getHubs(hubIds);
+        List<HubResponse> hubResponses = hubIds.isEmpty() ? List.of() : hubClient.getHubs(hubIds);
 
         // O(1) 조회를 위한 허브 Map 생성
         Map<UUID, HubResponse> hubMap = hubResponses.stream()

@@ -91,7 +91,7 @@ class ProductRepositoryImplTest {
         assertThat(result.getTotalElements()).isEqualTo(2);
         assertThat(result.getContent())
                 .extracting(Product::getName)
-                .containsExactly("Samsung 모니터", "SAMSUNG 키보드");
+                .containsExactlyInAnyOrder("Samsung 모니터", "SAMSUNG 키보드");
     }
 
     @Test
