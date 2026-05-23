@@ -3,6 +3,7 @@ package com.sparta.gt5lt7.catalog.domain.entity;
 import com.sparta.gt5lt7.common.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.SQLRestriction;
@@ -21,4 +22,9 @@ public class Category extends BaseEntity {
 
     @Column(nullable = false, length = 50)
     private String name;
+
+    @Builder
+    public Category(String name) {
+        this.name = name;
+    }
 }
