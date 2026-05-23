@@ -1,5 +1,7 @@
 package com.sparta.gt5lt7.catalog.application;
 
+import com.sparta.gt5lt7.common.entity.UserRole;
+import com.sparta.gt5lt7.common.security.CustomUserPrincipal;
 import com.sparta.gt5lt7.catalog.domain.entity.Company;
 import com.sparta.gt5lt7.catalog.domain.entity.CompanyType;
 import com.sparta.gt5lt7.catalog.domain.repository.CompanyRepository;
@@ -78,14 +80,14 @@ class CompanyServiceTest {
         @DisplayName("성공: MASTER - 허브 상관 없음")
         void test1() {
             // given
-            List<String> roles = List.of("ROLE_MASTER");
+            CustomUserPrincipal principal = new CustomUserPrincipal(UUID.randomUUID(), UserRole.ROLE_MASTER, null);
 
             given(hubClient.getHub(companyRequest.getHubId())).willReturn(hubResponse);
             given(companyRepository.save(any(Company.class))).willReturn(mockCompany);
             given(kakaoMapService.getCoordinates(anyString())).willReturn(mockCoordinate);
 
             // when
-            CompanyResponse.Create response = companyService.createCompany(companyRequest, null, roles);
+            CompanyResponse.Create response = companyService.createCompany(companyRequest, principal);
 
             // then
             assertThat(response.info().name()).isEqualTo(companyRequest.getName());
@@ -101,14 +103,14 @@ class CompanyServiceTest {
         @DisplayName("성공: HUB_MANAGER - 담당 허브 ID와 요청 허브 ID 일치")
         void test2() {
             // given
-            List<String> roles = List.of("ROLE_HUB_MANAGER");
+            CustomUserPrincipal principal = new CustomUserPrincipal(UUID.randomUUID(), UserRole.ROLE_HUB_MANAGER, hubId);
 
             given(hubClient.getHub(companyRequest.getHubId())).willReturn(hubResponse);
             given(companyRepository.save(any(Company.class))).willReturn(mockCompany);
             given(kakaoMapService.getCoordinates(anyString())).willReturn(mockCoordinate);
 
             // when
-            CompanyResponse.Create response = companyService.createCompany(companyRequest, hubId, roles); // hubId 일치
+            CompanyResponse.Create response = companyService.createCompany(companyRequest, principal);
 
             // then
             assertThat(response).isNotNull();
@@ -121,10 +123,10 @@ class CompanyServiceTest {
         @DisplayName("실패: HUB_MANAGER - 담당 허브 ID와 요청 허브 ID 불일치")
         void test3() {
             // given
-            List<String> roles = List.of("ROLE_HUB_MANAGER");
+            CustomUserPrincipal principal = new CustomUserPrincipal(UUID.randomUUID(), UserRole.ROLE_HUB_MANAGER, UUID.randomUUID());
 
             // when & then
-            assertThatThrownBy(() -> companyService.createCompany(companyRequest, UUID.randomUUID(), roles))
+            assertThatThrownBy(() -> companyService.createCompany(companyRequest, principal))
                     .isInstanceOf(BaseException.class)
                     .hasMessageContaining(CompanyErrorCode.COMPANY_CREATE_DENIED.getMessage());
 
@@ -239,13 +241,13 @@ class CompanyServiceTest {
         @DisplayName("성공: MASTER - 허브 상관 없음")
         void test1() {
             // given
-            List<String> roles = List.of("ROLE_MASTER");
+            CustomUserPrincipal principal = new CustomUserPrincipal(UUID.randomUUID(), UserRole.ROLE_MASTER, null);
 
             given(companyRepository.findById(companyId)).willReturn(Optional.of(mockCompany));
             given(hubClient.getHub(hubId)).willReturn(hubResponse);
 
             // when
-            CompanyResponse.Update response = companyService.updateCompany(companyId, companyRequest, null, roles);
+            CompanyResponse.Update response = companyService.updateCompany(companyId, companyRequest, principal);
 
             // then
             assertThat(response.info().name()).isEqualTo("스파르타 물류");
@@ -256,13 +258,13 @@ class CompanyServiceTest {
         @DisplayName("성공: HUB_MANAGER - 담당 허브 ID와 요청 허브 ID 일치")
         void test2() {
             // given
-            List<String> roles = List.of("ROLE_HUB_MANAGER");
+            CustomUserPrincipal principal = new CustomUserPrincipal(UUID.randomUUID(), UserRole.ROLE_HUB_MANAGER, hubId);
 
             given(companyRepository.findById(companyId)).willReturn(Optional.of(mockCompany));
             given(hubClient.getHub(hubId)).willReturn(hubResponse);
 
             // when
-            CompanyResponse.Update response = companyService.updateCompany(companyId, companyRequest, hubId, roles);
+            CompanyResponse.Update response = companyService.updateCompany(companyId, companyRequest, principal);
 
             // then
             assertThat(response).isNotNull();
@@ -273,13 +275,13 @@ class CompanyServiceTest {
         @DisplayName("성공: COMPANY_MANAGER - 본인 업체 ID와 요청 업체 ID 일치")
         void test3() {
             // given
-            List<String> roles = List.of("ROLE_COMPANY_MANAGER");
+            CustomUserPrincipal principal = new CustomUserPrincipal(UUID.randomUUID(), UserRole.ROLE_COMPANY_MANAGER, companyId);
 
             given(companyRepository.findById(companyId)).willReturn(Optional.of(mockCompany));
             given(hubClient.getHub(hubId)).willReturn(hubResponse);
 
             // when
-            CompanyResponse.Update response = companyService.updateCompany(companyId, companyRequest, hubId, roles);
+            CompanyResponse.Update response = companyService.updateCompany(companyId, companyRequest, principal);
 
             // then
             assertThat(response).isNotNull();
@@ -290,12 +292,12 @@ class CompanyServiceTest {
         @DisplayName("실패: HUB_MANAGER - 담당 허브 ID와 요청 허브 ID 불일치")
         void test4() {
             // given
-            List<String> roles = List.of("ROLE_HUB_MANAGER");
+            CustomUserPrincipal principal = new CustomUserPrincipal(UUID.randomUUID(), UserRole.ROLE_HUB_MANAGER, UUID.randomUUID());
 
             given(companyRepository.findById(companyId)).willReturn(Optional.of(mockCompany));
 
             // when & then
-            assertThatThrownBy(() -> companyService.updateCompany(companyId, companyRequest, UUID.randomUUID(), roles))
+            assertThatThrownBy(() -> companyService.updateCompany(companyId, companyRequest, principal))
                     .isInstanceOf(BaseException.class)
                     .hasMessageContaining(CompanyErrorCode.COMPANY_UPDATE_DENIED.getMessage());
         }
@@ -304,12 +306,12 @@ class CompanyServiceTest {
         @DisplayName("실패: COMPANY_MANAGER - 본인 업체 ID와 요청 업체 ID 불일치")
         void test5() {
             // given
-            List<String> roles = List.of("ROLE_COMPANY_MANAGER");
+            CustomUserPrincipal principal = new CustomUserPrincipal(UUID.randomUUID(), UserRole.ROLE_COMPANY_MANAGER, UUID.randomUUID());
 
             given(companyRepository.findById(companyId)).willReturn(Optional.of(mockCompany));
 
             // when & then
-            assertThatThrownBy(() -> companyService.updateCompany(companyId, companyRequest, UUID.randomUUID(), roles))
+            assertThatThrownBy(() -> companyService.updateCompany(companyId, companyRequest, principal))
                     .isInstanceOf(BaseException.class)
                     .hasMessageContaining(CompanyErrorCode.COMPANY_UPDATE_DENIED.getMessage());
         }
@@ -325,47 +327,49 @@ class CompanyServiceTest {
         @DisplayName("성공: MASTER - 허브 상관 없음")
         void test1() {
             // given
-            List<String> roles = List.of("ROLE_MASTER");
+            UUID deletedBy = UUID.randomUUID();
+            CustomUserPrincipal principal = new CustomUserPrincipal(deletedBy, UserRole.ROLE_MASTER, null);
 
             given(companyRepository.findById(companyId)).willReturn(Optional.of(mockCompany));
 
             // when
-            CompanyResponse.Delete response = companyService.deleteCompany(companyId, userOrHubId, roles);
+            CompanyResponse.Delete response = companyService.deleteCompany(companyId, principal);
 
             // then
             assertThat(response.deletedAt()).isNotNull();
             verify(companyRepository).findById(companyId);
-            verify(productService).deleteProducts(companyId, userOrHubId);
+            verify(productService).deleteProducts(companyId, deletedBy);
         }
 
         @Test
         @DisplayName("성공: HUB_MANAGER - 담당 허브 ID와 요청 허브 ID 일치")
         void test2() {
             // given
-            List<String> roles = List.of("ROLE_HUB_MANAGER");
+            UUID deletedBy = UUID.randomUUID();
+            CustomUserPrincipal principal = new CustomUserPrincipal(deletedBy, UserRole.ROLE_HUB_MANAGER, hubId);
+
             given(companyRepository.findById(companyId)).willReturn(Optional.of(mockCompany));
 
             // when
-            CompanyResponse.Delete response = companyService.deleteCompany(companyId, userOrHubId, roles);
+            CompanyResponse.Delete response = companyService.deleteCompany(companyId, principal);
 
             // then
             assertThat(response.deletedAt()).isNotNull();
 
             verify(companyRepository).findById(companyId);
-            verify(productService).deleteProducts(companyId, userOrHubId);
+            verify(productService).deleteProducts(companyId, deletedBy);
         }
 
         @Test
         @DisplayName("실패: HUB_MANAGER - 담당 허브 ID와 요청 허브 ID 일치")
         void test3() {
             // given
-            List<String> roles = List.of("ROLE_HUB_MANAGER");
-            UUID wrongUserId = UUID.randomUUID();
+            CustomUserPrincipal principal = new CustomUserPrincipal(UUID.randomUUID(), UserRole.ROLE_HUB_MANAGER, UUID.randomUUID());
 
             given(companyRepository.findById(companyId)).willReturn(Optional.of(mockCompany));
 
             // when & then
-            assertThatThrownBy(() -> companyService.deleteCompany(companyId, wrongUserId, roles))
+            assertThatThrownBy(() -> companyService.deleteCompany(companyId, principal))
                     .isInstanceOf(BaseException.class)
                     .hasMessageContaining(CompanyErrorCode.COMPANY_DELETE_DENIED.getMessage());
             verify(productService, never()).deleteProducts(any(UUID.class), any(UUID.class));
