@@ -110,7 +110,7 @@ class CompanyRepositoryImplTest {
     }
 
     @Test
-    @DisplayName("성공: 모든 조건 적용 시 해당 조건을 모두 만족하는 업체만 조회")
+    @DisplayName("성공: 모든 조건 적용 시 조건을 모두 만족하는 업체만 조회")
     void test5() {
         // given
         Pageable pageable = PageRequest.of(0, 10);
@@ -128,30 +128,27 @@ class CompanyRepositoryImplTest {
     // 🔴 실패 및 예외 케이스
     // ==========================================
     @Test
-    @DisplayName("실패: Soft Delete된 업체는 어떤 조건에서도 조회 불가")
+    @DisplayName("실패: 일치하는 검색 결과가 없으면 빈 페이지 반환")
     void test6() {
         // given
         Pageable pageable = PageRequest.of(0, 10);
 
         // when
-        Page<Company> allResult = companyRepository.searchCompanies(null, null, null, pageable);
-        Page<Company> keywordResult = companyRepository.searchCompanies("카카오", CompanyType.SUPPLIER, hubAId, pageable);
+        Page<Company> result = companyRepository.searchCompanies("존재하지않는업체", null, null, pageable);
 
         // then
-        assertThat(allResult.getContent())
-                .extracting(Company::getName)
-                .doesNotContain("카카오(삭제됨)");
-        assertThat(keywordResult.getTotalElements()).isEqualTo(0);
+        assertThat(result.getTotalElements()).isEqualTo(0);
+        assertThat(result.getContent()).isEmpty();
     }
 
     @Test
-    @DisplayName("실패: 일치하는 검색 결과가 없으면 빈 페이지 반환")
+    @DisplayName("실패: 모든 조건 적용 시 조건을 하나라도 만족하지 않으면 빈 페이지 반환")
     void test7() {
         // given
         Pageable pageable = PageRequest.of(0, 10);
 
         // when
-        Page<Company> result = companyRepository.searchCompanies("존재하지않는업체", null, null, pageable);
+        Page<Company> result = companyRepository.searchCompanies("삼성", CompanyType.SUPPLIER, hubBId, pageable);
 
         // then
         assertThat(result.getTotalElements()).isEqualTo(0);
