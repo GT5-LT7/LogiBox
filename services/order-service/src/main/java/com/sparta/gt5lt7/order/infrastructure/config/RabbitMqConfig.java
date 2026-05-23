@@ -28,4 +28,19 @@ public class RabbitMqConfig {
                 .to(orderExchange())
                 .with(ORDER_CREATED_ROUTING_KEY);
     }
+
+    @Bean
+    public Queue deliveryCreatedQueue() {
+        return QueueBuilder.durable("delivery.created.queue").build();
+    }
+
+    @Bean
+    public Queue deliveryFailedQueue() {
+        return QueueBuilder.durable("delivery.failed.queue").build();
+    }
+
+    @Bean
+    public Queue deliveryStartedQueue() {
+        return QueueBuilder.durable("delivery.started.queue").build();
+    }
 }
