@@ -4,7 +4,9 @@ import lombok.Getter;
 
 @Getter
 public class HubSearchRequest {
+    private final String keyword;
 
-    private String name;
-    private String address;
+    public HubSearchRequest(String keyword) {
+        this.keyword = keyword;
+    }
 }

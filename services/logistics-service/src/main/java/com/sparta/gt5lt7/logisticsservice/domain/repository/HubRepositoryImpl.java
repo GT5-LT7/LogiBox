@@ -28,14 +28,12 @@ public class HubRepositoryImpl implements HubRepositoryCustom {
         // 삭제된 데이터 제외
         builder.and(hub.deletedAt.isNull());
 
-        // 이름 키워드 검색
-        if (StringUtils.hasText(request.getName())) {
-            builder.and(hub.name.containsIgnoreCase(request.getName()));
-        }
-
-        // 주소 키워드 검색
-        if (StringUtils.hasText(request.getAddress())) {
-            builder.and(hub.address.containsIgnoreCase(request.getAddress()));
+        // 이름/주소 키워드 검색 (OR 조건)
+        if (StringUtils.hasText(request.getKeyword())) {
+            builder.and(
+                    hub.name.containsIgnoreCase(request.getKeyword())
+                            .or(hub.address.containsIgnoreCase(request.getKeyword()))
+            );
         }
 
         List<HubResponse> content = queryFactory
