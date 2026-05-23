@@ -1,14 +1,10 @@
 package com.sparta.gt5lt7.logisticsservice.global.exception;
 
-import lombok.Getter;
+import com.sparta.gt5lt7.common.exception.BaseException;
 
-@Getter
-public class HubException extends RuntimeException {
-
-    private final HubErrorCode errorCode;
+public class HubException extends BaseException {
 
     public HubException(HubErrorCode errorCode) {
-        super(errorCode.getMessage());
-        this.errorCode = errorCode;
+        super(errorCode);
     }
 }
