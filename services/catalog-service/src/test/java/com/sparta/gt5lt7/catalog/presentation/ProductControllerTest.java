@@ -53,12 +53,7 @@ class ProductControllerTest {
                     .quantity(100)
                     .build();
 
-            CategoryResponse.Simple category = new CategoryResponse.Simple(UUID.randomUUID(), "테스트 카테고리");
-            ProductResponse.Info info = new ProductResponse.Info(
-                    UUID.randomUUID(), "테스트 상품", "설명", null,
-                    null, null, category, 10000L, 100
-            );
-            ProductResponse.Create response = new ProductResponse.Create(info, LocalDateTime.now());
+            ProductResponse.Create response = new ProductResponse.Create(UUID.randomUUID(), "테스트 상품", LocalDateTime.now());
 
             when(productService.createProduct(any(), any())).thenReturn(response);
 

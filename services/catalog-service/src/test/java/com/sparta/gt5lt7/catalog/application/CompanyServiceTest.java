@@ -82,7 +82,6 @@ class CompanyServiceTest {
             // given
             CustomUserPrincipal principal = new CustomUserPrincipal(UUID.randomUUID(), UserRole.ROLE_MASTER, null);
 
-            given(hubClient.getHub(companyRequest.getHubId())).willReturn(hubResponse);
             given(companyRepository.save(any(Company.class))).willReturn(mockCompany);
             given(kakaoMapService.getCoordinates(anyString())).willReturn(mockCoordinate);
 
@@ -90,11 +89,7 @@ class CompanyServiceTest {
             CompanyResponse.Create response = companyService.createCompany(companyRequest, principal);
 
             // then
-            assertThat(response.info().name()).isEqualTo(companyRequest.getName());
-            assertThat(response.info().hub().name()).isEqualTo("서울 중앙 허브");
-
-            // 레포지토리 저장 및 외부 클라이언트 호출 검증
-            verify(hubClient).getHub(companyRequest.getHubId());
+            assertThat(response.name()).isEqualTo(companyRequest.getName());
             verify(companyRepository).save(any(Company.class));
             verify(kakaoMapService).getCoordinates(companyRequest.getBaseAddress());
         }
@@ -105,7 +100,6 @@ class CompanyServiceTest {
             // given
             CustomUserPrincipal principal = new CustomUserPrincipal(UUID.randomUUID(), UserRole.ROLE_HUB_MANAGER, hubId);
 
-            given(hubClient.getHub(companyRequest.getHubId())).willReturn(hubResponse);
             given(companyRepository.save(any(Company.class))).willReturn(mockCompany);
             given(kakaoMapService.getCoordinates(anyString())).willReturn(mockCoordinate);
 
@@ -114,7 +108,6 @@ class CompanyServiceTest {
 
             // then
             assertThat(response).isNotNull();
-            verify(hubClient).getHub(companyRequest.getHubId());
             verify(companyRepository).save(any(Company.class));
             verify(kakaoMapService).getCoordinates(companyRequest.getBaseAddress());
         }
@@ -131,7 +124,6 @@ class CompanyServiceTest {
                     .hasMessageContaining(CompanyErrorCode.COMPANY_CREATE_DENIED.getMessage());
 
             // 레포지토리 저장 및 외부 클라이언트 호출 무시
-            verify(hubClient, never()).getHub(any());
             verify(companyRepository, never()).save(any());
         }
     }

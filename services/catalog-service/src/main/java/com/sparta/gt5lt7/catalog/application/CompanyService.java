@@ -54,9 +54,6 @@ public class CompanyService {
             throw new BaseException(CompanyErrorCode.COMPANY_CREATE_DENIED);
         }
 
-        // Hub Service로 허브 정보 요청
-        HubResponse hubResponse = hubClient.getHub(request.getHubId());
-
         // Kakao Map Service로 좌표 정보 요청
         CoordinateResponse coordinateResponse = kakaoMapService.getCoordinates(request.getBaseAddress());
 
@@ -73,7 +70,7 @@ public class CompanyService {
                 .build();
 
         Company savedCompany = companyRepository.save(company);
-        return CompanyResponse.Create.of(savedCompany, hubResponse);
+        return CompanyResponse.Create.from(savedCompany);
     }
 
     public PageResponse<CompanyResponse.Summary> searchCompanies(String keyword, CompanyType type, UUID hubId, Pageable pageable) {
