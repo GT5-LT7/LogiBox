@@ -79,19 +79,19 @@ public class CompanyService {
     }
 
     public PageResponse<CompanyResponse.Summary> searchCompanies(String keyword, CompanyType type, UUID hubId, Pageable pageable) {
-        Page<Company> companiePage = companyRepository.searchCompanies(keyword, type, hubId, pageable);
+        Page<Company> companyPage = companyRepository.searchCompanies(keyword, type, hubId, pageable);
 
         // 허브 ID를 중복 없이 추출 → Hub Service로 허브 정보 요청
-        Set<UUID> hubIds = companiePage.stream()
+        Set<UUID> hubIds = companyPage.stream()
                 .map(Company::getHubId)
                 .collect(Collectors.toSet());
-        List<HubResponse> hubResponses = hubClient.getHubs(hubIds);
+        List<HubResponse> hubResponses = hubIds.isEmpty() ? List.of() : hubClient.getHubs(hubIds);
 
         // O(1) 조회를 위한 허브 Map 생성
         Map<UUID, HubResponse> hubMap = hubResponses.stream()
                 .collect(Collectors.toMap(HubResponse::id, Function.identity()));
 
-        return PageResponse.of(companiePage, company -> {
+        return PageResponse.of(companyPage, company -> {
             HubResponse hubResponse = hubMap.get(company.getHubId());
             return CompanyResponse.Summary.of(company, hubResponse);
         });
