@@ -50,4 +50,13 @@ public class ProductRequest {
         @PositiveOrZero(message = "가격은 0원 이상이어야 합니다.")
         private Long price;
     }
+
+    @Getter
+    @Builder
+    @NoArgsConstructor(access = AccessLevel.PROTECTED)
+    @AllArgsConstructor
+    public static class StatusUpdate {
+        @NotNull(message = "상태 변경 액션은 필수입니다.")
+        private ActionType action;
+    }
 }

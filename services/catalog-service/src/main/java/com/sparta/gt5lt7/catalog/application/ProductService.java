@@ -1,5 +1,6 @@
 package com.sparta.gt5lt7.catalog.application;
 
+import com.sparta.gt5lt7.catalog.presentation.dto.request.ActionType;
 import com.sparta.gt5lt7.common.security.CustomUserPrincipal;
 import com.sparta.gt5lt7.catalog.domain.entity.Category;
 import com.sparta.gt5lt7.catalog.domain.entity.Product;
@@ -120,6 +121,27 @@ public class ProductService {
         product.update(request, category);
 
         return ProductResponse.Update.from(product);
+    }
+
+    @Transactional
+    public ProductResponse.StatusUpdate updateProductStatus(UUID id, ProductRequest.StatusUpdate request, CustomUserPrincipal principal) {
+        ActionType action = request.getAction();
+
+        // Master가 아니면 STOP 액션 불가
+        if (action == ActionType.STOP && !principal.isMaster()) {
+            throw new BaseException(ProductErrorCode.PRODUCT_UPDATE_DENIED);
+        }
+
+        Product product = getProductById(id);
+
+        // Master가 아니면 담당 허브 또는 본인 업체인지 검증
+        if (!principal.isAccessibleHub(product.getCompany().getHubId()) && !principal.isAccessibleCompany(product.getCompany().getCompanyId())) {
+            throw new BaseException(ProductErrorCode.PRODUCT_UPDATE_DENIED);
+        }
+
+        product.updateStatus(action);
+
+        return ProductResponse.StatusUpdate.from(product);
     }
 
     @Transactional

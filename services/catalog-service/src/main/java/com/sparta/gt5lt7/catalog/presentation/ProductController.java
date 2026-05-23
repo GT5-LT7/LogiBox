@@ -66,6 +66,17 @@ public class ProductController {
         return ResponseEntity.ok(ApiResponse.updated(response));
     }
 
+    @PatchMapping("/{id}/status")
+    @PreAuthorize("hasAnyRole('MASTER', 'HUB_MANAGER', 'COMPANY_MANAGER')")
+    public ResponseEntity<ApiResponse<ProductResponse.StatusUpdate>> updateProductStatus(
+            @PathVariable UUID id,
+            @Valid @RequestBody ProductRequest.StatusUpdate request,
+            @AuthenticationPrincipal CustomUserPrincipal principal
+    ) {
+        ProductResponse.StatusUpdate response = productService.updateProductStatus(id, request, principal);
+        return ResponseEntity.ok(ApiResponse.updated(response));
+    }
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('MASTER', 'HUB_MANAGER')")
     public ResponseEntity<ApiResponse<ProductResponse.Delete>> deleteProduct(

@@ -57,6 +57,14 @@ public class ProductResponse {
         }
     }
 
+    public record StatusUpdate(UUID productId, String name, ProductStatus status, LocalDateTime updatedAt) {
+        public static StatusUpdate from(Product product) {
+            return new StatusUpdate(
+                    product.getProductId(), product.getName(), product.getStatus(), product.getUpdatedAt()
+            );
+        }
+    }
+
     public record Delete(UUID productId, String name, LocalDateTime deletedAt) {
         public static Delete from(Product product) {
             return new Delete(product.getProductId(), product.getName(), product.getDeletedAt());
