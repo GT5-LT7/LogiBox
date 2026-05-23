@@ -14,4 +14,9 @@ public class CatalogClient {
     public void decreaseStock(UUID productId, Integer quantity) {
         // TODO: Catalog Service API 호출
     }
+
+    public void restoreStock(UUID productId, Integer quantity) {
+
+        // TODO: Catalog Service 재고 복구 API 호출
+    }
 }
