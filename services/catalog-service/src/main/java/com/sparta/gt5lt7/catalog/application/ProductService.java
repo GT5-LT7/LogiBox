@@ -167,7 +167,7 @@ public class ProductService {
 
     // 상품 조회 공통 메서드
     public Product getProductById(UUID id) {
-        return productRepository.findByIdWithCompany(id)
+        return productRepository.findByIdWithCompanyAndCategory(id)
                 .orElseThrow(() -> new BaseException(ProductErrorCode.PRODUCT_NOT_FOUND));
     }
 }
