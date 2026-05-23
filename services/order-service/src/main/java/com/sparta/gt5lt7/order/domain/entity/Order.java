@@ -80,4 +80,16 @@ public class Order extends BaseEntity {
     public void assignDelivery(UUID deliveryId) {
         this.deliveryId = deliveryId;
     }
+
+    public void waitingForDelivery() {
+        this.orderStatus = OrderStatus.WAITING_FOR_DELIVERY;
+    }
+
+    public void shipping() {
+        this.orderStatus = OrderStatus.SHIPPING;
+    }
+
+    public void fail() {
+        this.orderStatus = OrderStatus.FAILED;
+    }
 }
