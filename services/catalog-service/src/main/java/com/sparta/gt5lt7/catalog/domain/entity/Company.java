@@ -50,6 +50,9 @@ public class Company extends BaseEntity {
     @Column(nullable = false, precision = 11, scale = 8)
     private BigDecimal longitude;
 
+    @Version
+    private Long version;
+
     @Builder
     public Company(
             String name, CompanyType type, String phone, UUID hubId,

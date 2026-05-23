@@ -1,11 +1,9 @@
 package com.sparta.gt5lt7.catalog.domain.entity;
 
-import com.sparta.gt5lt7.catalog.global.exception.KakaoMapErrorCode;
 import com.sparta.gt5lt7.catalog.presentation.dto.request.ActionType;
 import com.sparta.gt5lt7.catalog.presentation.dto.request.ProductRequest;
 import com.sparta.gt5lt7.common.entity.BaseEntity;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -47,6 +45,9 @@ public class Product extends BaseEntity {
 
     @Column(nullable = false)
     private Integer quantity;
+
+    @Version
+    private Long version;
 
     @Builder
     public Product(String name, String description, Company company, Category category, Long price, Integer quantity) {
