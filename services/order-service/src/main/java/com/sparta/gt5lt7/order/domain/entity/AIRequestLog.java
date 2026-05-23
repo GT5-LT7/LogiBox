@@ -17,7 +17,7 @@ public class AIRequestLog extends BaseEntity {
     @Column(name = "ai_log_id", nullable = false, updatable = false)
     private UUID id;
 
-    @Column(name = "delivery_id", nullable = false)
+    @Column(name = "delivery_id")
     private UUID deliveryId;
 
     @Column(name = "order_id", nullable = false)
