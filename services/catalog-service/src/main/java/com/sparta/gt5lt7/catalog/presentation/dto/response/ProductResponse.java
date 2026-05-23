@@ -65,6 +65,12 @@ public class ProductResponse {
         }
     }
 
+    public record StockUpdate(UUID productId, Integer quantity, LocalDateTime updatedAt) {
+        public static StockUpdate from(Product product) {
+            return new StockUpdate(product.getProductId(), product.getQuantity(), product.getUpdatedAt());
+        }
+    }
+
     public record Delete(UUID productId, String name, LocalDateTime deletedAt) {
         public static Delete from(Product product) {
             return new Delete(product.getProductId(), product.getName(), product.getDeletedAt());

@@ -12,8 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class QueryDslUtil {
-    // 객체 생성 방지
-    private QueryDslUtil() {}
+    private QueryDslUtil() {} // 객체 생성 방지
 
     // 정렬 조건 처리 메서드
     public static List<OrderSpecifier<?>> getOrderSpecifiers(Pageable pageable, EntityPathBase<?> qClass) {

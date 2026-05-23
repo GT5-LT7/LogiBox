@@ -2,8 +2,8 @@ package com.sparta.gt5lt7.catalog.presentation;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sparta.gt5lt7.catalog.application.ProductService;
+import com.sparta.gt5lt7.catalog.presentation.controller.ProductController;
 import com.sparta.gt5lt7.catalog.presentation.dto.request.ProductRequest;
-import com.sparta.gt5lt7.catalog.presentation.dto.response.CategoryResponse;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.ProductResponse;
 import com.sparta.gt5lt7.common.config.WebConfig;
 import com.sparta.gt5lt7.common.security.SecurityConfig;

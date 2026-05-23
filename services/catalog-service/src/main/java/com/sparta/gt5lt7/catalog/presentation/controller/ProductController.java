@@ -1,4 +1,4 @@
-package com.sparta.gt5lt7.catalog.presentation;
+package com.sparta.gt5lt7.catalog.presentation.controller;
 
 import com.sparta.gt5lt7.common.security.CustomUserPrincipal;
 import com.sparta.gt5lt7.catalog.presentation.dto.request.ProductRequest;
@@ -15,6 +15,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -74,6 +75,14 @@ public class ProductController {
             @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
         ProductResponse.StatusUpdate response = productService.updateProductStatus(id, request, principal);
+        return ResponseEntity.ok(ApiResponse.updated(response));
+    }
+
+    @PatchMapping("/stock")
+    public ResponseEntity<ApiResponse<List<ProductResponse.StockUpdate>>> updateProductQuantity(
+            @Valid @RequestBody ProductRequest.StockUpdate requests
+    ) {
+        List<ProductResponse.StockUpdate> response = productService.updateProductQuantity(requests);
         return ResponseEntity.ok(ApiResponse.updated(response));
     }
 

@@ -1,12 +1,15 @@
 package com.sparta.gt5lt7.catalog.domain.repository;
 
 import com.sparta.gt5lt7.catalog.domain.entity.Product;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -24,7 +27,11 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, Product
         SET p.deletedAt = :now, p.deletedBy = :deletedBy
         WHERE p.company.companyId = :companyId AND p.deletedAt IS NULL
     """)
-    void softDeleteByProductId(@Param("companyId") UUID companyId,
-                             @Param("deletedBy") UUID deletedBy,
-                             @Param("now") LocalDateTime now);
+    void softDeleteByProductId(
+            @Param("companyId") UUID companyId, @Param("deletedBy") UUID deletedBy, @Param("now") LocalDateTime now
+    );
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select p from Product p where p.productId in :ids order by p.productId asc")
+    List<Product> findAllByIdInForUpdate(List<UUID> ids);
 }

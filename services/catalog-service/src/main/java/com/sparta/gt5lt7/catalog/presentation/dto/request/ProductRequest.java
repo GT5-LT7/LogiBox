@@ -1,8 +1,10 @@
 package com.sparta.gt5lt7.catalog.presentation.dto.request;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.*;
 
+import java.util.List;
 import java.util.UUID;
 
 public class ProductRequest {
@@ -56,7 +58,31 @@ public class ProductRequest {
     @NoArgsConstructor(access = AccessLevel.PROTECTED)
     @AllArgsConstructor
     public static class StatusUpdate {
-        @NotNull(message = "상태 변경 액션은 필수입니다.")
+        @NotNull(message = "변경 상태는 필수입니다.")
         private ActionType action;
+    }
+
+    @Getter
+    @Builder
+    @NoArgsConstructor(access = AccessLevel.PROTECTED)
+    @AllArgsConstructor
+    public static class StockUpdate {
+        private UUID orderId;
+
+        @Valid
+        @NotEmpty(message = "변경 상품은 필수입니다.")
+        private List<StockItem> stockItems;
+    }
+
+    @Getter
+    @Builder
+    @NoArgsConstructor(access = AccessLevel.PROTECTED)
+    @AllArgsConstructor
+    public static class StockItem {
+        @NotNull(message = "상품 ID는 필수입니다.")
+        private UUID productId;
+
+        @NotNull(message = "변경 재고량은 필수입니다.")
+        private Integer updateQuantity;
     }
 }

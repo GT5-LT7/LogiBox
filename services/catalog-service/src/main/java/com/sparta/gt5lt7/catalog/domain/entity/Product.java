@@ -76,4 +76,8 @@ public class Product extends BaseEntity {
             case STOP -> ProductStatus.STOPPED;
         };
     }
+
+    public void updateQuantity(Integer quantity) {
+        this.quantity = quantity;
+    }
 }
