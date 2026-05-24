@@ -43,4 +43,11 @@ public class RabbitMqConfig {
     public Queue deliveryStartedQueue() {
         return QueueBuilder.durable("delivery.started.queue").build();
     }
+
+    @Bean
+    public Queue deliveryCompletedQueue() {
+        return QueueBuilder
+                .durable("delivery.completed.queue")
+                .build();
+    }
 }

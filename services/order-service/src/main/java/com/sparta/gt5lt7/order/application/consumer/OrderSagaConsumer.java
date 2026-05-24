@@ -3,6 +3,7 @@ package com.sparta.gt5lt7.order.application.consumer;
 import com.sparta.gt5lt7.order.application.event.DeliveryCreatedEvent;
 import com.sparta.gt5lt7.order.application.event.DeliveryFailedEvent;
 import com.sparta.gt5lt7.order.application.event.DeliveryStartedEvent;
+import com.sparta.gt5lt7.order.application.event.DeliveryCompletedEvent;
 import com.sparta.gt5lt7.order.application.service.OrderSagaService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,6 +45,16 @@ public class OrderSagaConsumer {
         log.info("배송 시작 이벤트 수신 orderId={}", event.orderId());
 
         orderSagaService.handleDeliveryStarted(
+                event.orderId()
+        );
+    }
+
+    @RabbitListener(queues = "delivery.completed.queue")
+    public void consumeDeliveryCompleted(DeliveryCompletedEvent event) {
+
+        log.info("배송 완료 이벤트 수신 orderId={}", event.orderId());
+
+        orderSagaService.handleDeliveryCompleted(
                 event.orderId()
         );
     }
