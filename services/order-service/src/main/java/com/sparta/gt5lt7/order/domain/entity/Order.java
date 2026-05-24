@@ -89,6 +89,10 @@ public class Order extends BaseEntity {
         this.orderStatus = OrderStatus.SHIPPING;
     }
 
+    public void complete() {
+        this.orderStatus = OrderStatus.COMPLETED;
+    }
+
     public void fail() {
         this.orderStatus = OrderStatus.FAILED;
     }

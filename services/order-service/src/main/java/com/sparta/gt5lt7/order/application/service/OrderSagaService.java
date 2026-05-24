@@ -19,6 +19,7 @@ public class OrderSagaService {
     private final OrderRepository orderRepository;
     private final OrderHistoryRepository orderHistoryRepository;
     private final CatalogClient catalogClient;
+    private final SlackNotificationService slackNotificationService;
 
     @Transactional
     public void handleDeliveryCreated(UUID orderId, UUID deliveryId) {
@@ -52,6 +53,25 @@ public class OrderSagaService {
                 OrderStatus.SHIPPING,
                 "배송 시작"
         );
+
+        slackNotificationService.sendDeliveryStarted(order);
+    }
+
+    @Transactional
+    public void handleDeliveryCompleted(UUID orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow();
+
+        order.shipping();
+
+        saveHistory(
+                orderId,
+                OrderStatus.SHIPPING,
+                OrderStatus.COMPLETED,
+                "배송 완료"
+        );
+
+        slackNotificationService.sendDeliveryCompleted(order);
     }
 
     @Transactional
@@ -73,6 +93,8 @@ public class OrderSagaService {
                 OrderStatus.FAILED,
                 reason
         );
+
+        slackNotificationService.sendDeliveryFailed(order);
     }
 
     private void saveHistory(

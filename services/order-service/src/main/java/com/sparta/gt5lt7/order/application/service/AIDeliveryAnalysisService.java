@@ -4,7 +4,10 @@ import com.sparta.gt5lt7.order.application.dto.AIDeliveryAnalysisRequest;
 import com.sparta.gt5lt7.order.application.dto.AIDeliveryAnalysisResult;
 import com.sparta.gt5lt7.order.domain.entity.AIRequestLog;
 import com.sparta.gt5lt7.order.domain.entity.AIType;
+import com.sparta.gt5lt7.order.domain.entity.Order;
+import com.sparta.gt5lt7.order.domain.entity.RiskLevel;
 import com.sparta.gt5lt7.order.domain.repository.AIRequestLogRepository;
+import com.sparta.gt5lt7.order.domain.repository.OrderRepository;
 import com.sparta.gt5lt7.order.infrastructure.ai.GeminiClient;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,6 +21,8 @@ public class AIDeliveryAnalysisService {
     private final AIPromptService aiPromptService;
     private final AIResponseParser aiResponseParser;
     private final AIRequestLogRepository aiRequestLogRepository;
+    private final OrderRepository orderRepository;
+    private final SlackNotificationService slackNotificationService;
 
     @Transactional
     public AIDeliveryAnalysisResult analyzeDelivery(AIDeliveryAnalysisRequest request) {
@@ -36,6 +41,12 @@ public class AIDeliveryAnalysisService {
         try {
             String responseText = geminiClient.generate(prompt);
             AIDeliveryAnalysisResult result = aiResponseParser.parse(responseText);
+
+            if (result.riskLevel() == RiskLevel.HIGH) {
+                Order order = orderRepository.findById(request.orderId())
+                        .orElseThrow();
+                slackNotificationService.sendUrgentDelivery(order);
+            }
 
             log.updateResponse(
                     responseText,

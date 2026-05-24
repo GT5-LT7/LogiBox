@@ -29,6 +29,7 @@ public class OrderService {
     private final LogisticsClient logisticsClient;
     private final RedisLockService redisLockService;
     private final OrderEventProducer orderEventProducer;
+    private final SlackNotificationService slackNotificationService;
 
     @Transactional
     public OrderCreateResponse createOrder(OrderCreateRequest request, UUID userId) {
@@ -70,6 +71,8 @@ public class OrderService {
                     .build();
 
             orderHistoryRepository.save(history);
+
+            slackNotificationService.sendOrderCreated(order);
 
             orderEventProducer.publishOrderCreated(
                     new OrderCreatedEvent(
