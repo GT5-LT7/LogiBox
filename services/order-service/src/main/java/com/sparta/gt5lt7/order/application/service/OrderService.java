@@ -29,6 +29,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import com.sparta.gt5lt7.order.presentation.dto.request.OrderUpdateRequest;
 import com.sparta.gt5lt7.order.presentation.dto.response.OrderResponse;
 import org.springframework.security.access.AccessDeniedException;
+import com.sparta.gt5lt7.order.application.event.OrderCanceledEvent;
+import org.springframework.security.access.AccessDeniedException;
 
 import java.time.Duration;
 import java.util.UUID;
@@ -242,5 +244,58 @@ public class OrderService {
         orderHistoryRepository.save(history);
 
         return OrderResponse.from(order);
+    }
+
+    @Transactional
+    public OrderResponse cancelOrder(UUID orderId, UUID userId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("주문을 찾을 수 없습니다."));
+
+        if (!order.getCreatedBy().equals(userId)) {
+            throw new AccessDeniedException("본인의 주문만 취소할 수 있습니다.");
+        }
+
+        if (order.getOrderStatus() == OrderStatus.SHIPPING
+                || order.getOrderStatus() == OrderStatus.COMPLETED
+                || order.getOrderStatus() == OrderStatus.CANCELED) {
+            throw new IllegalStateException("배송 시작 이후에는 주문을 취소할 수 없습니다.");
+        }
+
+        OrderStatus previousStatus = order.getOrderStatus();
+
+        catalogClient.restoreStock(
+                order.getProductId(),
+                order.getQuantity()
+        );
+
+        order.cancel();
+
+        orderHistoryRepository.save(
+                OrderHistory.builder()
+                        .orderId(order.getId())
+                        .previousStatus(previousStatus)
+                        .newStatus(OrderStatus.CANCELED)
+                        .reason("주문 취소")
+                        .build()
+        );
+
+        orderEventProducer.publishOrderCanceled(
+                new OrderCanceledEvent(
+                        order.getId(),
+                        order.getDeliveryId(),
+                        order.getProductId(),
+                        order.getQuantity()
+                )
+        );
+
+        return OrderResponse.from(order);
+    }
+
+    @Transactional
+    public void deleteOrder(UUID orderId, UUID userId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("주문을 찾을 수 없습니다."));
+
+        order.softDelete(userId);
     }
 }

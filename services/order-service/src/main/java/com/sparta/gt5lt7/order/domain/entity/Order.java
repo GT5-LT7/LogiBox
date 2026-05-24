@@ -106,4 +106,8 @@ public class Order extends BaseEntity {
     public void fail() {
         this.orderStatus = OrderStatus.FAILED;
     }
+
+    public void cancel() {
+        this.orderStatus = OrderStatus.CANCELED;
+    }
 }

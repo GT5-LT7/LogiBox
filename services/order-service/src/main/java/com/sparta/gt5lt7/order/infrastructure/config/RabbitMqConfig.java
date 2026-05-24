@@ -10,6 +10,8 @@ public class RabbitMqConfig {
     public static final String ORDER_EXCHANGE = "order.exchange";
     public static final String ORDER_CREATED_QUEUE = "order.created.queue";
     public static final String ORDER_CREATED_ROUTING_KEY = "order.created";
+    public static final String ORDER_CANCELED_QUEUE = "order.canceled.queue";
+    public static final String ORDER_CANCELED_ROUTING_KEY = "order.canceled";
 
     @Bean
     public TopicExchange orderExchange() {
@@ -49,5 +51,18 @@ public class RabbitMqConfig {
         return QueueBuilder
                 .durable("delivery.completed.queue")
                 .build();
+    }
+
+    @Bean
+    public Queue orderCanceledQueue() {
+        return QueueBuilder.durable(ORDER_CANCELED_QUEUE).build();
+    }
+
+    @Bean
+    public Binding orderCanceledBinding() {
+        return BindingBuilder
+                .bind(orderCanceledQueue())
+                .to(orderExchange())
+                .with(ORDER_CANCELED_ROUTING_KEY);
     }
 }
