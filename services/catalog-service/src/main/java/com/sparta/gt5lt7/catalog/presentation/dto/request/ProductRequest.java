@@ -22,7 +22,6 @@ public class ProductRequest {
         @NotNull(message = "업체 ID는 필수입니다.")
         private UUID companyId;
 
-        @NotNull(message = "카테고리 ID는 필수입니다.")
         private UUID categoryId;
 
         @NotNull(message = "가격은 필수입니다.")
@@ -45,7 +44,6 @@ public class ProductRequest {
 
         private String description;
 
-        @NotNull(message = "카테고리 ID는 필수입니다.")
         private UUID categoryId;
 
         @NotNull(message = "가격은 필수입니다.")

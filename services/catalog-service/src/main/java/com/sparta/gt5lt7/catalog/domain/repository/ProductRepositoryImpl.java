@@ -52,7 +52,7 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
         // 3. 실제 데이터 조회
         List<Product> content = queryFactory
                 .selectFrom(product)
-                .leftJoin(product.company, company).fetchJoin()
+                .join(product.company, company).fetchJoin()
                 .leftJoin(product.category, category).fetchJoin()
                 .where(builder)
                 .offset(pageable.getOffset())
@@ -64,7 +64,7 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
         Long total = queryFactory
                 .select(product.count())
                 .from(product)
-                .leftJoin(product.company, company)
+                .join(product.company, company)
                 .leftJoin(product.category, category)
                 .where(builder)
                 .fetchOne();
