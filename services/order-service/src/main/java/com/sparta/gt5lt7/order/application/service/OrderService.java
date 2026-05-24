@@ -16,8 +16,20 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.sparta.gt5lt7.order.presentation.dto.request.OrderSearchCondition;
+import com.sparta.gt5lt7.order.presentation.dto.response.OrderResponse;
+import jakarta.persistence.criteria.Predicate;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+
 import java.time.Duration;
 import java.util.UUID;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -99,5 +111,76 @@ public class OrderService {
         } finally {
             redisLockService.unlock(lockKey, lockValue);
         }
+    }
+
+    @Transactional(readOnly = true)
+    public Page<OrderResponse> getOrders(
+            OrderSearchCondition condition,
+            Pageable pageable,
+            UUID userId
+    ) {
+        Specification<Order> spec = createOrderSearchSpecification(condition, userId);
+
+        return orderRepository.findAll(spec, pageable)
+                .map(OrderResponse::from);
+    }
+
+    @Transactional(readOnly = true)
+    public OrderResponse getOrder(UUID orderId, UUID userId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("주문을 찾을 수 없습니다."));
+
+        if (hasRole("CUSTOMER")) {
+            if (!order.getCreatedBy().equals(userId)) {
+                throw new AccessDeniedException("본인의 주문만 조회할 수 있습니다.");
+            }
+        }
+
+        return OrderResponse.from(order);
+    }
+
+    private Specification<Order> createOrderSearchSpecification(
+            OrderSearchCondition condition,
+            UUID userId
+    ) {
+        return (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            if (hasRole("CUSTOMER")) {
+                predicates.add(cb.equal(root.get("createdBy"), userId));
+            }
+
+            if (condition.orderStatus() != null) {
+                predicates.add(cb.equal(root.get("orderStatus"), condition.orderStatus()));
+            }
+
+            if (condition.hubId() != null) {
+                predicates.add(cb.or(
+                        cb.equal(root.get("supplierCompanyId"), condition.hubId()),
+                        cb.equal(root.get("receiverCompanyId"), condition.hubId())
+                ));
+            }
+
+            if (condition.startDate() != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("createdAt"), condition.startDate()));
+            }
+
+            if (condition.endDate() != null) {
+                predicates.add(cb.lessThanOrEqualTo(root.get("createdAt"), condition.endDate()));
+            }
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+    }
+
+    private boolean hasRole(String role) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null) {
+            return false;
+        }
+
+        return authentication.getAuthorities().stream()
+                .anyMatch(authority -> authority.getAuthority().equals("ROLE_" + role));
     }
 }
