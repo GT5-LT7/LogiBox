@@ -1,5 +1,6 @@
 package com.sparta.gt5lt7.catalog.domain.entity;
 
+import com.sparta.gt5lt7.catalog.presentation.dto.request.ActionType;
 import com.sparta.gt5lt7.catalog.presentation.dto.request.ProductRequest;
 import com.sparta.gt5lt7.common.entity.BaseEntity;
 import jakarta.persistence.*;
@@ -36,7 +37,7 @@ public class Product extends BaseEntity {
     private Company company;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(nullable = false, name = "category_id")
+    @JoinColumn(name = "category_id")
     private Category category;
 
     @Column(nullable = false)
@@ -44,6 +45,9 @@ public class Product extends BaseEntity {
 
     @Column(nullable = false)
     private Integer quantity;
+
+    @Version
+    private Long version;
 
     @Builder
     public Product(String name, String description, Company company, Category category, Long price, Integer quantity) {
@@ -63,5 +67,17 @@ public class Product extends BaseEntity {
         this.description = (description != null && !description.isBlank()) ? description.trim() : null;
         this.category = category;
         this.price = request.getPrice();
+    }
+
+    public void updateStatus(ActionType action) {
+        this.status = switch (action) {
+            case SHOW -> (this.quantity > 0) ? ProductStatus.ON_SALE : ProductStatus.SOLD_OUT;
+            case HIDE -> ProductStatus.HIDDEN;
+            case STOP -> ProductStatus.STOPPED;
+        };
+    }
+
+    public void updateQuantity(Integer quantity) {
+        this.quantity = quantity;
     }
 }

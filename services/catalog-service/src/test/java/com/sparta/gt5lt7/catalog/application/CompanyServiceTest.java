@@ -82,7 +82,6 @@ class CompanyServiceTest {
             // given
             CustomUserPrincipal principal = new CustomUserPrincipal(UUID.randomUUID(), UserRole.ROLE_MASTER, null);
 
-            given(hubClient.getHub(companyRequest.getHubId())).willReturn(hubResponse);
             given(companyRepository.save(any(Company.class))).willReturn(mockCompany);
             given(kakaoMapService.getCoordinates(anyString())).willReturn(mockCoordinate);
 
@@ -90,11 +89,7 @@ class CompanyServiceTest {
             CompanyResponse.Create response = companyService.createCompany(companyRequest, principal);
 
             // then
-            assertThat(response.info().name()).isEqualTo(companyRequest.getName());
-            assertThat(response.info().hub().name()).isEqualTo("서울 중앙 허브");
-
-            // 레포지토리 저장 및 외부 클라이언트 호출 검증
-            verify(hubClient).getHub(companyRequest.getHubId());
+            assertThat(response.name()).isEqualTo(companyRequest.getName());
             verify(companyRepository).save(any(Company.class));
             verify(kakaoMapService).getCoordinates(companyRequest.getBaseAddress());
         }
@@ -105,7 +100,6 @@ class CompanyServiceTest {
             // given
             CustomUserPrincipal principal = new CustomUserPrincipal(UUID.randomUUID(), UserRole.ROLE_HUB_MANAGER, hubId);
 
-            given(hubClient.getHub(companyRequest.getHubId())).willReturn(hubResponse);
             given(companyRepository.save(any(Company.class))).willReturn(mockCompany);
             given(kakaoMapService.getCoordinates(anyString())).willReturn(mockCoordinate);
 
@@ -114,7 +108,6 @@ class CompanyServiceTest {
 
             // then
             assertThat(response).isNotNull();
-            verify(hubClient).getHub(companyRequest.getHubId());
             verify(companyRepository).save(any(Company.class));
             verify(kakaoMapService).getCoordinates(companyRequest.getBaseAddress());
         }
@@ -131,7 +124,6 @@ class CompanyServiceTest {
                     .hasMessageContaining(CompanyErrorCode.COMPANY_CREATE_DENIED.getMessage());
 
             // 레포지토리 저장 및 외부 클라이언트 호출 무시
-            verify(hubClient, never()).getHub(any());
             verify(companyRepository, never()).save(any());
         }
     }
@@ -157,7 +149,7 @@ class CompanyServiceTest {
 
         // then
         assertThat(response.getContent()).hasSize(1);
-        assertThat(response.getContent().get(0).info().hub().name()).isEqualTo("서울 중앙 허브");
+        assertThat(response.getContent().get(0).info().hub().name()).isEqualTo(hubResponse.name());
         verify(companyRepository).searchCompanies(keyword, type, hubId, pageable);
         verify(hubClient).getHubs(Set.of(hubId));
     }
@@ -193,7 +185,7 @@ class CompanyServiceTest {
             CompanyResponse.Detail response = companyService.getCompany(companyId);
 
             // then
-            assertThat(response.info().name()).isEqualTo("스파르타 물류");
+            assertThat(response.info().name()).isEqualTo(mockCompany.getName());
             verify(companyRepository).findById(companyId);
             verify(hubClient).getHub(hubId);
             verify(userClient).getUsers(Set.of(createdBy, updatedBy));
@@ -250,7 +242,7 @@ class CompanyServiceTest {
             CompanyResponse.Update response = companyService.updateCompany(companyId, companyRequest, principal);
 
             // then
-            assertThat(response.info().name()).isEqualTo("스파르타 물류");
+            assertThat(response.info().name()).isEqualTo(companyRequest.getName());
             verify(hubClient).getHub(hubId);
         }
 
@@ -321,7 +313,6 @@ class CompanyServiceTest {
     @DisplayName("업체 삭제 테스트")
     class DeleteCompanyTest {
         private final Company mockCompany = createCompany(companyId, createCompanyRequest("수정 예정 물류"));
-        private final UUID userOrHubId = hubId;
 
         @Test
         @DisplayName("성공: MASTER - 허브 상관 없음")

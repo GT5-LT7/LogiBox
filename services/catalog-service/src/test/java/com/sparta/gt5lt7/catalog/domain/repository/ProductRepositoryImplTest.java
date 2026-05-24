@@ -157,7 +157,7 @@ class ProductRepositoryImplTest {
         Pageable pageable = PageRequest.of(0, 10);
 
         // when
-        Page<Product> result = productRepository.searchProducts("존재하지않는상품", null, null, null, pageable);
+        Page<Product> result = productRepository.searchProducts("없는 상품", null, null, null, pageable);
 
         // then
         assertThat(result.getTotalElements()).isEqualTo(0);

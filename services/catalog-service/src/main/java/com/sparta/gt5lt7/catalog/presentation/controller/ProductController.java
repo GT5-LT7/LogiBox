@@ -1,4 +1,4 @@
-package com.sparta.gt5lt7.catalog.presentation;
+package com.sparta.gt5lt7.catalog.presentation.controller;
 
 import com.sparta.gt5lt7.common.security.CustomUserPrincipal;
 import com.sparta.gt5lt7.catalog.presentation.dto.request.ProductRequest;
@@ -63,6 +63,28 @@ public class ProductController {
             @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
         ProductResponse.Update response = productService.updateProduct(id, request, principal);
+        return ResponseEntity.ok(ApiResponse.updated(response));
+    }
+
+    @PatchMapping("/{id}/status")
+    @PreAuthorize("hasAnyRole('MASTER', 'HUB_MANAGER', 'COMPANY_MANAGER')")
+    public ResponseEntity<ApiResponse<ProductResponse.StatusUpdate>> updateProductStatus(
+            @PathVariable UUID id,
+            @Valid @RequestBody ProductRequest.StatusUpdate request,
+            @AuthenticationPrincipal CustomUserPrincipal principal
+    ) {
+        ProductResponse.StatusUpdate response = productService.updateProductStatus(id, request, principal);
+        return ResponseEntity.ok(ApiResponse.updated(response));
+    }
+
+    @PatchMapping("/{id}/stock")
+    @PreAuthorize("hasAnyRole('MASTER', 'HUB_MANAGER', 'COMPANY_MANAGER')")
+    public ResponseEntity<ApiResponse<ProductResponse.StockUpdate>> updateProductQuantity(
+            @PathVariable UUID id,
+            @Valid @RequestBody ProductRequest.StockUpdate request,
+            @AuthenticationPrincipal CustomUserPrincipal principal
+    ) {
+        ProductResponse.StockUpdate response = productService.updateProductQuantity(id, request, principal);
         return ResponseEntity.ok(ApiResponse.updated(response));
     }
 

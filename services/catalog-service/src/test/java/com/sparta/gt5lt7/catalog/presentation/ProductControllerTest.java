@@ -2,8 +2,8 @@ package com.sparta.gt5lt7.catalog.presentation;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sparta.gt5lt7.catalog.application.ProductService;
+import com.sparta.gt5lt7.catalog.presentation.controller.ProductController;
 import com.sparta.gt5lt7.catalog.presentation.dto.request.ProductRequest;
-import com.sparta.gt5lt7.catalog.presentation.dto.response.CategoryResponse;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.ProductResponse;
 import com.sparta.gt5lt7.common.config.WebConfig;
 import com.sparta.gt5lt7.common.security.SecurityConfig;
@@ -53,12 +53,7 @@ class ProductControllerTest {
                     .quantity(100)
                     .build();
 
-            CategoryResponse.Simple category = new CategoryResponse.Simple(UUID.randomUUID(), "테스트 카테고리");
-            ProductResponse.Info info = new ProductResponse.Info(
-                    UUID.randomUUID(), "테스트 상품", "설명", null,
-                    null, null, category, 10000L, 100
-            );
-            ProductResponse.Create response = new ProductResponse.Create(info, LocalDateTime.now());
+            ProductResponse.Create response = new ProductResponse.Create(UUID.randomUUID(), "테스트 상품", LocalDateTime.now());
 
             when(productService.createProduct(any(), any())).thenReturn(response);
 

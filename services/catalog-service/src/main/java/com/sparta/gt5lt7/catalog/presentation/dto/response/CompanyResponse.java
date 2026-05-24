@@ -1,5 +1,6 @@
 package com.sparta.gt5lt7.catalog.presentation.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import com.sparta.gt5lt7.catalog.domain.entity.Company;
 import com.sparta.gt5lt7.catalog.domain.entity.CompanyType;
 import com.sparta.gt5lt7.catalog.infrastructure.client.dto.HubResponse;
@@ -16,6 +17,12 @@ public class CompanyResponse {
         }
     }
 
+    public record Create(UUID companyId, String name, LocalDateTime createdAt) {
+        public static Create from(Company company) {
+            return new Create(company.getCompanyId(), company.getName(), company.getCreatedAt());
+        }
+    }
+
     public record Info(
             UUID companyId, String name, CompanyType type, String phone,
             HubResponse hub, String address,  BigDecimal latitude, BigDecimal longitude
@@ -28,20 +35,14 @@ public class CompanyResponse {
         }
     }
 
-    public record Create(Info info, LocalDateTime createdAt) {
-        public static Create of(Company company, HubResponse hub) {
-            return new Create(Info.of(company, hub), company.getCreatedAt());
-        }
-    }
-
-    public record Summary(Info info, LocalDateTime createdAt, LocalDateTime updatedAt) {
+    public record Summary(@JsonUnwrapped Info info, LocalDateTime createdAt, LocalDateTime updatedAt) {
         public static Summary of(Company company, HubResponse hub) {
             return new Summary(Info.of(company, hub), company.getCreatedAt(), company.getUpdatedAt());
         }
     }
 
     public record Detail(
-            Info info, LocalDateTime createdAt, LocalDateTime updatedAt,
+            @JsonUnwrapped Info info, LocalDateTime createdAt, LocalDateTime updatedAt,
             UserResponse createdBy, UserResponse updatedBy
     ) {
         public static Detail of(Company company, HubResponse hub, UserResponse createdBy, UserResponse updatedBy) {
@@ -49,7 +50,7 @@ public class CompanyResponse {
         }
     }
 
-    public record Update(Info info, LocalDateTime updatedAt) {
+    public record Update(@JsonUnwrapped Info info, LocalDateTime updatedAt) {
         public static Update of(Company company, HubResponse hub) {
             return new Update(Info.of(company, hub), company.getUpdatedAt());
         }

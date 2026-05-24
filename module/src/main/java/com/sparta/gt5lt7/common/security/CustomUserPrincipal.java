@@ -40,19 +40,19 @@ public record CustomUserPrincipal(UUID userId, UserRole role, UUID managementId)
     }
 
     // 권한 검증 메서드
-    public boolean isAdmin() {
+    public boolean isMaster() {
         return this.role == UserRole.ROLE_MASTER;
     }
 
     public boolean isAccessibleHub(UUID targetHubId) {
-        if (isAdmin()) {
+        if (isMaster()) {
             return true;
         }
         return this.managementId != null && this.managementId.equals(targetHubId);
     }
 
     public boolean isAccessibleCompany(UUID targetCompanyId) {
-        if (isAdmin()) {
+        if (isMaster()) {
             return true;
         }
         return this.managementId != null && this.managementId.equals(targetCompanyId);

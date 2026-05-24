@@ -1,6 +1,6 @@
 package com.sparta.gt5lt7.catalog.presentation;
 
-import com.sparta.gt5lt7.common.security.SecurityConfig;
+import com.sparta.gt5lt7.catalog.presentation.controller.CompanyController;
 import com.sparta.gt5lt7.catalog.application.CompanyService;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.CompanyResponse;
 import com.sparta.gt5lt7.common.config.WebConfig;

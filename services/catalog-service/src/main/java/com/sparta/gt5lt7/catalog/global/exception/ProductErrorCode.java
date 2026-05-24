@@ -8,13 +8,11 @@ import org.springframework.http.HttpStatus;
 @Getter
 @AllArgsConstructor
 public enum ProductErrorCode implements ErrorCode {
-    // 404 NOT_FOUND
     PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "PRODUCT-001", "상품을 찾을 수 없습니다."),
-
-    // 403 FORBIDDEN
     PRODUCT_CREATE_DENIED(HttpStatus.FORBIDDEN, "PRODUCT-002", "상품 등록 권한이 없습니다."),
     PRODUCT_UPDATE_DENIED(HttpStatus.FORBIDDEN, "PRODUCT-003", "상품 수정 권한이 없습니다."),
-    PRODUCT_DELETE_DENIED(HttpStatus.FORBIDDEN, "PRODUCT-004", "상품 삭제 권한이 없습니다.");
+    PRODUCT_DELETE_DENIED(HttpStatus.FORBIDDEN, "PRODUCT-004", "상품 삭제 권한이 없습니다."),
+    OUT_OF_STOCK(HttpStatus.BAD_REQUEST, "PRODUCT-005", "상품의 재고가 부족합니다.");
 
     private final HttpStatus status;
     private final String code;
