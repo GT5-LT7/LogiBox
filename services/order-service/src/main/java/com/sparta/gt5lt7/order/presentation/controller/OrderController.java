@@ -87,4 +87,23 @@ public class OrderController {
                 userId
         );
     }
+
+    @PatchMapping("/{orderId}/cancel")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public OrderResponse cancelOrder(
+            @PathVariable UUID orderId,
+            @AuthenticationPrincipal UUID userId
+    ) {
+        return orderService.cancelOrder(orderId, userId);
+    }
+
+    @DeleteMapping("/{orderId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasRole('MASTER')")
+    public void deleteOrder(
+            @PathVariable UUID orderId,
+            @AuthenticationPrincipal UUID userId
+    ) {
+        orderService.deleteOrder(orderId, userId);
+    }
 }
