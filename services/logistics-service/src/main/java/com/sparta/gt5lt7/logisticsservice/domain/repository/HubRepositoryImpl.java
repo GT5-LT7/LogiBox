@@ -29,10 +29,11 @@ public class HubRepositoryImpl implements HubRepositoryCustom {
         builder.and(hub.deletedAt.isNull());
 
         // 이름/주소 키워드 검색 (OR 조건)
-        if (StringUtils.hasText(request.getKeyword())) {
+        String keyword = request.getKeyword() == null ? null : request.getKeyword().trim();
+        if (StringUtils.hasText(keyword)) {
             builder.and(
-                    hub.name.containsIgnoreCase(request.getKeyword())
-                            .or(hub.address.containsIgnoreCase(request.getKeyword()))
+                    hub.name.containsIgnoreCase(keyword)
+                            .or(hub.address.containsIgnoreCase(keyword))
             );
         }
 
