@@ -1,5 +1,7 @@
 package com.sparta.gt5lt7.logisticsservice.presentation;
 
+import com.sparta.gt5lt7.common.dto.ApiResponse;
+import com.sparta.gt5lt7.common.dto.PageResponse;
 import com.sparta.gt5lt7.logisticsservice.application.HubService;
 import com.sparta.gt5lt7.logisticsservice.presentation.dto.request.HubRequest;
 import com.sparta.gt5lt7.logisticsservice.presentation.dto.request.HubSearchRequest;
@@ -15,6 +17,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
+import java.util.function.Function;
 
 @RestController
 @RequestMapping("/api/v1/hubs")
@@ -25,27 +28,29 @@ public class HubController {
 
     @PostMapping
     @PreAuthorize("hasRole('MASTER')")
-    public ResponseEntity<HubResponse> createHub(
+    public ResponseEntity<ApiResponse<HubResponse>> createHub(
             @RequestBody @Valid HubRequest request
     ) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(hubService.createHub(request));
+                .body(ApiResponse.created(hubService.createHub(request)));
     }
 
-    // 허브 상세 조회
     @GetMapping("/{hubId}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<HubResponse> getHub(@PathVariable UUID hubId) {
-        return ResponseEntity.ok(hubService.getHub(hubId));
+    public ResponseEntity<ApiResponse<HubResponse>> getHub(@PathVariable UUID hubId) {
+        return ResponseEntity.ok(ApiResponse.success(hubService.getHub(hubId)));
     }
 
-    // 허브 목록 검색
     @GetMapping
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Page<HubResponse>> searchHubs(
+    public ResponseEntity<ApiResponse<PageResponse<HubResponse>>> searchHubs(
             HubSearchRequest request,
             @PageableDefault(size = 10, sort = "createdAt") Pageable pageable
     ) {
-        return ResponseEntity.ok(hubService.searchHubs(request, pageable));
+        PageResponse<HubResponse> response = PageResponse.of(
+                hubService.searchHubs(request, pageable),
+                Function.identity()
+        );
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 }
