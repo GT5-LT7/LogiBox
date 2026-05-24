@@ -15,13 +15,16 @@ import com.sparta.gt5lt7.catalog.domain.entity.Company;
 import com.sparta.gt5lt7.catalog.domain.repository.ProductRepository;
 import com.sparta.gt5lt7.catalog.presentation.dto.request.ProductRequest;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.ProductResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -154,26 +157,47 @@ public class ProductService {
     }
 
     @Transactional
-    public List<ProductResponse.StockUpdate> updateProductQuantity(ProductRequest.StockUpdate requests) {
+    public ProductResponse.StockUpdate updateProductQuantity(UUID id, ProductRequest.StockUpdate request, CustomUserPrincipal principal) {
+        // [데드락 방지] DB에서 비관적 락을 걸고 데이터 조회
+        Product product = productRepository.findByIdInForUpdate(id);
+
+        // Master가 아니면 담당 허브 또는 본인 업체인지 검증
+        if (!principal.isAccessibleHub(product.getCompany().getHubId())
+                && !principal.isAccessibleCompany(product.getCompany().getCompanyId())) {
+            throw new BaseException(ProductErrorCode.PRODUCT_UPDATE_DENIED);
+        }
+
+        // 재고 차감 및 원복
+        int quantity = product.getQuantity() + request.getUpdateQuantity();
+
+        // 재고 부족 예외 처리
+        if (quantity < 0) {
+            throw new BaseException(ProductErrorCode.OUT_OF_STOCK);
+        }
+
+        // 재고 변경
+        product.updateQuantity(quantity);
+
+        return ProductResponse.StockUpdate.from(product);
+    }
+
+    @Transactional
+    public List<ProductResponse.StockUpdate> updateProductQuantityForOrder(ProductRequest.OrderStockUpdate requests) {
         List<ProductRequest.StockItem> stockItems = requests.getStockItems();
 
-        if (stockItems == null || stockItems.isEmpty()) {
+        if (stockItems.isEmpty()) {
             return Collections.emptyList();
         }
 
-        UUID orderId = requests.getOrderId();
-
-        // [Redis 활용] 원복 요청이면서 주문 ID가 존재할 때, 보상 트랜잭션 중복 검증
-        boolean isRollbackProcess = (
-                orderId != null && stockItems.stream().allMatch(item -> item.getUpdateQuantity() > 0)
-        );
-        String redisKey = REDIS_ROLLBACK_KEY_PREFIX + orderId;
+        // [Redis 활용] 원복 요청일 때, 보상 트랜잭션 중복 검증
+        boolean isRollbackProcess = stockItems.stream().allMatch(item -> item.getUpdateQuantity() > 0);
+        String redisKey = REDIS_ROLLBACK_KEY_PREFIX + requests.getOrderId();
 
         // 1. 주문 ID로 롤백되었는지 확인
         if (isRollbackProcess) {
             Boolean isAlreadyProcessed = redisTemplate.hasKey(redisKey);
 
-            if (isAlreadyProcessed) {
+            if (Objects.equals(isAlreadyProcessed, true)) {
                 List<UUID> productIdsForRead = stockItems.stream()
                         .map(ProductRequest.StockItem::getProductId)
                         .collect(Collectors.toList());
@@ -227,13 +251,12 @@ public class ProductService {
             long randomBufferSeconds = ThreadLocalRandom.current().nextLong(RANDOM_BUFFER_MAX_SECONDS + 1);
             long totalTimeoutSeconds = BASE_TIMEOUT_SECONDS + randomBufferSeconds;
 
-            redisTemplate.opsForValue().set(redisKey, "processed", totalTimeoutSeconds, TimeUnit.MINUTES);
+            redisTemplate.opsForValue().set(redisKey, "processed", totalTimeoutSeconds, TimeUnit.SECONDS);
         }
 
         return responses;
     }
 
-    @Transactional
     public ProductResponse.Delete deleteProduct(UUID id, CustomUserPrincipal principal) {
         Product product = getProductById(id);
 

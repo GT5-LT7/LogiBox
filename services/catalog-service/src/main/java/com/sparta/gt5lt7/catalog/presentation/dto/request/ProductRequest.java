@@ -65,6 +65,16 @@ public class ProductRequest {
     @NoArgsConstructor(access = AccessLevel.PROTECTED)
     @AllArgsConstructor
     public static class StockUpdate {
+        @NotNull(message = "변경 재고량은 필수입니다.")
+        private Integer updateQuantity;
+    }
+
+    @Getter
+    @Builder
+    @NoArgsConstructor(access = AccessLevel.PROTECTED)
+    @AllArgsConstructor
+    public static class OrderStockUpdate {
+        @NotNull(message = "주문 ID는 필수입니다.")
         private UUID orderId;
 
         @Valid

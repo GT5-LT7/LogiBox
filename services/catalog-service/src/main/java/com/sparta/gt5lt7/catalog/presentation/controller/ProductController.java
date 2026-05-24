@@ -15,7 +15,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -78,11 +77,14 @@ public class ProductController {
         return ResponseEntity.ok(ApiResponse.updated(response));
     }
 
-    @PatchMapping("/stock")
-    public ResponseEntity<ApiResponse<List<ProductResponse.StockUpdate>>> updateProductQuantity(
-            @Valid @RequestBody ProductRequest.StockUpdate requests
+    @PatchMapping("/{id}/stock")
+    @PreAuthorize("hasAnyRole('MASTER', 'HUB_MANAGER', 'COMPANY_MANAGER')")
+    public ResponseEntity<ApiResponse<ProductResponse.StockUpdate>> updateProductQuantity(
+            @PathVariable UUID id,
+            @Valid @RequestBody ProductRequest.StockUpdate request,
+            @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
-        List<ProductResponse.StockUpdate> response = productService.updateProductQuantity(requests);
+        ProductResponse.StockUpdate response = productService.updateProductQuantity(id, request, principal);
         return ResponseEntity.ok(ApiResponse.updated(response));
     }
 
