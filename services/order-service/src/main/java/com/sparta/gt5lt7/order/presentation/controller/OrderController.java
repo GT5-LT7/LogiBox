@@ -16,6 +16,7 @@ import com.sparta.gt5lt7.order.presentation.dto.response.OrderResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import com.sparta.gt5lt7.order.presentation.dto.request.OrderUpdateRequest;
 
 import java.util.UUID;
 import java.time.LocalDateTime;
@@ -71,5 +72,19 @@ public class OrderController {
             @AuthenticationPrincipal UUID userId
     ) {
         return orderService.getOrder(orderId, userId);
+    }
+
+    @PutMapping("/{orderId}")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public OrderResponse updateOrder(
+            @PathVariable UUID orderId,
+            @Valid @RequestBody OrderUpdateRequest request,
+            @AuthenticationPrincipal UUID userId
+    ) {
+        return orderService.updateOrder(
+                orderId,
+                request,
+                userId
+        );
     }
 }
