@@ -22,15 +22,17 @@ public abstract class BaseEntity {
     private LocalDateTime createdAt;
 
     @LastModifiedDate
+    @Column(nullable = false)
     private LocalDateTime updatedAt;
 
     private LocalDateTime deletedAt;
 
     @CreatedBy
-    @Column(updatable = false)
+    @Column(updatable = false, nullable = false)
     private UUID createdBy;
 
     @LastModifiedBy
+    @Column(nullable = false)
     private UUID updatedBy;
 
     private UUID deletedBy;

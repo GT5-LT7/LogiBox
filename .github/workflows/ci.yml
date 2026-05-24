@@ -22,6 +22,8 @@ jobs:
   # 1. 어떤 프로젝트가 변경되었는지 감지
   detect-changes:
     runs-on: ubuntu-latest
+    env:
+      GEMINI_API_KEY: test-api-key
     outputs:
       projects: ${{ steps.filter.outputs.changes }}
     steps:
@@ -79,6 +81,9 @@ jobs:
 
       # 4. 루트의 gradlew를 사용해 특정 모듈만 빌드
       - name: 빌드 및 테스트
+        env:
+          # catalog-service 일 때만 주입
+          KAKAO_MAP_API_KEY: ${{ matrix.project == 'catalog-service' && secrets.KAKAO_MAP_API_KEY || '' }}
         run: ./gradlew ${{ steps.vars.outputs.target }}:build --no-daemon
 
       - name: 테스트 결과 업로드

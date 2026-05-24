@@ -6,14 +6,11 @@ import lombok.*;
 
 import java.util.UUID;
 
-/**
- * 업체 생성 요청 DTO 클래스입니다.
- */
 @Getter
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-public class CompanyCreateRequest {
+public class CompanyRequest {
     @NotBlank(message = "업체 이름은 필수입니다.")
     @Size(max = 100, message = "업체 이름은 100자 이하로 입력해주세요.")
     private String name;

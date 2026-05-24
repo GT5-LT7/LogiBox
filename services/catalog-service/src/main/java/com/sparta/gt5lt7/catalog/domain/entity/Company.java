@@ -1,11 +1,13 @@
 package com.sparta.gt5lt7.catalog.domain.entity;
 
+import com.sparta.gt5lt7.catalog.presentation.dto.request.CompanyRequest;
 import com.sparta.gt5lt7.common.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -14,6 +16,7 @@ import java.util.UUID;
 @Table(name = "p_companies")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@SQLRestriction("deleted_at IS NULL")
 public class Company extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -69,5 +72,22 @@ public class Company extends BaseEntity {
             return String.format("%s (%s)", this.baseAddress, this.zipcode);
         }
         return String.format("%s, %s (%s)", this.baseAddress, this.detailAddress, this.zipcode);
+    }
+
+    public void update(CompanyRequest request) {
+        String detailAddress = request.getDetailAddress();
+
+        this.name = request.getName().trim();
+        this.type = request.getType();
+        this.phone = request.getPhone();
+        this.hubId = request.getHubId();
+        this.baseAddress = request.getBaseAddress().trim();
+        this.detailAddress = (detailAddress != null && !detailAddress.isBlank()) ? detailAddress.trim() : null;
+        this.zipcode = request.getZipcode();
+    }
+
+    public void updateCoordinate(BigDecimal latitude, BigDecimal longitude) {
+        this.latitude = latitude;
+        this.longitude = longitude;
     }
 }

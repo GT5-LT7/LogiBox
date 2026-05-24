@@ -1,5 +1,6 @@
 package com.sparta.gt5lt7.catalog.presentation;
 
+import com.sparta.gt5lt7.common.security.SecurityConfig;
 import com.sparta.gt5lt7.catalog.application.CompanyService;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.CompanyResponse;
 import com.sparta.gt5lt7.common.config.WebConfig;
@@ -41,17 +42,10 @@ class CompanyControllerTest {
     @DisplayName("커스텀 페이징 리졸버 동작 테스트")
     class CustomPageableArgumentResolverTest {
         @Test
-        @DisplayName("정상 케이스")
+        @DisplayName("성공: 유효한 페이지 크기와 정렬 조건이라면 그대로 요청")
         void test1() throws Exception {
             // given
-            PageResponse<CompanyResponse> mockResponse = PageResponse.<CompanyResponse>builder()
-                    .content(List.of())
-                    .page(0)
-                    .size(30)
-                    .totalElements(0L)
-                    .totalPages(0)
-                    .sort("updatedAt: ASC")
-                    .build();
+            PageResponse<CompanyResponse.Summary> mockResponse = createSummaryResponse(30, "updatedAt: DESC");
             given(companyService.searchCompanies(any(), any(), any(), any())).willReturn(mockResponse);
 
             // when & then
@@ -72,18 +66,10 @@ class CompanyControllerTest {
         }
 
         @Test
-        @DisplayName("비정상 케이스 - 기본값 적용")
+        @DisplayName("예외: 유효하지 않는 페이지 크기와 정렬 조건이라면 기본값 적용")
         void test2() throws Exception {
             // given
-            PageResponse<CompanyResponse> mockResponse = PageResponse.<CompanyResponse>builder()
-                    .content(List.of())
-                    .page(0)
-                    .size(10)
-                    .totalElements(0L)
-                    .totalPages(0)
-                    .sort("createdAt: DESC")
-                    .build();
-
+            PageResponse<CompanyResponse.Summary> mockResponse = createSummaryResponse(10, "createdAt: DESC");
             given(companyService.searchCompanies(any(), any(), any(), any())).willReturn(mockResponse);
 
             // when & then
@@ -100,6 +86,17 @@ class CompanyControllerTest {
             assertThat(capturedPageable.getPageSize()).isEqualTo(10);
             assertThat(Objects.requireNonNull(capturedPageable.getSort().getOrderFor("createdAt")).getDirection())
                     .isEqualTo(Sort.Direction.DESC);
+        }
+
+        private PageResponse<CompanyResponse.Summary> createSummaryResponse(int size, String sort) {
+            return PageResponse.<CompanyResponse.Summary>builder()
+                    .content(List.of())
+                    .page(0)
+                    .size(size)
+                    .totalElements(0L)
+                    .totalPages(0)
+                    .sort(sort)
+                    .build();
         }
     }
 }

@@ -1,21 +1,18 @@
-package com.sparta.gt5lt7.catalog.infrastructure.repository;
+package com.sparta.gt5lt7.catalog.domain.repository;
 
 import com.querydsl.core.BooleanBuilder;
-import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.sparta.gt5lt7.catalog.domain.entity.Company;
 import com.sparta.gt5lt7.catalog.domain.entity.CompanyType;
 import com.sparta.gt5lt7.catalog.domain.entity.QCompany;
-import com.sparta.gt5lt7.catalog.domain.repository.CompanyRepositoryCustom;
+import com.sparta.gt5lt7.catalog.global.util.QueryDslUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.support.PageableExecutionUtils;
 import org.springframework.stereotype.Repository;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -41,7 +38,7 @@ public class CompanyRepositoryImpl implements CompanyRepositoryCustom {
         }
 
         // 2. 정렬 조건
-        List<OrderSpecifier<?>> orderSpecifiers = getOrderSpecifiers(pageable, company);
+        List<OrderSpecifier<?>> orderSpecifiers = QueryDslUtil.getOrderSpecifiers(pageable, company);
 
         // 3. 실제 데이터 조회
         List<Company> content = queryFactory
@@ -61,19 +58,5 @@ public class CompanyRepositoryImpl implements CompanyRepositoryCustom {
         long totalCount = (total != null) ? total : 0L;
 
         return PageableExecutionUtils.getPage(content, pageable, () -> totalCount);
-    }
-
-    private List<OrderSpecifier<?>> getOrderSpecifiers(Pageable pageable, QCompany company) {
-        List<OrderSpecifier<?>> orders = new ArrayList<>();
-
-        for (Sort.Order order : pageable.getSort()) {
-            Order direction = order.getDirection().isAscending() ? Order.ASC : Order.DESC;
-
-            switch (order.getProperty()) {
-                case "createdAt" -> orders.add(new OrderSpecifier<>(direction, company.createdAt));
-                case "updatedAt" -> orders.add(new OrderSpecifier<>(direction, company.updatedAt));
-            }
-        }
-        return orders;
     }
 }
