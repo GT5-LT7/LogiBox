@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -45,7 +46,7 @@ public class HubController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<PageResponse<HubResponse>>> searchHubs(
             HubSearchRequest request,
-            @PageableDefault(size = 10, sort = "createdAt") Pageable pageable
+            @PageableDefault(size = 10, sort = "createdAt",  direction = Sort.Direction.DESC) Pageable pageable
     ) {
         PageResponse<HubResponse> response = PageResponse.of(
                 hubService.searchHubs(request, pageable),
