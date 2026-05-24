@@ -36,13 +36,15 @@ public class ProductController {
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<ProductResponse.Summary>>> searchProducts(
             @RequestParam(required = false) String keyword,
+            @RequestParam(required = false, defaultValue = "false") Boolean salesOnly,
             @RequestParam(required = false) UUID companyId,
             @RequestParam(required = false) UUID hubId,
             @RequestParam(required = false) UUID categoryId,
-            Pageable pageable
+            Pageable pageable,
+            @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
         PageResponse<ProductResponse.Summary> response = productService.searchProducts(
-                keyword, companyId, hubId, categoryId, pageable
+                keyword, salesOnly, companyId, hubId, categoryId, pageable, principal
         );
         return ResponseEntity.ok(ApiResponse.success(response));
     }

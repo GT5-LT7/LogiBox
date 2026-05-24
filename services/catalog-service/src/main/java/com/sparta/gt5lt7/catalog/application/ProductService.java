@@ -74,9 +74,12 @@ public class ProductService {
     }
 
     public PageResponse<ProductResponse.Summary> searchProducts(
-            String keyword, UUID companyId, UUID hubId, UUID categoryId, Pageable pageable
+            String keyword, Boolean salesOnly, UUID companyId, UUID hubId, UUID categoryId,
+            Pageable pageable, CustomUserPrincipal principal
     ) {
-        Page<Product> productPage = productRepository.searchProducts(keyword, companyId, hubId, categoryId, pageable);
+        Page<Product> productPage = productRepository.searchProducts(
+                keyword, salesOnly, companyId, hubId, categoryId, pageable, principal
+        );
 
         // 허브 ID를 중복 없이 추출 → Hub Service로 허브 정보 요청
         Set<UUID> hubIds = productPage.stream()

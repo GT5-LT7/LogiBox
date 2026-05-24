@@ -26,10 +26,10 @@ public class GatewayAuthenticationFilter extends GenericFilterBean {
 
         if (userIdStr != null && roleStr != null) {
             try {
-                CustomUserPrincipal principal = new CustomUserPrincipal(
+                CustomUserPrincipal principal = CustomUserPrincipal.of(
                         UUID.fromString(userIdStr),
                         UserRole.fromString(roleStr),
-                        managementIdStr != null ? UUID.fromString(managementIdStr) : null
+                        (managementIdStr != null) ? UUID.fromString(managementIdStr) : null
                 );
 
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
