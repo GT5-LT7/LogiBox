@@ -1,6 +1,8 @@
 package com.sparta.gt5lt7.order.application.service;
 
 import com.sparta.gt5lt7.order.application.event.OrderCreatedEvent;
+import com.sparta.gt5lt7.order.common.exception.ErrorCode;
+import com.sparta.gt5lt7.order.common.exception.OrderException;
 import com.sparta.gt5lt7.order.domain.entity.Order;
 import com.sparta.gt5lt7.order.domain.entity.OrderHistory;
 import com.sparta.gt5lt7.order.domain.entity.OrderStatus;
@@ -58,7 +60,7 @@ public class OrderService {
         boolean locked = redisLockService.tryLock(lockKey, lockValue, Duration.ofSeconds(5));
 
         if (!locked) {
-            throw new IllegalStateException("현재 주문 요청이 많습니다. 잠시 후 다시 시도해주세요.");
+            throw new OrderException(ErrorCode.REQUEST_OVERLOAD, "현재 주문이 많아 주문을 할 수 없습니다.");
         }
 
         try {
@@ -135,11 +137,11 @@ public class OrderService {
     @Transactional(readOnly = true)
     public OrderResponse getOrder(UUID orderId, UUID userId) {
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("주문을 찾을 수 없습니다."));
+                .orElseThrow(() -> new OrderException(ErrorCode.ORDER_NOT_FOUND, "주문을 찾을 수 없습니다."));
 
         if (hasRole("CUSTOMER")) {
             if (!order.getCreatedBy().equals(userId)) {
-                throw new AccessDeniedException("본인의 주문만 조회할 수 있습니다.");
+                throw new OrderException(ErrorCode.ACCESS_DENIED, "본인의 주문만 조회할 수 있습니다.");
             }
         }
 
@@ -198,22 +200,22 @@ public class OrderService {
             UUID userId
     ) {
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("주문을 찾을 수 없습니다."));
+                .orElseThrow(() -> new OrderException(ErrorCode.ORDER_NOT_FOUND, "주문을 찾을 수 없습니다."));
 
         if (!order.getCreatedBy().equals(userId)) {
-            throw new AccessDeniedException("본인의 주문만 수정할 수 있습니다.");
+            throw new OrderException(ErrorCode.ACCESS_DENIED, "본인의 주문만 수정할 수 있습니다.");
         }
 
         if (order.getOrderStatus() != OrderStatus.PENDING) {
-            throw new IllegalStateException("PENDING 상태에서만 수정 가능합니다.");
+            throw new OrderException(ErrorCode.ORDER_STATUS_INVALID, "PENDING 상태에서만 수정 가능합니다.");
         }
 
         if (order.getDeliveryId() != null) {
-            throw new IllegalStateException("배송 생성 이후 주문 수정이 불가능합니다.");
+            throw new OrderException(ErrorCode.ORDER_STATUS_INVALID, "배송 생성 이후 주문 수정이 불가능합니다.");
         }
 
         if (LocalDateTime.now().isAfter(order.getDeliveryDeadline())) {
-            throw new IllegalStateException("배송 마감 시간이 지나 수정할 수 없습니다.");
+            throw new OrderException(ErrorCode.ORDER_STATUS_INVALID, "배송 마감 시간이 지나 수정할 수 없습니다.");
         }
 
         if (!order.getQuantity().equals(request.quantity())) {
@@ -249,16 +251,16 @@ public class OrderService {
     @Transactional
     public OrderResponse cancelOrder(UUID orderId, UUID userId) {
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("주문을 찾을 수 없습니다."));
+                .orElseThrow(() -> new OrderException(ErrorCode.ORDER_NOT_FOUND, "주문을 찾을 수 없습니다."));
 
         if (!order.getCreatedBy().equals(userId)) {
-            throw new AccessDeniedException("본인의 주문만 취소할 수 있습니다.");
+            throw new OrderException(ErrorCode.ACCESS_DENIED, "본인의 주문만 취소할 수 있습니다.");
         }
 
         if (order.getOrderStatus() == OrderStatus.SHIPPING
                 || order.getOrderStatus() == OrderStatus.COMPLETED
                 || order.getOrderStatus() == OrderStatus.CANCELED) {
-            throw new IllegalStateException("배송 시작 이후에는 주문을 취소할 수 없습니다.");
+            throw new OrderException(ErrorCode.ORDER_STATUS_INVALID, "배송 시작 이후에는 주문을 취소할 수 없습니다.");
         }
 
         OrderStatus previousStatus = order.getOrderStatus();
@@ -294,7 +296,7 @@ public class OrderService {
     @Transactional
     public void deleteOrder(UUID orderId, UUID userId) {
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("주문을 찾을 수 없습니다."));
+                .orElseThrow(() -> new OrderException(ErrorCode.ORDER_NOT_FOUND, "주문을 찾을 수 없습니다."));
 
         order.softDelete(userId);
     }
