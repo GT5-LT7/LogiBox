@@ -94,8 +94,16 @@ public class ProductService {
         });
     }
 
-    public ProductResponse.Detail getProduct(UUID id) {
+    public ProductResponse.Detail getProduct(UUID id, CustomUserPrincipal principal) {
         Product product = getProductById(id);
+
+        // 숨김 상품일 때 권한 처리
+        if (product.isHidden()) {
+            if (!principal.isAccessibleHub(product.getCompany().getHubId())
+                    && !principal.isAccessibleCompany(product.getCompany().getCompanyId())) {
+                throw new BaseException(ProductErrorCode.PRODUCT_NOT_FOUND);
+            }
+        }
 
         // Hub Service로 허브 정보 요청
         HubResponse hubResponse = hubClient.getHub(product.getCompany().getHubId());

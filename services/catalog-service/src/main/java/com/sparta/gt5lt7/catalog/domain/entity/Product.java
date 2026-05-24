@@ -68,7 +68,7 @@ public class Product extends BaseEntity {
         this.category = category;
         this.price = request.getPrice();
     }
-
+    
     public void updateStatus(ActionType action) {
         this.status = switch (action) {
             case SHOW -> (this.quantity > 0) ? ProductStatus.ON_SALE : ProductStatus.SOLD_OUT;
@@ -79,5 +79,9 @@ public class Product extends BaseEntity {
 
     public void updateQuantity(Integer quantity) {
         this.quantity = quantity;
+    }
+
+    public boolean isHidden() {
+        return this.status == ProductStatus.HIDDEN;
     }
 }
