@@ -2,6 +2,8 @@ package com.sparta.gt5lt7.order.application.service;
 
 import com.sparta.gt5lt7.order.application.dto.AIDeliveryAnalysisRequest;
 import com.sparta.gt5lt7.order.application.dto.AIDeliveryAnalysisResult;
+import com.sparta.gt5lt7.order.common.exception.ErrorCode;
+import com.sparta.gt5lt7.order.common.exception.OrderException;
 import com.sparta.gt5lt7.order.domain.entity.AIRequestLog;
 import com.sparta.gt5lt7.order.domain.entity.AIType;
 import com.sparta.gt5lt7.order.domain.entity.Order;
@@ -67,7 +69,7 @@ public class AIDeliveryAnalysisService {
                     null
             );
 
-            throw e;
+            throw new OrderException(ErrorCode.AI_API_FAILED);
         }
     }
 }

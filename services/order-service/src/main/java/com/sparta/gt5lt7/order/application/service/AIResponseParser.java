@@ -2,6 +2,8 @@ package com.sparta.gt5lt7.order.application.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sparta.gt5lt7.order.application.dto.AIDeliveryAnalysisResult;
+import com.sparta.gt5lt7.order.common.exception.ErrorCode;
+import com.sparta.gt5lt7.order.common.exception.OrderException;
 import com.sparta.gt5lt7.order.domain.entity.RiskLevel;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -27,7 +29,7 @@ public class AIResponseParser {
                     RiskLevel.valueOf(parsed.riskLevel())
             );
         } catch (Exception e) {
-            throw new IllegalArgumentException("AI 응답 파싱에 실패했습니다.", e);
+            throw new OrderException(ErrorCode.AI_RESPONSE_PARSE_FAILED, "AI 응답 파싱에 실패했습니다.");
         }
     }
 
@@ -36,7 +38,7 @@ public class AIResponseParser {
         int end = text.lastIndexOf("}");
 
         if (start == -1 || end == -1) {
-            throw new IllegalArgumentException("AI 응답에서 JSON을 찾을 수 없습니다.");
+            throw new OrderException(ErrorCode.AI_RESPONSE_PARSE_FAILED, "AI 응답에서 JSON을 찾을 수 없습니다.");
         }
 
         return text.substring(start, end + 1);
