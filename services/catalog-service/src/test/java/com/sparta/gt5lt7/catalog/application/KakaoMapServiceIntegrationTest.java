@@ -18,8 +18,8 @@ class KakaoMapServiceIntegrationTest {
     private KakaoMapService kakaoMapService;
 
     @Test
-    @DisplayName("카카오맵 API 동작 테스트")
-    void test1() {
+    @DisplayName("좌표 변환 테스트")
+    void GetCoordinatesTest() {
         // Given
         String address = "서울시 강남구 테헤란로 311";
 

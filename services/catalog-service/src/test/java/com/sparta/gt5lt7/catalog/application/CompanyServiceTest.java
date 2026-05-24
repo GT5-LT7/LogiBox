@@ -149,7 +149,7 @@ class CompanyServiceTest {
 
         // then
         assertThat(response.getContent()).hasSize(1);
-        assertThat(response.getContent().get(0).info().hub().name()).isEqualTo("서울 중앙 허브");
+        assertThat(response.getContent().get(0).info().hub().name()).isEqualTo(hubResponse.name());
         verify(companyRepository).searchCompanies(keyword, type, hubId, pageable);
         verify(hubClient).getHubs(Set.of(hubId));
     }
@@ -185,7 +185,7 @@ class CompanyServiceTest {
             CompanyResponse.Detail response = companyService.getCompany(companyId);
 
             // then
-            assertThat(response.info().name()).isEqualTo("스파르타 물류");
+            assertThat(response.info().name()).isEqualTo(mockCompany.getName());
             verify(companyRepository).findById(companyId);
             verify(hubClient).getHub(hubId);
             verify(userClient).getUsers(Set.of(createdBy, updatedBy));
@@ -242,7 +242,7 @@ class CompanyServiceTest {
             CompanyResponse.Update response = companyService.updateCompany(companyId, companyRequest, principal);
 
             // then
-            assertThat(response.info().name()).isEqualTo("스파르타 물류");
+            assertThat(response.info().name()).isEqualTo(companyRequest.getName());
             verify(hubClient).getHub(hubId);
         }
 
@@ -313,7 +313,6 @@ class CompanyServiceTest {
     @DisplayName("업체 삭제 테스트")
     class DeleteCompanyTest {
         private final Company mockCompany = createCompany(companyId, createCompanyRequest("수정 예정 물류"));
-        private final UUID userOrHubId = hubId;
 
         @Test
         @DisplayName("성공: MASTER - 허브 상관 없음")
