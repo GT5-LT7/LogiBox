@@ -28,6 +28,7 @@ Thumbs.db
 *.env
 *.properties
 !**/gradle-wrapper.properties
+!**/application.properties
 **/application-local.yml
 **/application-test.yml
 

@@ -1,8 +1,10 @@
 package com.sparta.gt5lt7.logisticsservice.presentation.dto.response;
 
 import com.sparta.gt5lt7.logisticsservice.domain.entity.Hub;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -10,6 +12,8 @@ import java.util.UUID;
 
 @Getter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class HubResponse implements Serializable {
 
     private UUID hubId;
