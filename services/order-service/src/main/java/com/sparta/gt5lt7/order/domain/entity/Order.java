@@ -73,6 +73,16 @@ public class Order extends BaseEntity {
         this.slackId = slackId;
     }
 
+    public void updateOrder(
+            Integer quantity,
+            String requestMessage,
+            LocalDateTime deliveryDeadline
+    ) {
+        this.quantity = quantity;
+        this.requestMessage = requestMessage;
+        this.deliveryDeadline = deliveryDeadline;
+    }
+
     public void updateStatus(OrderStatus orderStatus) {
         this.orderStatus = orderStatus;
     }

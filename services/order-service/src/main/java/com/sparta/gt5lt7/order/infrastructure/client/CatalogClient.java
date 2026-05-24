@@ -19,4 +19,8 @@ public class CatalogClient {
 
         // TODO: Catalog Service 재고 복구 API 호출
     }
+
+    public void validateStock(UUID productId, Integer quantity) {
+        // TODO: Catalog Service 재고 검증 API 호출
+    }
 }
