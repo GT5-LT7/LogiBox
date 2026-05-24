@@ -24,6 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GEMINI_API_KEY: test-api-key
+      SLACK_WEBHOOK_URL: https://test.slack.webhook
     outputs:
       projects: ${{ steps.filter.outputs.changes }}
     steps:
