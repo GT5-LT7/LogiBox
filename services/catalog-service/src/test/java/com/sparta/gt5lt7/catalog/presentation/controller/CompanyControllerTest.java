@@ -49,7 +49,7 @@ class CompanyControllerTest {
         void test1() throws Exception {
             // given
             PageResponse<CompanyResponse.Summary> mockResponse = createSummaryResponse(30, "updatedAt: DESC");
-            given(companyService.searchCompanies(any(), any(), any(), any())).willReturn(mockResponse);
+            given(companyFacade.searchCompanies(any(), any(), any(), any())).willReturn(mockResponse);
 
             // when & then
             mockMvc.perform(get("/api/companies")
@@ -58,7 +58,7 @@ class CompanyControllerTest {
                     .andExpect(status().isOk());
 
             ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-            verify(companyService).searchCompanies(any(), any(), any(), pageableCaptor.capture());
+            verify(companyFacade).searchCompanies(any(), any(), any(), pageableCaptor.capture());
 
             Pageable capturedPageable = pageableCaptor.getValue();
             assertThat(capturedPageable.getPageNumber()).isEqualTo(0);
@@ -72,7 +72,7 @@ class CompanyControllerTest {
         void test2() throws Exception {
             // given
             PageResponse<CompanyResponse.Summary> mockResponse = createSummaryResponse(10, "createdAt: DESC");
-            given(companyService.searchCompanies(any(), any(), any(), any())).willReturn(mockResponse);
+            given(companyFacade.searchCompanies(any(), any(), any(), any())).willReturn(mockResponse);
 
             // when & then
             mockMvc.perform(get("/api/companies")
@@ -81,7 +81,7 @@ class CompanyControllerTest {
                     .andExpect(status().isOk());
 
             ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-            verify(companyService).searchCompanies(any(), any(), any(), pageableCaptor.capture());
+            verify(companyFacade).searchCompanies(any(), any(), any(), pageableCaptor.capture());
 
             Pageable capturedPageable = pageableCaptor.getValue();
             assertThat(capturedPageable.getPageSize()).isEqualTo(10);

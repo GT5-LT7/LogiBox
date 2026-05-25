@@ -1,5 +1,7 @@
 package com.sparta.gt5lt7.catalog.application.facade;
 
+import com.sparta.gt5lt7.common.dto.PageResponse;
+import com.sparta.gt5lt7.catalog.domain.entity.CompanyType;
 import com.sparta.gt5lt7.catalog.infrastructure.client.UserClient;
 import com.sparta.gt5lt7.catalog.infrastructure.client.dto.HubResponse;
 import com.sparta.gt5lt7.catalog.infrastructure.client.dto.UserResponse;
@@ -14,12 +16,15 @@ import com.sparta.gt5lt7.catalog.presentation.dto.request.CompanyRequest;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.CompanyResponse;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.CoordinateResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Component
@@ -48,6 +53,26 @@ public class CompanyFacade {
         return CompanyResponse.Create.from(company);
     }
 
+    public PageResponse<CompanyResponse.Summary> searchCompanies(String keyword, CompanyType type, UUID hubId, Pageable pageable) {
+        // [서비스 레이어]
+        Page<Company> companyPage = companyService.searchCompanies(keyword, type, hubId, pageable);
+
+        // [MSA 통신] 허브 ID를 중복 없이 추출 → Hub Service로 허브 정보 요청
+        Set<UUID> hubIds = companyPage.stream()
+                .map(Company::getHubId)
+                .collect(Collectors.toSet());
+        List<HubResponse> hubResponses = hubIds.isEmpty() ? List.of() : hubClient.getHubs(hubIds);
+
+        // O(1) 조회를 위한 허브 Map 생성
+        Map<UUID, HubResponse> hubMap = hubResponses.stream()
+                .collect(Collectors.toMap(HubResponse::id, Function.identity()));
+
+        return PageResponse.of(companyPage, company -> {
+            HubResponse hubResponse = hubMap.get(company.getHubId());
+            return CompanyResponse.Summary.of(company, hubResponse);
+        });
+    }
+
     public CompanyResponse.Detail getCompany(UUID id) {
         // [서비스 레이어]
         Company company = companyService.getCompany(id);
@@ -55,7 +80,7 @@ public class CompanyFacade {
         // [MSA 통신] Hub Service로 허브 정보 요청
         HubResponse hub = hubClient.getHub(company.getHubId());
 
-        // 사용자 ID를 중복 없이 추출 → User Service로 사용자 정보 요청
+        // [MSA 통신] 사용자 ID를 중복 없이 추출 → User Service로 사용자 정보 요청
         Set<UUID> userIds = Set.of(company.getCreatedBy(), company.getUpdatedBy());
         List<UserResponse> users = userClient.getUsers(userIds);
 

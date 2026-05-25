@@ -9,7 +9,6 @@ import com.sparta.gt5lt7.catalog.infrastructure.client.HubClient;
 import com.sparta.gt5lt7.catalog.infrastructure.client.dto.HubResponse;
 import com.sparta.gt5lt7.catalog.presentation.dto.request.CompanyRequest;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.*;
-import com.sparta.gt5lt7.common.dto.PageResponse;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,12 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.sparta.gt5lt7.common.exception.BaseException;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
@@ -59,23 +53,8 @@ public class CompanyService {
         return companyRepository.save(company);
     }
 
-    public PageResponse<CompanyResponse.Summary> searchCompanies(String keyword, CompanyType type, UUID hubId, Pageable pageable) {
-        Page<Company> companyPage = companyRepository.searchCompanies(keyword, type, hubId, pageable);
-
-        // 허브 ID를 중복 없이 추출 → Hub Service로 허브 정보 요청
-        Set<UUID> hubIds = companyPage.stream()
-                .map(Company::getHubId)
-                .collect(Collectors.toSet());
-        List<HubResponse> hubResponses = hubIds.isEmpty() ? List.of() : hubClient.getHubs(hubIds);
-
-        // O(1) 조회를 위한 허브 Map 생성
-        Map<UUID, HubResponse> hubMap = hubResponses.stream()
-                .collect(Collectors.toMap(HubResponse::id, Function.identity()));
-
-        return PageResponse.of(companyPage, company -> {
-            HubResponse hubResponse = hubMap.get(company.getHubId());
-            return CompanyResponse.Summary.of(company, hubResponse);
-        });
+    public Page<Company> searchCompanies(String keyword, CompanyType type, UUID hubId, Pageable pageable) {
+        return companyRepository.searchCompanies(keyword, type, hubId, pageable);
     }
 
     public Company getCompany(UUID id) {

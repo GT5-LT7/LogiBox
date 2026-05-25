@@ -43,7 +43,7 @@ public class CompanyController {
             @RequestParam(required = false) UUID hubId,
             Pageable pageable
     ) {
-        PageResponse<CompanyResponse.Summary> response = companyService.searchCompanies(keyword, type, hubId, pageable);
+        PageResponse<CompanyResponse.Summary> response = companyFacade.searchCompanies(keyword, type, hubId, pageable);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 

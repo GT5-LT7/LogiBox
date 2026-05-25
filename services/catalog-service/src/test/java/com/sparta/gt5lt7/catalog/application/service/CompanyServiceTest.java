@@ -13,7 +13,6 @@ import com.sparta.gt5lt7.catalog.presentation.dto.response.CompanyResponse;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.CoordinateResponse;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.HubUsageStatusResponse;
 import com.sparta.gt5lt7.common.exception.BaseException;
-import com.sparta.gt5lt7.common.dto.PageResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -30,7 +29,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -85,19 +83,15 @@ class CompanyServiceTest {
         Company mockCompany = createCompany(UUID.randomUUID(), createCompanyRequest("스파르타 물류"));
         Page<Company> mockPage = new PageImpl<>(List.of(mockCompany), pageable, 1);
 
-        List<HubResponse> mockHubResponses = List.of(mockHub);
-
         given(companyRepository.searchCompanies(keyword, type, hubId, pageable)).willReturn(mockPage);
-        given(hubClient.getHubs(Set.of(hubId))).willReturn(mockHubResponses);
 
         // when
-        PageResponse<CompanyResponse.Summary> response = companyService.searchCompanies(keyword, type, hubId, pageable);
+        Page<Company> response = companyService.searchCompanies(keyword, type, hubId, pageable);
 
         // then
         assertThat(response.getContent()).hasSize(1);
-        assertThat(response.getContent().get(0).info().hub().name()).isEqualTo(mockHub.name());
+        assertThat(response.getContent().get(0).getName()).isEqualTo(mockCompany.getName());
         verify(companyRepository).searchCompanies(keyword, type, hubId, pageable);
-        verify(hubClient).getHubs(Set.of(hubId));
     }
 
     @Test
