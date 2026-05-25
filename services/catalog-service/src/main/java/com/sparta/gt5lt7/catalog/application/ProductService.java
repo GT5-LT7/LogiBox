@@ -15,16 +15,13 @@ import com.sparta.gt5lt7.catalog.domain.entity.Company;
 import com.sparta.gt5lt7.catalog.domain.repository.ProductRepository;
 import com.sparta.gt5lt7.catalog.presentation.dto.request.ProductRequest;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.ProductResponse;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.RequestBody;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -99,17 +96,18 @@ public class ProductService {
 
     public ProductResponse.Detail getProduct(UUID id, CustomUserPrincipal principal) {
         Product product = getProductById(id);
+        Company company = product.getCompany();
 
         // 숨김 상품일 때 권한 처리
         if (product.isHidden()) {
-            if (!principal.isAccessibleHub(product.getCompany().getHubId())
-                    && !principal.isAccessibleCompany(product.getCompany().getCompanyId())) {
+            if (principal == null ||
+                    (!principal.isAccessibleHub(company.getHubId()) && !principal.isAccessibleCompany(company.getCompanyId()))) {
                 throw new BaseException(ProductErrorCode.PRODUCT_NOT_FOUND);
             }
         }
 
         // Hub Service로 허브 정보 요청
-        HubResponse hubResponse = hubClient.getHub(product.getCompany().getHubId());
+        HubResponse hubResponse = hubClient.getHub(company.getHubId());
 
         // 사용자 ID를 중복 없이 추출 → User Service로 사용자 정보 요청
         Set<UUID> userIds = Set.of(product.getCreatedBy(), product.getUpdatedBy());
@@ -127,10 +125,10 @@ public class ProductService {
     @Transactional
     public ProductResponse.Update updateProduct(UUID id, ProductRequest.Update request, CustomUserPrincipal principal) {
         Product product = getProductById(id);
+        Company company = product.getCompany();
 
         // Master가 아니면 담당 허브 또는 본인 업체인지 검증
-        if (!principal.isAccessibleHub(product.getCompany().getHubId())
-                && !principal.isAccessibleCompany(product.getCompany().getCompanyId())) {
+        if (!principal.isAccessibleHub(company.getHubId()) && !principal.isAccessibleCompany(company.getCompanyId())) {
             throw new BaseException(ProductErrorCode.PRODUCT_UPDATE_DENIED);
         }
 
@@ -155,10 +153,10 @@ public class ProductService {
         }
 
         Product product = getProductById(id);
+        Company company = product.getCompany();
 
         // Master가 아니면 담당 허브 또는 본인 업체인지 검증
-        if (!principal.isAccessibleHub(product.getCompany().getHubId())
-                && !principal.isAccessibleCompany(product.getCompany().getCompanyId())) {
+        if (!principal.isAccessibleHub(company.getHubId()) && !principal.isAccessibleCompany(company.getCompanyId())) {
             throw new BaseException(ProductErrorCode.PRODUCT_UPDATE_DENIED);
         }
 
@@ -171,10 +169,10 @@ public class ProductService {
     public ProductResponse.StockUpdate updateProductQuantity(UUID id, ProductRequest.StockUpdate request, CustomUserPrincipal principal) {
         // [데드락 방지] DB에서 비관적 락을 걸고 데이터 조회
         Product product = productRepository.findByIdInForUpdate(id);
+        Company company = product.getCompany();
 
         // Master가 아니면 담당 허브 또는 본인 업체인지 검증
-        if (!principal.isAccessibleHub(product.getCompany().getHubId())
-                && !principal.isAccessibleCompany(product.getCompany().getCompanyId())) {
+        if (!principal.isAccessibleHub(company.getHubId()) && !principal.isAccessibleCompany(company.getCompanyId())) {
             throw new BaseException(ProductErrorCode.PRODUCT_UPDATE_DENIED);
         }
 

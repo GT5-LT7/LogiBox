@@ -57,7 +57,7 @@ class ProductRepositoryImplTest {
         createProduct("마우스", companyA, categoryA, ProductStatus.SOLD_OUT);
 
         // Soft Delete 검증용
-        Product deletedProduct = createProduct("비비고 김치(삭제됨)", companyC, categoryB, ProductStatus.ON_SALE);
+        Product deletedProduct = createProduct("비비고 김치(삭제)", companyC, categoryB, ProductStatus.ON_SALE);
         deletedProduct.softDelete(UUID.randomUUID());
 
         entityManager.flush();
@@ -185,7 +185,9 @@ class ProductRepositoryImplTest {
 
         // then
         assertThat(result.getTotalElements()).isEqualTo(4);
-        assertThat(result.getTotalElements()).isEqualTo(4);
+        assertThat(result.getContent()).extracting(Product::getName)
+                .contains("SAMSUNG 키보드(숨김)")
+                .doesNotContain("LG 울트라기어 모니터(숨김)");
     }
 
     @Test

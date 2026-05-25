@@ -13,6 +13,7 @@ import org.springframework.data.support.PageableExecutionUtils;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Repository
@@ -51,15 +52,17 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
         }
 
         // 2. 숨김 상품에 대한 권한 제어
-        if (!principal.isMaster()) {
+        if (principal == null || !principal.isMaster()) {
             // 기본적으로 숨김 상품 제외
             BooleanBuilder hiddenFilter = new BooleanBuilder(product.status.ne(ProductStatus.HIDDEN));
 
             // 담당 허브 또는 본인 업체의 숨김 상품은 볼 수 있도록 동적 조건 추가
-            if (principal.hubId() != null) {
-                hiddenFilter.or(product.status.eq(ProductStatus.HIDDEN).and(company.hubId.eq(principal.hubId())));
-            } else if (principal.companyId() != null) {
-                hiddenFilter.or(product.status.eq(ProductStatus.HIDDEN).and(company.companyId.eq(principal.companyId())));
+            if (principal != null) {
+                if (principal.hubId() != null) {
+                    hiddenFilter.or(product.status.eq(ProductStatus.HIDDEN).and(company.hubId.eq(principal.hubId())));
+                } else if (principal.companyId() != null) {
+                    hiddenFilter.or(product.status.eq(ProductStatus.HIDDEN).and(company.companyId.eq(principal.companyId())));
+                }
             }
 
             builder.and(hiddenFilter);
