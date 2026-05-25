@@ -1,5 +1,6 @@
 package com.sparta.gt5lt7.catalog.application.facade;
 
+import com.sparta.gt5lt7.catalog.application.service.ProductService;
 import com.sparta.gt5lt7.common.dto.PageResponse;
 import com.sparta.gt5lt7.catalog.domain.entity.CompanyType;
 import com.sparta.gt5lt7.catalog.infrastructure.client.UserClient;
@@ -19,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -31,6 +33,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class CompanyFacade {
     private final CompanyService companyService;
+    private final ProductService productService;
     private final KakaoMapService kakaoMapService;
     private final HubClient hubClient;
     private final UserClient userClient;
@@ -117,5 +120,12 @@ public class CompanyFacade {
         companyService.updateCompany(company);
 
         return CompanyResponse.Update.of(company, hubResponse);
+    }
+
+    @Transactional
+    public CompanyResponse.Delete deleteCompany(UUID id, CustomUserPrincipal principal) {
+        Company company = companyService.deleteCompany(id, principal);
+        productService.deleteProducts(company.getCompanyId(), principal.userId());
+        return CompanyResponse.Delete.from(company);
     }
 }

@@ -7,7 +7,7 @@ import com.sparta.gt5lt7.catalog.domain.repository.CompanyRepository;
 import com.sparta.gt5lt7.catalog.global.exception.CompanyErrorCode;
 import com.sparta.gt5lt7.catalog.presentation.dto.request.CompanyRequest;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.*;
-import org.springframework.context.annotation.Lazy;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -18,14 +18,9 @@ import java.util.UUID;
 
 @Service
 @Transactional(readOnly = true)
+@RequiredArgsConstructor
 public class CompanyService {
-    private final ProductService productService;
     private final CompanyRepository companyRepository;
-
-    public CompanyService(@Lazy ProductService productService, CompanyRepository companyRepository) {
-        this.productService = productService;
-        this.companyRepository = companyRepository;
-    }
 
     @Transactional
     public Company createCompany(CompanyRequest request, CoordinateResponse coordinate) {
@@ -63,7 +58,7 @@ public class CompanyService {
     }
 
     @Transactional
-    public CompanyResponse.Delete deleteCompany(UUID id, CustomUserPrincipal principal) {
+    public Company deleteCompany(UUID id, CustomUserPrincipal principal) {
         Company company = getCompany(id);
 
         // Master가 아니면 담당 허브인지 검증
@@ -71,11 +66,8 @@ public class CompanyService {
             throw new BaseException(CompanyErrorCode.COMPANY_DELETE_DENIED);
         }
 
-        // Soft Delete 처리
-        UUID deletedBy = principal.userId();
-        company.softDelete(deletedBy);
-        productService.deleteProducts(company.getCompanyId(), deletedBy);
+        company.softDelete(principal.userId());
 
-        return CompanyResponse.Delete.from(company);
+        return company;
     }
 }

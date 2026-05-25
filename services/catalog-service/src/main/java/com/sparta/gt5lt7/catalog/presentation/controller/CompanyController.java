@@ -2,7 +2,6 @@ package com.sparta.gt5lt7.catalog.presentation.controller;
 
 import com.sparta.gt5lt7.catalog.application.facade.CompanyFacade;
 import com.sparta.gt5lt7.common.security.CustomUserPrincipal;
-import com.sparta.gt5lt7.catalog.application.service.CompanyService;
 import com.sparta.gt5lt7.catalog.domain.entity.CompanyType;
 import com.sparta.gt5lt7.catalog.presentation.dto.request.CompanyRequest;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.CompanyResponse;
@@ -24,7 +23,6 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class CompanyController {
     private final CompanyFacade companyFacade;
-    private final CompanyService companyService;
 
     @PostMapping
     @PreAuthorize("hasAnyRole('MASTER', 'HUB_MANAGER')")
@@ -72,7 +70,7 @@ public class CompanyController {
             @PathVariable UUID id,
             @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
-        CompanyResponse.Delete response = companyService.deleteCompany(id, principal);
+        CompanyResponse.Delete response = companyFacade.deleteCompany(id, principal);
         return ResponseEntity.ok(ApiResponse.deleted(response));
     }
 }

@@ -7,7 +7,6 @@ import com.sparta.gt5lt7.catalog.domain.entity.CompanyType;
 import com.sparta.gt5lt7.catalog.domain.repository.CompanyRepository;
 import com.sparta.gt5lt7.catalog.global.exception.CompanyErrorCode;
 import com.sparta.gt5lt7.catalog.presentation.dto.request.CompanyRequest;
-import com.sparta.gt5lt7.catalog.presentation.dto.response.CompanyResponse;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.CoordinateResponse;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.HubUsageStatusResponse;
 import com.sparta.gt5lt7.common.exception.BaseException;
@@ -42,9 +41,6 @@ class CompanyServiceTest {
 
     @Mock
     private CompanyRepository companyRepository;
-
-    @Mock
-    private ProductService productService;
 
     private final UUID companyId = UUID.randomUUID();
     private final UUID hubId = UUID.randomUUID();
@@ -113,16 +109,14 @@ class CompanyServiceTest {
             // given
             UUID deletedBy = UUID.randomUUID();
             CustomUserPrincipal principal = CustomUserPrincipal.of(deletedBy, UserRole.ROLE_MASTER, null);
-
             given(companyRepository.findById(companyId)).willReturn(Optional.of(mockCompany));
 
             // when
-            CompanyResponse.Delete response = companyService.deleteCompany(companyId, principal);
+            Company company = companyService.deleteCompany(companyId, principal);
 
             // then
-            assertThat(response.deletedAt()).isNotNull();
+            assertThat(company.getDeletedAt()).isNotNull();
             verify(companyRepository).findById(companyId);
-            verify(productService).deleteProducts(companyId, deletedBy);
         }
 
         @Test
@@ -131,17 +125,14 @@ class CompanyServiceTest {
             // given
             UUID deletedBy = UUID.randomUUID();
             CustomUserPrincipal principal = CustomUserPrincipal.of(deletedBy, UserRole.ROLE_HUB_MANAGER, hubId);
-
             given(companyRepository.findById(companyId)).willReturn(Optional.of(mockCompany));
 
             // when
-            CompanyResponse.Delete response = companyService.deleteCompany(companyId, principal);
+            Company company = companyService.deleteCompany(companyId, principal);
 
             // then
-            assertThat(response.deletedAt()).isNotNull();
-
+            assertThat(company.getDeletedAt()).isNotNull();
             verify(companyRepository).findById(companyId);
-            verify(productService).deleteProducts(companyId, deletedBy);
         }
 
         @Test
@@ -149,14 +140,14 @@ class CompanyServiceTest {
         void test3() {
             // given
             CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_HUB_MANAGER, UUID.randomUUID());
-
             given(companyRepository.findById(companyId)).willReturn(Optional.of(mockCompany));
 
             // when & then
             assertThatThrownBy(() -> companyService.deleteCompany(companyId, principal))
                     .isInstanceOf(BaseException.class)
                     .hasMessageContaining(CompanyErrorCode.COMPANY_DELETE_DENIED.getMessage());
-            verify(productService, never()).deleteProducts(any(UUID.class), any(UUID.class));
+
+            verify(companyRepository).findById(companyId);
         }
     }
 

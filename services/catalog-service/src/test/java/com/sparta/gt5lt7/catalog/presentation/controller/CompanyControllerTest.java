@@ -1,7 +1,6 @@
 package com.sparta.gt5lt7.catalog.presentation.controller;
 
 import com.sparta.gt5lt7.catalog.application.facade.CompanyFacade;
-import com.sparta.gt5lt7.catalog.application.service.CompanyService;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.CompanyResponse;
 import com.sparta.gt5lt7.common.config.WebConfig;
 import com.sparta.gt5lt7.common.dto.PageResponse;
@@ -37,9 +36,6 @@ class CompanyControllerTest {
 
     @MockitoBean
     private CompanyFacade companyFacade;
-
-    @MockitoBean
-    private CompanyService companyService;
 
     @Nested
     @DisplayName("커스텀 페이징 리졸버 동작 테스트")

@@ -2,6 +2,7 @@ package com.sparta.gt5lt7.catalog.application.facade;
 
 import com.sparta.gt5lt7.catalog.application.service.CompanyService;
 import com.sparta.gt5lt7.catalog.application.service.KakaoMapService;
+import com.sparta.gt5lt7.catalog.application.service.ProductService;
 import com.sparta.gt5lt7.catalog.domain.entity.Company;
 import com.sparta.gt5lt7.catalog.domain.entity.CompanyType;
 import com.sparta.gt5lt7.catalog.global.exception.CompanyErrorCode;
@@ -42,6 +43,9 @@ class CompanyFacadeTest {
 
     @Mock
     private CompanyService companyService;
+
+    @Mock
+    private ProductService productService;
 
     @Mock
     private KakaoMapService kakaoMapService;
@@ -169,7 +173,6 @@ class CompanyFacadeTest {
                     .isInstanceOf(BaseException.class)
                     .hasMessageContaining(CompanyErrorCode.COMPANY_NOT_FOUND.getMessage());
 
-
             verify(companyService).getCompany(companyId);
             verifyNoInteractions(hubClient);
             verifyNoInteractions(kakaoMapService);
@@ -217,6 +220,7 @@ class CompanyFacadeTest {
             verify(companyService).getCompany(companyId);
             verify(companyService).updateCompany(mockCompany);
             verify(hubClient).getHub(hubId);
+            verifyNoInteractions(kakaoMapService);
         }
 
         @Test
@@ -235,6 +239,7 @@ class CompanyFacadeTest {
             verify(companyService).getCompany(companyId);
             verify(companyService).updateCompany(mockCompany);
             verify(hubClient).getHub(hubId);
+            verifyNoInteractions(kakaoMapService);
         }
 
         @Test
@@ -258,8 +263,8 @@ class CompanyFacadeTest {
             assertThat(response).isNotNull();
             verify(companyService).getCompany(companyId);
             verify(companyService).updateCompany(mockCompany);
+            verify(hubClient).getHub(hubId);
             verify(kakaoMapService).getCoordinates(request.getBaseAddress());
-            verify(companyService).updateCompany(mockCompany);
         }
 
         @Test
@@ -273,6 +278,11 @@ class CompanyFacadeTest {
             assertThatThrownBy(() -> companyFacade.updateCompany(companyId, companyRequest, principal))
                     .isInstanceOf(BaseException.class)
                     .hasMessageContaining(CompanyErrorCode.COMPANY_UPDATE_DENIED.getMessage());
+
+            verify(companyService).getCompany(companyId);
+            verify(companyService, never()).updateCompany(any());
+            verifyNoInteractions(hubClient);
+            verifyNoInteractions(kakaoMapService);
         }
 
         @Test
@@ -290,6 +300,45 @@ class CompanyFacadeTest {
             verify(companyService).getCompany(companyId);
             verify(companyService, never()).updateCompany(any());
             verifyNoInteractions(hubClient);
+            verifyNoInteractions(kakaoMapService);
+        }
+    }
+
+    @Nested
+    @DisplayName("업체 삭제 테스트")
+    class DeleteCompanyTest {
+        @Test
+        @DisplayName("성공: 업체 삭제 권한 있음")
+        void test1() {
+            // given
+            UUID deletedBy = UUID.randomUUID();
+            CustomUserPrincipal principal = CustomUserPrincipal.of(deletedBy, UserRole.ROLE_MASTER, null);
+            Company mockCompany = createCompany(companyId, createCompanyRequest("삭제 예정 물류"));
+            given(companyService.deleteCompany(companyId, principal)).willReturn(mockCompany);
+
+            // when
+            CompanyResponse.Delete response = companyFacade.deleteCompany(companyId, principal);
+
+            // then
+            assertThat(response).isNotNull();
+            verify(companyService).deleteCompany(companyId, principal);
+            verify(productService).deleteProducts(companyId, deletedBy);
+        }
+
+        @Test
+        @DisplayName("실패: 업체 삭제 권한 없음")
+        void test3() {
+            // given
+            CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_HUB_MANAGER, UUID.randomUUID());
+            given(companyService.deleteCompany(companyId, principal)).willThrow(new BaseException(CompanyErrorCode.COMPANY_NOT_FOUND));
+
+            // when & then
+            assertThatThrownBy(() -> companyFacade.deleteCompany(companyId, principal))
+                    .isInstanceOf(BaseException.class)
+                    .hasMessageContaining(CompanyErrorCode.COMPANY_NOT_FOUND.getMessage());
+
+            verify(companyService).deleteCompany(companyId, principal);
+            verifyNoInteractions(productService);
         }
     }
 
