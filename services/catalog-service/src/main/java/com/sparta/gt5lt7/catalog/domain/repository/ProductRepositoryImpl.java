@@ -13,7 +13,6 @@ import org.springframework.data.support.PageableExecutionUtils;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 
 @Repository
@@ -23,14 +22,11 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
 
     @Override
     public Page<Product> searchProducts(
-            String keyword, Boolean salesOnly, UUID companyId, UUID hubId, UUID categoryId,
+            String keyword, Boolean salesOnly, UUID companyId, UUID hubId,
             Pageable pageable, CustomUserPrincipal principal
     ) {
         QProduct product = QProduct.product;
-
-        // 조인용 Q클래스
-        QCompany company = QCompany.company;
-        QCategory category = QCategory.category;
+        QCompany company = QCompany.company; // 조인용 Q클래스
 
         BooleanBuilder builder = new BooleanBuilder();
 
@@ -46,9 +42,6 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
         }
         if (hubId != null) {
             builder.and(company.hubId.eq(hubId));
-        }
-        if (categoryId != null) {
-            builder.and(category.categoryId.eq(categoryId));
         }
 
         // 2. 숨김 상품에 대한 권한 제어
@@ -75,7 +68,6 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
         List<Product> content = queryFactory
                 .selectFrom(product)
                 .join(product.company, company).fetchJoin()
-                .leftJoin(product.category, category).fetchJoin()
                 .where(builder)
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
@@ -87,7 +79,6 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
                 .select(product.count())
                 .from(product)
                 .join(product.company, company)
-                .leftJoin(product.category, category)
                 .where(builder)
                 .fetchOne();
         long totalCount = (total != null) ? total : 0L;

@@ -39,12 +39,11 @@ public class ProductController {
             @RequestParam(required = false, defaultValue = "false") Boolean salesOnly,
             @RequestParam(required = false) UUID companyId,
             @RequestParam(required = false) UUID hubId,
-            @RequestParam(required = false) UUID categoryId,
             Pageable pageable,
             @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
         PageResponse<ProductResponse.Summary> response = productService.searchProducts(
-                keyword, salesOnly, companyId, hubId, categoryId, pageable, principal
+                keyword, salesOnly, companyId, hubId, pageable, principal
         );
         return ResponseEntity.ok(ApiResponse.success(response));
     }

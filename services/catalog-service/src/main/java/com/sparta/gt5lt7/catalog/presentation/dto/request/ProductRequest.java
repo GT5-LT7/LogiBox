@@ -22,8 +22,6 @@ public class ProductRequest {
         @NotNull(message = "업체 ID는 필수입니다.")
         private UUID companyId;
 
-        private UUID categoryId;
-
         @NotNull(message = "가격은 필수입니다.")
         @PositiveOrZero(message = "가격은 0원 이상이어야 합니다.")
         private Long price;
@@ -43,8 +41,6 @@ public class ProductRequest {
         private String name;
 
         private String description;
-
-        private UUID categoryId;
 
         @NotNull(message = "가격은 필수입니다.")
         @PositiveOrZero(message = "가격은 0원 이상이어야 합니다.")

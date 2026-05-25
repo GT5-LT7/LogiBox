@@ -1,13 +1,11 @@
 package com.sparta.gt5lt7.catalog.domain.repository;
 
-import com.sparta.gt5lt7.catalog.domain.entity.Category;
 import com.sparta.gt5lt7.catalog.domain.entity.Company;
 import com.sparta.gt5lt7.catalog.domain.entity.CompanyType;
 import com.sparta.gt5lt7.catalog.domain.entity.Product;
 import com.sparta.gt5lt7.catalog.global.config.QueryDslConfig;
 import com.sparta.gt5lt7.catalog.global.config.TestJpaConfig;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -31,48 +29,22 @@ class ProductRepositoryTest {
     @Autowired
     private TestEntityManager entityManager;
 
-    @Nested
+    @Test
     @DisplayName("상품 조회 테스트")
-    class FindByIdWithCompanyAndCategoryTest {
-        @Test
-        @DisplayName("업체와 카테고리를 FETCH JOIN으로 한 번에 조회")
-        void test1() {
-            // given
-            Company company = createCompany();
-            Category category = Category.builder().name("테스트 카테고리").build();
-            Product product = createProduct(company, category);
+    void findByIdWithCompanyTest() {
+        // given
+        Company company = createCompany();
+        Product product = createProduct(company);
 
-            entityManager.persist(category);
-            flushAndClear();
+        flushAndClear();
 
-            // when
-            Optional<Product> result = productRepository.findByIdWithCompanyAndCategory(product.getProductId());
+        // when
+        Optional<Product> result = productRepository.findByIdWithCompany(product.getProductId());
 
-            // then
-            assertThat(result).isPresent();
-            assertThat(result.get().getName()).isEqualTo(product.getName());
-            assertThat(result.get().getCompany().getCompanyId()).isEqualTo(company.getCompanyId());
-            assertThat(result.get().getCategory().getCategoryId()).isEqualTo(category.getCategoryId());
-        }
-
-        @Test
-        @DisplayName("카테고리가 null이면 업체만 FETCH JOIN으로 한 번에 조회")
-        void test2() {
-            // given
-            Company company = createCompany();
-            Product product = createProduct(company, null);
-
-            flushAndClear();
-
-            // when
-            Optional<Product> result = productRepository.findByIdWithCompanyAndCategory(product.getProductId());
-
-            // then
-            assertThat(result).isPresent();
-            assertThat(result.get().getName()).isEqualTo(product.getName());
-            assertThat(result.get().getCompany().getName()).isEqualTo(company.getName());
-            assertThat(result.get().getCategory()).isNull();
-        }
+        // then
+        assertThat(result).isPresent();
+        assertThat(result.get().getName()).isEqualTo(product.getName());
+        assertThat(result.get().getCompany().getName()).isEqualTo(company.getName());
     }
 
     @Test
@@ -85,14 +57,14 @@ class ProductRepositoryTest {
         UUID targetCompanyId = targetCompany.getCompanyId();
 
         // 삭제 대상
-        Product targetProduct1 = createProduct(targetCompany, null);
-        Product targetProduct2 = createProduct(targetCompany, null);
+        Product targetProduct1 = createProduct(targetCompany);
+        Product targetProduct2 = createProduct(targetCompany);
 
         // 제외 대상: 이미 삭제된 상품
-        Product deletedProduct = createProduct(targetCompany, null);
+        Product deletedProduct = createProduct(targetCompany);
 
         // 제외 대상: 타 업체 상품
-        Product otherCompanyProduct = createProduct(otherCompany, null);
+        Product otherCompanyProduct = createProduct(otherCompany);
 
         // DB 반영한 후 Soft Delete 처리
         entityManager.flush();
@@ -145,9 +117,9 @@ class ProductRepositoryTest {
         // given
         Company company = createCompany();
 
-        Product product1 = createProduct(company, null);
-        Product product2 = createProduct(company, null);
-        Product product3 = createProduct(company, null);
+        Product product1 = createProduct(company);
+        Product product2 = createProduct(company);
+        Product product3 = createProduct(company);
 
         UUID productId1 = product1.getProductId();
         UUID productId2 = product2.getProductId();
@@ -173,11 +145,10 @@ class ProductRepositoryTest {
         entityManager.clear();
     }
 
-    private Product createProduct(Company company, Category category) {
+    private Product createProduct(Company company) {
         Product product = Product.builder()
                 .name("테스트 상품")
                 .company(company)
-                .category(category)
                 .price(10000L)
                 .quantity(100)
                 .build();

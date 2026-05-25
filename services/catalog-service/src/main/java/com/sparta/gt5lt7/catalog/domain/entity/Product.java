@@ -36,10 +36,6 @@ public class Product extends BaseEntity {
     @JoinColumn(nullable = false, name = "company_id")
     private Company company;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id")
-    private Category category;
-
     @Column(nullable = false)
     private Long price;
 
@@ -50,22 +46,20 @@ public class Product extends BaseEntity {
     private Long version;
 
     @Builder
-    public Product(String name, String description, Company company, Category category, Long price, Integer quantity) {
+    public Product(String name, String description, Company company, Long price, Integer quantity) {
         this.name = name.trim();
         this.description = (description != null && !description.isBlank()) ? description.trim() : null;
         this.status = (quantity > 0) ? ProductStatus.ON_SALE : ProductStatus.SOLD_OUT;
         this.company = company;
-        this.category = category;
         this.price = price;
         this.quantity = quantity;
     }
 
-    public void update(ProductRequest.Update request, Category category) {
+    public void update(ProductRequest.Update request) {
         String description = request.getDescription();
 
         this.name = request.getName().trim();
         this.description = (description != null && !description.isBlank()) ? description.trim() : null;
-        this.category = category;
         this.price = request.getPrice();
     }
     
