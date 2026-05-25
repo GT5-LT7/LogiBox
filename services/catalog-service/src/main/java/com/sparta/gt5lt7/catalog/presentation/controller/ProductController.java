@@ -5,7 +5,7 @@ import com.sparta.gt5lt7.catalog.presentation.dto.request.ProductRequest;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.ProductResponse;
 import com.sparta.gt5lt7.common.dto.ApiResponse;
 import com.sparta.gt5lt7.common.dto.PageResponse;
-import com.sparta.gt5lt7.catalog.application.ProductService;
+import com.sparta.gt5lt7.catalog.application.service.ProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;

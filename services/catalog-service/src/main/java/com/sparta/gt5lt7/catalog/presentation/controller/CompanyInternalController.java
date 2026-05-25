@@ -1,6 +1,6 @@
 package com.sparta.gt5lt7.catalog.presentation.controller;
 
-import com.sparta.gt5lt7.catalog.application.CompanyService;
+import com.sparta.gt5lt7.catalog.application.service.CompanyService;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.HubUsageStatusResponse;
 import com.sparta.gt5lt7.common.dto.ApiResponse;
 import lombok.RequiredArgsConstructor;

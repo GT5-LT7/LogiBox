@@ -1,7 +1,7 @@
-package com.sparta.gt5lt7.catalog.presentation;
+package com.sparta.gt5lt7.catalog.presentation.controller;
 
-import com.sparta.gt5lt7.catalog.presentation.controller.CompanyController;
-import com.sparta.gt5lt7.catalog.application.CompanyService;
+import com.sparta.gt5lt7.catalog.application.facade.CompanyFacade;
+import com.sparta.gt5lt7.catalog.application.service.CompanyService;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.CompanyResponse;
 import com.sparta.gt5lt7.common.config.WebConfig;
 import com.sparta.gt5lt7.common.dto.PageResponse;
@@ -36,6 +36,9 @@ class CompanyControllerTest {
     private MockMvc mockMvc;
 
     @MockitoBean
+    private CompanyFacade companyFacade;
+
+    @MockitoBean
     private CompanyService companyService;
 
     @Nested
@@ -58,7 +61,6 @@ class CompanyControllerTest {
             verify(companyService).searchCompanies(any(), any(), any(), pageableCaptor.capture());
 
             Pageable capturedPageable = pageableCaptor.getValue();
-
             assertThat(capturedPageable.getPageNumber()).isEqualTo(0);
             assertThat(capturedPageable.getPageSize()).isEqualTo(30);
             assertThat(Objects.requireNonNull(capturedPageable.getSort().getOrderFor("updatedAt")).getDirection())
@@ -82,7 +84,6 @@ class CompanyControllerTest {
             verify(companyService).searchCompanies(any(), any(), any(), pageableCaptor.capture());
 
             Pageable capturedPageable = pageableCaptor.getValue();
-
             assertThat(capturedPageable.getPageSize()).isEqualTo(10);
             assertThat(Objects.requireNonNull(capturedPageable.getSort().getOrderFor("createdAt")).getDirection())
                     .isEqualTo(Sort.Direction.DESC);

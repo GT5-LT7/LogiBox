@@ -1,4 +1,4 @@
-package com.sparta.gt5lt7.catalog.application;
+package com.sparta.gt5lt7.catalog.application.service;
 
 import com.sparta.gt5lt7.common.security.CustomUserPrincipal;
 import com.sparta.gt5lt7.catalog.domain.entity.Company;
@@ -48,15 +48,7 @@ public class CompanyService {
     }
 
     @Transactional
-    public CompanyResponse.Create createCompany(CompanyRequest request, CustomUserPrincipal principal) {
-        // Master가 아니면 담당 허브인지 검증
-        if (!principal.isAccessibleHub(request.getHubId())) {
-            throw new BaseException(CompanyErrorCode.COMPANY_CREATE_DENIED);
-        }
-
-        // Kakao Map Service로 좌표 정보 요청
-        CoordinateResponse coordinateResponse = kakaoMapService.getCoordinates(request.getBaseAddress());
-
+    public Company createCompanyEntity(CompanyRequest request, CoordinateResponse coordinate) {
         Company company = Company.builder()
                 .name(request.getName())
                 .type(request.getType())
@@ -65,12 +57,10 @@ public class CompanyService {
                 .baseAddress(request.getBaseAddress())
                 .detailAddress(request.getDetailAddress())
                 .zipcode(request.getZipcode())
-                .latitude(coordinateResponse.latitude())
-                .longitude(coordinateResponse.longitude())
+                .latitude(coordinate.latitude())
+                .longitude(coordinate.longitude())
                 .build();
-
-        Company savedCompany = companyRepository.save(company);
-        return CompanyResponse.Create.from(savedCompany);
+        return companyRepository.save(company);
     }
 
     public PageResponse<CompanyResponse.Summary> searchCompanies(String keyword, CompanyType type, UUID hubId, Pageable pageable) {

@@ -1,6 +1,6 @@
 package com.sparta.gt5lt7.catalog.presentation.controller;
 
-import com.sparta.gt5lt7.catalog.application.ProductService;
+import com.sparta.gt5lt7.catalog.application.service.ProductService;
 import com.sparta.gt5lt7.catalog.presentation.dto.request.ProductRequest;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.ProductResponse;
 import com.sparta.gt5lt7.common.dto.ApiResponse;

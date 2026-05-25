@@ -1,4 +1,4 @@
-package com.sparta.gt5lt7.catalog.application;
+package com.sparta.gt5lt7.catalog.application.service;
 
 import com.sparta.gt5lt7.catalog.presentation.dto.response.CoordinateResponse;
 import org.junit.jupiter.api.DisplayName;

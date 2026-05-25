@@ -1,4 +1,4 @@
-package com.sparta.gt5lt7.catalog.application;
+package com.sparta.gt5lt7.catalog.application.service;
 
 import com.sparta.gt5lt7.common.entity.UserRole;
 import com.sparta.gt5lt7.common.security.CustomUserPrincipal;
@@ -54,9 +54,6 @@ class CompanyServiceTest {
     private ProductService productService;
 
     @Mock
-    private KakaoMapService kakaoMapService;
-
-    @Mock
     private HubClient hubClient;
 
     @Mock
@@ -65,67 +62,22 @@ class CompanyServiceTest {
     private final UUID companyId = UUID.randomUUID();
     private final UUID hubId = UUID.randomUUID();
 
-    private final HubResponse hubResponse  = new HubResponse(hubId, "서울 중앙 허브");
+    private final HubResponse mockHub  = new HubResponse(hubId, "서울 중앙 허브");
 
-    @Nested
-    @DisplayName("업체 생성 테스트")
-    class CreateCompanyTest {
-        private final CompanyRequest companyRequest = createCompanyRequest("스파르타 물류");
-        private final Company mockCompany = createCompany(companyId, companyRequest);
-        private final CoordinateResponse mockCoordinate = new CoordinateResponse(
-                new BigDecimal("37.5"), new BigDecimal("127.0")
-        );
+    @Test
+    @DisplayName("업체 엔티티 생성 테스트")
+    void createCompanyEntityTest() {
+        // given
+        CompanyRequest companyRequest = createCompanyRequest("스파르타 물류");
+        CoordinateResponse mockCoordinate = new CoordinateResponse(new BigDecimal("37.5"), new BigDecimal("127.0"));
+        given(companyRepository.save(any(Company.class))).willReturn(createCompany(companyId, companyRequest));
 
-        @Test
-        @DisplayName("성공: MASTER - 허브 상관 없음")
-        void test1() {
-            // given
-            CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_MASTER, null);
+        // when
+        Company company = companyService.createCompanyEntity(companyRequest, mockCoordinate);
 
-            given(companyRepository.save(any(Company.class))).willReturn(mockCompany);
-            given(kakaoMapService.getCoordinates(anyString())).willReturn(mockCoordinate);
-
-            // when
-            CompanyResponse.Create response = companyService.createCompany(companyRequest, principal);
-
-            // then
-            assertThat(response.name()).isEqualTo(companyRequest.getName());
-            verify(companyRepository).save(any(Company.class));
-            verify(kakaoMapService).getCoordinates(companyRequest.getBaseAddress());
-        }
-
-        @Test
-        @DisplayName("성공: HUB_MANAGER - 담당 허브 ID와 요청 허브 ID 일치")
-        void test2() {
-            // given
-            CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_HUB_MANAGER, hubId);
-
-            given(companyRepository.save(any(Company.class))).willReturn(mockCompany);
-            given(kakaoMapService.getCoordinates(anyString())).willReturn(mockCoordinate);
-
-            // when
-            CompanyResponse.Create response = companyService.createCompany(companyRequest, principal);
-
-            // then
-            assertThat(response).isNotNull();
-            verify(companyRepository).save(any(Company.class));
-            verify(kakaoMapService).getCoordinates(companyRequest.getBaseAddress());
-        }
-
-        @Test
-        @DisplayName("실패: HUB_MANAGER - 담당 허브 ID와 요청 허브 ID 불일치")
-        void test3() {
-            // given
-            CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_HUB_MANAGER, UUID.randomUUID());
-
-            // when & then
-            assertThatThrownBy(() -> companyService.createCompany(companyRequest, principal))
-                    .isInstanceOf(BaseException.class)
-                    .hasMessageContaining(CompanyErrorCode.COMPANY_CREATE_DENIED.getMessage());
-
-            // 레포지토리 저장 및 외부 클라이언트 호출 무시
-            verify(companyRepository, never()).save(any());
-        }
+        // then
+        assertThat(company.getName()).isEqualTo(companyRequest.getName());
+        verify(companyRepository).save(any(Company.class));
     }
 
     @Test
@@ -139,7 +91,7 @@ class CompanyServiceTest {
         Company mockCompany = createCompany(UUID.randomUUID(), createCompanyRequest("스파르타 물류"));
         Page<Company> mockPage = new PageImpl<>(List.of(mockCompany), pageable, 1);
 
-        List<HubResponse> mockHubResponses = List.of(hubResponse);
+        List<HubResponse> mockHubResponses = List.of(mockHub);
 
         given(companyRepository.searchCompanies(keyword, type, hubId, pageable)).willReturn(mockPage);
         given(hubClient.getHubs(Set.of(hubId))).willReturn(mockHubResponses);
@@ -149,7 +101,7 @@ class CompanyServiceTest {
 
         // then
         assertThat(response.getContent()).hasSize(1);
-        assertThat(response.getContent().get(0).info().hub().name()).isEqualTo(hubResponse.name());
+        assertThat(response.getContent().get(0).info().hub().name()).isEqualTo(mockHub.name());
         verify(companyRepository).searchCompanies(keyword, type, hubId, pageable);
         verify(hubClient).getHubs(Set.of(hubId));
     }
@@ -178,7 +130,7 @@ class CompanyServiceTest {
             );
 
             given(companyRepository.findById(companyId)).willReturn(Optional.of(mockCompany));
-            given(hubClient.getHub(hubId)).willReturn(hubResponse);
+            given(hubClient.getHub(hubId)).willReturn(mockHub);
             given(userClient.getUsers(Set.of(createdBy, updatedBy))).willReturn(mockUserResponses);
 
             // when
@@ -236,7 +188,7 @@ class CompanyServiceTest {
             CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_MASTER, null);
 
             given(companyRepository.findById(companyId)).willReturn(Optional.of(mockCompany));
-            given(hubClient.getHub(hubId)).willReturn(hubResponse);
+            given(hubClient.getHub(hubId)).willReturn(mockHub);
 
             // when
             CompanyResponse.Update response = companyService.updateCompany(companyId, companyRequest, principal);
@@ -253,7 +205,7 @@ class CompanyServiceTest {
             CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_HUB_MANAGER, hubId);
 
             given(companyRepository.findById(companyId)).willReturn(Optional.of(mockCompany));
-            given(hubClient.getHub(hubId)).willReturn(hubResponse);
+            given(hubClient.getHub(hubId)).willReturn(mockHub);
 
             // when
             CompanyResponse.Update response = companyService.updateCompany(companyId, companyRequest, principal);
@@ -270,7 +222,7 @@ class CompanyServiceTest {
             CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_COMPANY_MANAGER, companyId);
 
             given(companyRepository.findById(companyId)).willReturn(Optional.of(mockCompany));
-            given(hubClient.getHub(hubId)).willReturn(hubResponse);
+            given(hubClient.getHub(hubId)).willReturn(mockHub);
 
             // when
             CompanyResponse.Update response = companyService.updateCompany(companyId, companyRequest, principal);
