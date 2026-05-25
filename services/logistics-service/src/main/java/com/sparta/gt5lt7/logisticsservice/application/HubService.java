@@ -16,6 +16,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.sparta.gt5lt7.common.security.CustomUserPrincipal;
 
 import java.util.UUID;
 
@@ -81,5 +82,17 @@ public class HubService {
         } catch (DataIntegrityViolationException e) {
             throw new HubException(HubErrorCode.HUB_NAME_DUPLICATED);
         }
+    }
+
+    @Transactional
+    @CacheEvict(cacheNames = "hub", key = "#hubId")
+    public HubResponse deleteHub(UUID hubId, CustomUserPrincipal principal) {
+        Hub hub = hubRepository.findByHubIdAndDeletedAtIsNull(hubId)
+                .orElseThrow(() -> new HubException(HubErrorCode.HUB_NOT_FOUND));
+
+        // BaseEntity에 정의된 softDelete 사용 (deletedAt, deletedBy 자동 세팅)
+        hub.softDelete(principal.userId());
+
+        return HubResponse.from(hub);
     }
 }
