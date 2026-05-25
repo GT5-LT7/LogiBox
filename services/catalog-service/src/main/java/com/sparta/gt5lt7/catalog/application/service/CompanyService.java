@@ -5,8 +5,6 @@ import com.sparta.gt5lt7.catalog.domain.entity.Company;
 import com.sparta.gt5lt7.catalog.domain.entity.CompanyType;
 import com.sparta.gt5lt7.catalog.domain.repository.CompanyRepository;
 import com.sparta.gt5lt7.catalog.global.exception.CompanyErrorCode;
-import com.sparta.gt5lt7.catalog.infrastructure.client.HubClient;
-import com.sparta.gt5lt7.catalog.infrastructure.client.dto.HubResponse;
 import com.sparta.gt5lt7.catalog.presentation.dto.request.CompanyRequest;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.*;
 import org.springframework.context.annotation.Lazy;
@@ -21,24 +19,16 @@ import java.util.UUID;
 @Service
 @Transactional(readOnly = true)
 public class CompanyService {
-    private final HubClient hubClient;
     private final ProductService productService;
-    private final KakaoMapService kakaoMapService;
     private final CompanyRepository companyRepository;
 
-    public CompanyService(
-            HubClient hubClient,
-            @Lazy ProductService productService, KakaoMapService kakaoMapService,
-            CompanyRepository companyRepository
-    ) {
-        this.hubClient = hubClient;
+    public CompanyService(@Lazy ProductService productService, CompanyRepository companyRepository) {
         this.productService = productService;
-        this.kakaoMapService = kakaoMapService;
         this.companyRepository = companyRepository;
     }
 
     @Transactional
-    public Company createCompanyEntity(CompanyRequest request, CoordinateResponse coordinate) {
+    public Company createCompany(CompanyRequest request, CoordinateResponse coordinate) {
         Company company = Company.builder()
                 .name(request.getName())
                 .type(request.getType())
@@ -68,26 +58,8 @@ public class CompanyService {
     }
 
     @Transactional
-    public CompanyResponse.Update updateCompany(UUID id, CompanyRequest request, CustomUserPrincipal principal) {
-        Company company = getCompany(id);
-
-        // Master가 아니면 담당 허브 또는 본인 업체인지 검증
-        if (!principal.isAccessibleHub(company.getHubId()) && !principal.isAccessibleCompany(id)) {
-            throw new BaseException(CompanyErrorCode.COMPANY_UPDATE_DENIED);
-        }
-
-        // 주소 변경 시 Kakao Map Service로 좌표 정보 요청
-        if (!company.getBaseAddress().equals(request.getBaseAddress())) {
-            CoordinateResponse coordinateResponse = kakaoMapService.getCoordinates(request.getBaseAddress());
-            company.updateCoordinate(coordinateResponse.latitude(), coordinateResponse.longitude());
-        }
-
-        company.update(request);
-
-        // Hub Service로 허브 정보 요청
-        HubResponse hubResponse = hubClient.getHub(company.getHubId());
-
-        return CompanyResponse.Update.of(company, hubResponse);
+    public void updateCompany(Company company) {
+        companyRepository.save(company);
     }
 
     @Transactional

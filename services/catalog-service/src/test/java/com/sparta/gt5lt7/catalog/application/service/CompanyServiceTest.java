@@ -6,8 +6,6 @@ import com.sparta.gt5lt7.catalog.domain.entity.Company;
 import com.sparta.gt5lt7.catalog.domain.entity.CompanyType;
 import com.sparta.gt5lt7.catalog.domain.repository.CompanyRepository;
 import com.sparta.gt5lt7.catalog.global.exception.CompanyErrorCode;
-import com.sparta.gt5lt7.catalog.infrastructure.client.HubClient;
-import com.sparta.gt5lt7.catalog.infrastructure.client.dto.HubResponse;
 import com.sparta.gt5lt7.catalog.presentation.dto.request.CompanyRequest;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.CompanyResponse;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.CoordinateResponse;
@@ -48,27 +46,22 @@ class CompanyServiceTest {
     @Mock
     private ProductService productService;
 
-    @Mock
-    private HubClient hubClient;
-
     private final UUID companyId = UUID.randomUUID();
     private final UUID hubId = UUID.randomUUID();
 
-    private final HubResponse mockHub  = new HubResponse(hubId, "서울 중앙 허브");
-
     @Test
     @DisplayName("업체 엔티티 생성 테스트")
-    void createCompanyEntityTest() {
+    void createCompanyTest() {
         // given
-        CompanyRequest companyRequest = createCompanyRequest("스파르타 물류");
+        CompanyRequest request = createCompanyRequest("스파르타 물류");
         CoordinateResponse mockCoordinate = new CoordinateResponse(new BigDecimal("37.5"), new BigDecimal("127.0"));
-        given(companyRepository.save(any(Company.class))).willReturn(createCompany(companyId, companyRequest));
+        given(companyRepository.save(any(Company.class))).willReturn(createCompany(companyId, request));
 
         // when
-        Company company = companyService.createCompanyEntity(companyRequest, mockCoordinate);
+        Company company = companyService.createCompany(request, mockCoordinate);
 
         // then
-        assertThat(company.getName()).isEqualTo(companyRequest.getName());
+        assertThat(company.getName()).isEqualTo(request.getName());
         verify(companyRepository).save(any(Company.class));
     }
 
@@ -107,92 +100,6 @@ class CompanyServiceTest {
         assertThat(response).isNotNull();
         assertThat(response.used()).isTrue();
         verify(companyRepository).existsByHubId(hubId);
-    }
-
-    @Nested
-    @DisplayName("업체 수정 테스트")
-    class UpdateCompanyTest {
-        private final Company mockCompany = createCompany(companyId, createCompanyRequest("수정 예정 물류"));
-        private final CompanyRequest companyRequest = createCompanyRequest("스파르타 물류");
-
-        @Test
-        @DisplayName("성공: MASTER - 허브 상관 없음")
-        void test1() {
-            // given
-            CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_MASTER, null);
-
-            given(companyRepository.findById(companyId)).willReturn(Optional.of(mockCompany));
-            given(hubClient.getHub(hubId)).willReturn(mockHub);
-
-            // when
-            CompanyResponse.Update response = companyService.updateCompany(companyId, companyRequest, principal);
-
-            // then
-            assertThat(response.info().name()).isEqualTo(companyRequest.getName());
-            verify(hubClient).getHub(hubId);
-        }
-
-        @Test
-        @DisplayName("성공: HUB_MANAGER - 담당 허브 ID와 요청 허브 ID 일치")
-        void test2() {
-            // given
-            CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_HUB_MANAGER, hubId);
-
-            given(companyRepository.findById(companyId)).willReturn(Optional.of(mockCompany));
-            given(hubClient.getHub(hubId)).willReturn(mockHub);
-
-            // when
-            CompanyResponse.Update response = companyService.updateCompany(companyId, companyRequest, principal);
-
-            // then
-            assertThat(response).isNotNull();
-            verify(hubClient).getHub(hubId);
-        }
-
-        @Test
-        @DisplayName("성공: COMPANY_MANAGER - 본인 업체 ID와 요청 업체 ID 일치")
-        void test3() {
-            // given
-            CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_COMPANY_MANAGER, companyId);
-
-            given(companyRepository.findById(companyId)).willReturn(Optional.of(mockCompany));
-            given(hubClient.getHub(hubId)).willReturn(mockHub);
-
-            // when
-            CompanyResponse.Update response = companyService.updateCompany(companyId, companyRequest, principal);
-
-            // then
-            assertThat(response).isNotNull();
-            verify(hubClient).getHub(hubId);
-        }
-
-        @Test
-        @DisplayName("실패: HUB_MANAGER - 담당 허브 ID와 요청 허브 ID 불일치")
-        void test4() {
-            // given
-            CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_HUB_MANAGER, UUID.randomUUID());
-
-            given(companyRepository.findById(companyId)).willReturn(Optional.of(mockCompany));
-
-            // when & then
-            assertThatThrownBy(() -> companyService.updateCompany(companyId, companyRequest, principal))
-                    .isInstanceOf(BaseException.class)
-                    .hasMessageContaining(CompanyErrorCode.COMPANY_UPDATE_DENIED.getMessage());
-        }
-
-        @Test
-        @DisplayName("실패: COMPANY_MANAGER - 본인 업체 ID와 요청 업체 ID 불일치")
-        void test5() {
-            // given
-            CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_COMPANY_MANAGER, UUID.randomUUID());
-
-            given(companyRepository.findById(companyId)).willReturn(Optional.of(mockCompany));
-
-            // when & then
-            assertThatThrownBy(() -> companyService.updateCompany(companyId, companyRequest, principal))
-                    .isInstanceOf(BaseException.class)
-                    .hasMessageContaining(CompanyErrorCode.COMPANY_UPDATE_DENIED.getMessage());
-        }
     }
 
     @Nested

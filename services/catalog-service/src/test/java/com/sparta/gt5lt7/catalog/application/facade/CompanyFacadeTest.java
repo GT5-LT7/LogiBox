@@ -73,7 +73,7 @@ class CompanyFacadeTest {
             CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_MASTER, null);
             given(hubClient.getHub(hubId)).willReturn(mockHub);
             given(kakaoMapService.getCoordinates(companyRequest.getBaseAddress())).willReturn(mockCoordinate);
-            given(companyService.createCompanyEntity(companyRequest, mockCoordinate)).willReturn(mockCompany);
+            given(companyService.createCompany(companyRequest, mockCoordinate)).willReturn(mockCompany);
 
             // when
             CompanyResponse.Create response = companyFacade.createCompany(companyRequest, principal);
@@ -82,7 +82,7 @@ class CompanyFacadeTest {
             assertThat(response.name()).isEqualTo(companyRequest.getName());
             verify(hubClient).getHub(hubId);
             verify(kakaoMapService).getCoordinates(companyRequest.getBaseAddress());
-            verify(companyService).createCompanyEntity(companyRequest, mockCoordinate);
+            verify(companyService).createCompany(companyRequest, mockCoordinate);
         }
 
         @Test
@@ -92,7 +92,7 @@ class CompanyFacadeTest {
             CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_HUB_MANAGER, hubId);
             given(hubClient.getHub(companyRequest.getHubId())).willReturn(mockHub);
             given(kakaoMapService.getCoordinates(companyRequest.getBaseAddress())).willReturn(mockCoordinate);
-            given(companyService.createCompanyEntity(companyRequest, mockCoordinate)).willReturn(mockCompany);
+            given(companyService.createCompany(companyRequest, mockCoordinate)).willReturn(mockCompany);
 
             // when
             CompanyResponse.Create response = companyFacade.createCompany(companyRequest, principal);
@@ -101,7 +101,7 @@ class CompanyFacadeTest {
             assertThat(response).isNotNull();
             verify(hubClient).getHub(companyRequest.getHubId());
             verify(kakaoMapService).getCoordinates(companyRequest.getBaseAddress());
-            verify(companyService).createCompanyEntity(companyRequest, mockCoordinate);
+            verify(companyService).createCompany(companyRequest, mockCoordinate);
         }
 
         @Test
@@ -162,8 +162,7 @@ class CompanyFacadeTest {
         @DisplayName("실패: 존재하지 않는 업체 ID - COMPANY_NOT_FOUND 예외 발생")
         void test2() {
             // given
-            given(companyService.getCompany(companyId))
-                    .willThrow(new BaseException(CompanyErrorCode.COMPANY_NOT_FOUND));
+            given(companyService.getCompany(companyId)).willThrow(new BaseException(CompanyErrorCode.COMPANY_NOT_FOUND));
 
             // when & then
             assertThatThrownBy(() -> companyFacade.getCompany(companyId))
@@ -174,6 +173,123 @@ class CompanyFacadeTest {
             verify(companyService).getCompany(companyId);
             verifyNoInteractions(hubClient);
             verifyNoInteractions(kakaoMapService);
+        }
+    }
+
+    @Nested
+    @DisplayName("업체 수정 테스트")
+    class UpdateCompanyTest {
+        private final CompanyRequest companyRequest = createCompanyRequest("스파르타 물류");
+        private final Company mockCompany = createCompany(companyId, createCompanyRequest("수정 예정 물류"));
+
+        @Test
+        @DisplayName("성공: MASTER - 허브 상관 없음")
+        void test1() {
+            // given
+            CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_MASTER, null);
+            given(companyService.getCompany(companyId)).willReturn(mockCompany);
+            given(hubClient.getHub(hubId)).willReturn(mockHub);
+
+            // when
+            CompanyResponse.Update response = companyFacade.updateCompany(companyId, companyRequest, principal);
+
+            // then
+            assertThat(response.info().name()).isEqualTo(companyRequest.getName());
+            verify(companyService).getCompany(companyId);
+            verify(companyService).updateCompany(mockCompany);
+            verify(hubClient).getHub(hubId);
+            verifyNoInteractions(kakaoMapService);
+        }
+
+        @Test
+        @DisplayName("성공: HUB_MANAGER - 담당 허브 ID와 요청 허브 ID 일치")
+        void test2() {
+            // given
+            CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_HUB_MANAGER, hubId);
+            given(companyService.getCompany(companyId)).willReturn(mockCompany);
+            given(hubClient.getHub(hubId)).willReturn(mockHub);
+
+            // when
+            CompanyResponse.Update response = companyFacade.updateCompany(companyId, companyRequest, principal);
+
+            // then
+            assertThat(response).isNotNull();
+            verify(companyService).getCompany(companyId);
+            verify(companyService).updateCompany(mockCompany);
+            verify(hubClient).getHub(hubId);
+        }
+
+        @Test
+        @DisplayName("성공: COMPANY_MANAGER - 본인 업체 ID와 요청 업체 ID 일치")
+        void test3() {
+            // given
+            CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_COMPANY_MANAGER, companyId);
+            given(companyService.getCompany(companyId)).willReturn(mockCompany);
+            given(hubClient.getHub(hubId)).willReturn(mockHub);
+
+            // when
+            CompanyResponse.Update response = companyFacade.updateCompany(companyId, companyRequest, principal);
+
+            // then
+            assertThat(response).isNotNull();
+            verify(companyService).getCompany(companyId);
+            verify(companyService).updateCompany(mockCompany);
+            verify(hubClient).getHub(hubId);
+        }
+
+        @Test
+        @DisplayName("성공: 주소 변경 시 Kakao Map API 호출하여 좌표 갱신 업데이트한다")
+        void test4() {
+            // given
+            CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_MASTER, null);
+            CoordinateResponse mockCoordinate = new CoordinateResponse(BigDecimal.valueOf(35.1234), BigDecimal.valueOf(129.1234));
+
+            CompanyRequest request = createCompanyRequest("스파르타 물류");
+            ReflectionTestUtils.setField(request, "baseAddress", "새로운 부산 주소");
+
+            given(companyService.getCompany(companyId)).willReturn(mockCompany);
+            given(kakaoMapService.getCoordinates(request.getBaseAddress())).willReturn(mockCoordinate);
+            given(hubClient.getHub(hubId)).willReturn(mockHub);
+
+            // when
+            CompanyResponse.Update response = companyFacade.updateCompany(companyId, request, principal);
+
+            // then
+            assertThat(response).isNotNull();
+            verify(companyService).getCompany(companyId);
+            verify(companyService).updateCompany(mockCompany);
+            verify(kakaoMapService).getCoordinates(request.getBaseAddress());
+            verify(companyService).updateCompany(mockCompany);
+        }
+
+        @Test
+        @DisplayName("실패: HUB_MANAGER - 담당 허브 ID와 요청 허브 ID 불일치")
+        void test5() {
+            // given
+            CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_HUB_MANAGER, UUID.randomUUID());
+            given(companyService.getCompany(companyId)).willReturn(mockCompany);
+
+            // when & then
+            assertThatThrownBy(() -> companyFacade.updateCompany(companyId, companyRequest, principal))
+                    .isInstanceOf(BaseException.class)
+                    .hasMessageContaining(CompanyErrorCode.COMPANY_UPDATE_DENIED.getMessage());
+        }
+
+        @Test
+        @DisplayName("실패: COMPANY_MANAGER - 본인 업체 ID와 요청 업체 ID 불일치")
+        void test6() {
+            // given
+            CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_COMPANY_MANAGER, UUID.randomUUID());
+            given(companyService.getCompany(companyId)).willReturn(mockCompany);
+
+            // when & then
+            assertThatThrownBy(() -> companyFacade.updateCompany(companyId, companyRequest, principal))
+                    .isInstanceOf(BaseException.class)
+                    .hasMessageContaining(CompanyErrorCode.COMPANY_UPDATE_DENIED.getMessage());
+
+            verify(companyService).getCompany(companyId);
+            verify(companyService, never()).updateCompany(any());
+            verifyNoInteractions(hubClient);
         }
     }
 

@@ -62,7 +62,7 @@ public class CompanyController {
             @Valid @RequestBody CompanyRequest request,
             @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
-        CompanyResponse.Update response = companyService.updateCompany(id, request, principal);
+        CompanyResponse.Update response = companyFacade.updateCompany(id, request, principal);
         return ResponseEntity.ok(ApiResponse.updated(response));
     }
 

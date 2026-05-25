@@ -41,20 +41,20 @@ public class CompanyFacade {
             throw new BaseException(CompanyErrorCode.COMPANY_CREATE_DENIED);
         }
 
-        // [MSA 통신] Hub Service로 허브 정보 요청 (존재하지 않으면 404 예외)
+        // [MSA 통신] Hub Service로 허브 정보 요청
         hubClient.getHub(request.getHubId());
 
         // [외부 통신] Kakao Map Service로 좌표 정보 요청
         CoordinateResponse coordinate = kakaoMapService.getCoordinates(request.getBaseAddress());
 
-        // [서비스 레이어]
-        Company company = companyService.createCompanyEntity(request, coordinate);
+        // [서비스 레이어] 업체 생성
+        Company company = companyService.createCompany(request, coordinate);
 
         return CompanyResponse.Create.from(company);
     }
 
     public PageResponse<CompanyResponse.Summary> searchCompanies(String keyword, CompanyType type, UUID hubId, Pageable pageable) {
-        // [서비스 레이어]
+        // [서비스 레이어] 업체 목록 조회
         Page<Company> companyPage = companyService.searchCompanies(keyword, type, hubId, pageable);
 
         // [MSA 통신] 허브 ID를 중복 없이 추출 → Hub Service로 허브 정보 요청
@@ -74,7 +74,7 @@ public class CompanyFacade {
     }
 
     public CompanyResponse.Detail getCompany(UUID id) {
-        // [서비스 레이어]
+        // [서비스 레이어] 업체 조회
         Company company = companyService.getCompany(id);
 
         // [MSA 통신] Hub Service로 허브 정보 요청
@@ -91,5 +91,31 @@ public class CompanyFacade {
         return CompanyResponse.Detail.of(
                 company, hub, userMap.get(company.getCreatedBy()), userMap.get(company.getUpdatedBy())
         );
+    }
+
+    public CompanyResponse.Update updateCompany(UUID id, CompanyRequest request, CustomUserPrincipal principal) {
+        // [서비스 레이어] 업체 조회
+        Company company = companyService.getCompany(id);
+
+        // [권한 검증] Master가 아니면 담당 허브 또는 본인 업체인지 검증
+        if (!principal.isAccessibleHub(company.getHubId()) && !principal.isAccessibleCompany(id)) {
+            throw new BaseException(CompanyErrorCode.COMPANY_UPDATE_DENIED);
+        }
+
+        // [외부 통신] 주소 변경 시 Kakao Map Service로 좌표 정보 요청
+        if (!company.getBaseAddress().equals(request.getBaseAddress())) {
+            CoordinateResponse coordinateResponse = kakaoMapService.getCoordinates(request.getBaseAddress());
+            company.updateCoordinate(coordinateResponse.latitude(), coordinateResponse.longitude());
+        }
+
+        company.update(request);
+
+        // [MSA 통신] Hub Service로 허브 정보 요청
+        HubResponse hubResponse = hubClient.getHub(company.getHubId());
+
+        // [서비스 레이어] 업체 수정
+        companyService.updateCompany(company);
+
+        return CompanyResponse.Update.of(company, hubResponse);
     }
 }
