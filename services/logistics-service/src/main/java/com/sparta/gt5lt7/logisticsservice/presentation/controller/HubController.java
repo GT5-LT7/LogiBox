@@ -1,4 +1,4 @@
-package com.sparta.gt5lt7.logisticsservice.presentation;
+package com.sparta.gt5lt7.logisticsservice.presentation.controller;
 
 import com.sparta.gt5lt7.common.dto.ApiResponse;
 import com.sparta.gt5lt7.common.dto.PageResponse;
