@@ -99,9 +99,47 @@ class CompanyServiceTest {
     }
 
     @Nested
+    @DisplayName("업체 수정 테스트")
+    class UpdateCompanyTest {
+        private final Company mockCompany = createCompany(companyId, createCompanyRequest("수정 예정 물류"));
+        private final CompanyRequest request = createCompanyRequest("새로운 이름");
+
+        @Test
+        @DisplayName("성공: 좌표 정보가 null이면 위·경도 유지")
+        void testUpdateWithoutCoordinate() {
+            // given
+            given(companyRepository.save(any(Company.class))).willAnswer(invocation -> invocation.getArgument(0));
+
+            // when
+            Company updated = companyService.updateCompany(mockCompany, request, null);
+
+            // then
+            assertThat(updated.getName()).isEqualTo(request.getName());
+            assertThat(updated.getLatitude()).isEqualTo(BigDecimal.valueOf(37.503));
+            assertThat(updated.getLongitude()).isEqualTo(BigDecimal.valueOf(127.044));
+        }
+
+        @Test
+        @DisplayName("성공: 좌표 정보가 null이 아니면 위·경도 갱신")
+        void testUpdateWithCoordinate() {
+            // given
+            CoordinateResponse mockCoordinate = new CoordinateResponse(BigDecimal.valueOf(35.1234), BigDecimal.valueOf(129.1234));
+            given(companyRepository.save(any(Company.class))).willAnswer(invocation -> invocation.getArgument(0));
+
+            // when
+            Company updated = companyService.updateCompany(mockCompany, request, mockCoordinate);
+
+            // then
+            assertThat(updated.getName()).isEqualTo(request.getName());
+            assertThat(updated.getLatitude()).isEqualTo(mockCoordinate.latitude());
+            assertThat(updated.getLongitude()).isEqualTo(mockCoordinate.longitude());
+        }
+    }
+
+    @Nested
     @DisplayName("업체 삭제 테스트")
     class DeleteCompanyTest {
-        private final Company mockCompany = createCompany(companyId, createCompanyRequest("수정 예정 물류"));
+        private final Company mockCompany = createCompany(companyId, createCompanyRequest("삭제 예정 물류"));
 
         @Test
         @DisplayName("성공: MASTER - 허브 상관 없음")
@@ -136,7 +174,7 @@ class CompanyServiceTest {
         }
 
         @Test
-        @DisplayName("실패: HUB_MANAGER - 담당 허브 ID와 요청 허브 ID 일치")
+        @DisplayName("실패: HUB_MANAGER - 담당 허브 ID와 요청 허브 ID 불일치")
         void test3() {
             // given
             CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_HUB_MANAGER, UUID.randomUUID());

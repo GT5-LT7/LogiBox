@@ -76,7 +76,7 @@ class CompanyFacadeTest {
             // given
             CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_MASTER, null);
             given(hubClient.getHub(hubId)).willReturn(mockHub);
-            given(kakaoMapService.getCoordinates(companyRequest.getBaseAddress())).willReturn(mockCoordinate);
+            given(kakaoMapService.getCoordinate(companyRequest.getBaseAddress())).willReturn(mockCoordinate);
             given(companyService.createCompany(companyRequest, mockCoordinate)).willReturn(mockCompany);
 
             // when
@@ -85,17 +85,17 @@ class CompanyFacadeTest {
             // then
             assertThat(response.name()).isEqualTo(companyRequest.getName());
             verify(hubClient).getHub(hubId);
-            verify(kakaoMapService).getCoordinates(companyRequest.getBaseAddress());
+            verify(kakaoMapService).getCoordinate(companyRequest.getBaseAddress());
             verify(companyService).createCompany(companyRequest, mockCoordinate);
         }
 
         @Test
-        @DisplayName("성공: HUB_MANAGER - 담당 허브 ID와 요청 허브 ID 일치")
+        @DisplayName("성공: HUB_MANAGER - 담당 허브")
         void test2() {
             // given
             CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_HUB_MANAGER, hubId);
             given(hubClient.getHub(companyRequest.getHubId())).willReturn(mockHub);
-            given(kakaoMapService.getCoordinates(companyRequest.getBaseAddress())).willReturn(mockCoordinate);
+            given(kakaoMapService.getCoordinate(companyRequest.getBaseAddress())).willReturn(mockCoordinate);
             given(companyService.createCompany(companyRequest, mockCoordinate)).willReturn(mockCompany);
 
             // when
@@ -104,12 +104,12 @@ class CompanyFacadeTest {
             // then
             assertThat(response).isNotNull();
             verify(hubClient).getHub(companyRequest.getHubId());
-            verify(kakaoMapService).getCoordinates(companyRequest.getBaseAddress());
+            verify(kakaoMapService).getCoordinate(companyRequest.getBaseAddress());
             verify(companyService).createCompany(companyRequest, mockCoordinate);
         }
 
         @Test
-        @DisplayName("실패: HUB_MANAGER - 담당 허브 ID와 요청 허브 ID 불일치")
+        @DisplayName("실패: HUB_MANAGER - 담당 허브 아님")
         void test3() {
             // given
             CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_HUB_MANAGER, UUID.randomUUID());
@@ -163,7 +163,7 @@ class CompanyFacadeTest {
         }
 
         @Test
-        @DisplayName("실패: 존재하지 않는 업체 ID - COMPANY_NOT_FOUND 예외 발생")
+        @DisplayName("실패: 존재하지 않는 업체 ID")
         void test2() {
             // given
             given(companyService.getCompany(companyId)).willThrow(new BaseException(CompanyErrorCode.COMPANY_NOT_FOUND));
@@ -182,8 +182,8 @@ class CompanyFacadeTest {
     @Nested
     @DisplayName("업체 수정 테스트")
     class UpdateCompanyTest {
-        private final CompanyRequest companyRequest = createCompanyRequest("스파르타 물류");
-        private final Company mockCompany = createCompany(companyId, createCompanyRequest("수정 예정 물류"));
+        private final CompanyRequest request = createCompanyRequest("스파르타 물류");
+        private final Company mockCompany = createCompany(companyId, request);
 
         @Test
         @DisplayName("성공: MASTER - 허브 상관 없음")
@@ -191,15 +191,16 @@ class CompanyFacadeTest {
             // given
             CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_MASTER, null);
             given(companyService.getCompany(companyId)).willReturn(mockCompany);
+            given(companyService.updateCompany(mockCompany, request, null)).willReturn(mockCompany);
             given(hubClient.getHub(hubId)).willReturn(mockHub);
 
             // when
-            CompanyResponse.Update response = companyFacade.updateCompany(companyId, companyRequest, principal);
+            CompanyResponse.Update response = companyFacade.updateCompany(companyId, request, principal);
 
             // then
-            assertThat(response.info().name()).isEqualTo(companyRequest.getName());
+            assertThat(response.info().name()).isEqualTo(request.getName());
             verify(companyService).getCompany(companyId);
-            verify(companyService).updateCompany(mockCompany);
+            verify(companyService).updateCompany(mockCompany, request, null);
             verify(hubClient).getHub(hubId);
             verifyNoInteractions(kakaoMapService);
         }
@@ -210,15 +211,16 @@ class CompanyFacadeTest {
             // given
             CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_HUB_MANAGER, hubId);
             given(companyService.getCompany(companyId)).willReturn(mockCompany);
+            given(companyService.updateCompany(mockCompany, request, null)).willReturn(mockCompany);
             given(hubClient.getHub(hubId)).willReturn(mockHub);
 
             // when
-            CompanyResponse.Update response = companyFacade.updateCompany(companyId, companyRequest, principal);
+            CompanyResponse.Update response = companyFacade.updateCompany(companyId, request, principal);
 
             // then
             assertThat(response).isNotNull();
             verify(companyService).getCompany(companyId);
-            verify(companyService).updateCompany(mockCompany);
+            verify(companyService).updateCompany(mockCompany, request, null);
             verify(hubClient).getHub(hubId);
             verifyNoInteractions(kakaoMapService);
         }
@@ -229,31 +231,7 @@ class CompanyFacadeTest {
             // given
             CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_COMPANY_MANAGER, companyId);
             given(companyService.getCompany(companyId)).willReturn(mockCompany);
-            given(hubClient.getHub(hubId)).willReturn(mockHub);
-
-            // when
-            CompanyResponse.Update response = companyFacade.updateCompany(companyId, companyRequest, principal);
-
-            // then
-            assertThat(response).isNotNull();
-            verify(companyService).getCompany(companyId);
-            verify(companyService).updateCompany(mockCompany);
-            verify(hubClient).getHub(hubId);
-            verifyNoInteractions(kakaoMapService);
-        }
-
-        @Test
-        @DisplayName("성공: 주소 변경 시 Kakao Map API 호출하여 좌표 갱신 업데이트한다")
-        void test4() {
-            // given
-            CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_MASTER, null);
-            CoordinateResponse mockCoordinate = new CoordinateResponse(BigDecimal.valueOf(35.1234), BigDecimal.valueOf(129.1234));
-
-            CompanyRequest request = createCompanyRequest("스파르타 물류");
-            ReflectionTestUtils.setField(request, "baseAddress", "새로운 부산 주소");
-
-            given(companyService.getCompany(companyId)).willReturn(mockCompany);
-            given(kakaoMapService.getCoordinates(request.getBaseAddress())).willReturn(mockCoordinate);
+            given(companyService.updateCompany(mockCompany, request, null)).willReturn(mockCompany);
             given(hubClient.getHub(hubId)).willReturn(mockHub);
 
             // when
@@ -262,43 +240,136 @@ class CompanyFacadeTest {
             // then
             assertThat(response).isNotNull();
             verify(companyService).getCompany(companyId);
-            verify(companyService).updateCompany(mockCompany);
+            verify(companyService).updateCompany(mockCompany, request, null);
             verify(hubClient).getHub(hubId);
-            verify(kakaoMapService).getCoordinates(request.getBaseAddress());
+            verifyNoInteractions(kakaoMapService);
+        }
+
+        @Test
+        @DisplayName("성공: 주소 변경 시 카카오맵 API를 호출해 위·경도 갱신")
+        void test4() {
+            // given
+            CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_MASTER, null);
+            CoordinateResponse mockCoordinate = new CoordinateResponse(BigDecimal.valueOf(35.1234), BigDecimal.valueOf(129.1234));
+
+            CompanyRequest request = createCompanyRequest("스파르타 물류");
+            ReflectionTestUtils.setField(request, "baseAddress", "새로운 주소");
+
+            given(companyService.getCompany(companyId)).willReturn(mockCompany);
+            given(companyService.updateCompany(mockCompany, request, mockCoordinate)).willReturn(mockCompany);
+            given(kakaoMapService.getCoordinate(request.getBaseAddress())).willReturn(mockCoordinate);
+            given(hubClient.getHub(hubId)).willReturn(mockHub);
+
+            // when
+            CompanyResponse.Update response = companyFacade.updateCompany(companyId, request, principal);
+
+            // then
+            assertThat(response).isNotNull();
+            verify(companyService).getCompany(companyId);
+            verify(companyService).updateCompany(mockCompany, request, mockCoordinate);
+            verify(hubClient).getHub(hubId);
+            verify(kakaoMapService).getCoordinate(request.getBaseAddress());
+        }
+
+        @Test
+        @DisplayName("성공: MASTER - 허브 변경 가능")
+        void test5() {
+            // given
+            CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_MASTER, null);
+
+            UUID newHubId = UUID.randomUUID();
+            CompanyRequest request = createCompanyRequest("스파르타 물류");
+            ReflectionTestUtils.setField(request, "hubId", newHubId);
+
+            given(companyService.getCompany(companyId)).willReturn(mockCompany);
+            given(companyService.updateCompany(mockCompany, request, null)).willReturn(mockCompany);
+            given(hubClient.getHub(newHubId)).willReturn(new HubResponse(newHubId, "새로운 허브"));
+
+            // when
+            CompanyResponse.Update response = companyFacade.updateCompany(companyId, request, principal);
+
+            // then
+            assertThat(response).isNotNull();
+            verify(companyService).getCompany(companyId);
+            verify(companyService).updateCompany(mockCompany, request, null);
+            verify(hubClient).getHub(newHubId);
+            verifyNoInteractions(kakaoMapService);
         }
 
         @Test
         @DisplayName("실패: HUB_MANAGER - 담당 허브 ID와 요청 허브 ID 불일치")
-        void test5() {
+        void test6() {
             // given
             CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_HUB_MANAGER, UUID.randomUUID());
             given(companyService.getCompany(companyId)).willReturn(mockCompany);
 
             // when & then
-            assertThatThrownBy(() -> companyFacade.updateCompany(companyId, companyRequest, principal))
+            assertThatThrownBy(() -> companyFacade.updateCompany(companyId, request, principal))
                     .isInstanceOf(BaseException.class)
                     .hasMessageContaining(CompanyErrorCode.COMPANY_UPDATE_DENIED.getMessage());
 
             verify(companyService).getCompany(companyId);
-            verify(companyService, never()).updateCompany(any());
+            verify(companyService, never()).updateCompany(any(), any(), any());
             verifyNoInteractions(hubClient);
             verifyNoInteractions(kakaoMapService);
         }
 
         @Test
         @DisplayName("실패: COMPANY_MANAGER - 본인 업체 ID와 요청 업체 ID 불일치")
-        void test6() {
+        void test7() {
             // given
             CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_COMPANY_MANAGER, UUID.randomUUID());
             given(companyService.getCompany(companyId)).willReturn(mockCompany);
 
             // when & then
-            assertThatThrownBy(() -> companyFacade.updateCompany(companyId, companyRequest, principal))
+            assertThatThrownBy(() -> companyFacade.updateCompany(companyId, request, principal))
                     .isInstanceOf(BaseException.class)
                     .hasMessageContaining(CompanyErrorCode.COMPANY_UPDATE_DENIED.getMessage());
 
             verify(companyService).getCompany(companyId);
-            verify(companyService, never()).updateCompany(any());
+            verify(companyService, never()).updateCompany(any(), any(), any());
+            verifyNoInteractions(hubClient);
+            verifyNoInteractions(kakaoMapService);
+        }
+
+        @Test
+        @DisplayName("실패: HUB_MANAGER - 허브 변경 불가")
+        void test8() {
+            // given
+            CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_HUB_MANAGER, UUID.randomUUID());
+            given(companyService.getCompany(companyId)).willReturn(mockCompany);
+
+            CompanyRequest request = createCompanyRequest("스파르타 물류");
+            ReflectionTestUtils.setField(request, "hubId", UUID.randomUUID());
+
+            // when & then
+            assertThatThrownBy(() -> companyFacade.updateCompany(companyId, request, principal))
+                    .isInstanceOf(BaseException.class)
+                    .hasMessageContaining(CompanyErrorCode.COMPANY_UPDATE_DENIED.getMessage());
+
+            verify(companyService).getCompany(companyId);
+            verify(companyService, never()).updateCompany(any(), any(), any());
+            verifyNoInteractions(hubClient);
+            verifyNoInteractions(kakaoMapService);
+        }
+
+        @Test
+        @DisplayName("실패: COMPANY_MANAGER - 허브 변경 불가")
+        void test9() {
+            // given
+            CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_COMPANY_MANAGER, UUID.randomUUID());
+            given(companyService.getCompany(companyId)).willReturn(mockCompany);
+
+            CompanyRequest request = createCompanyRequest("스파르타 물류");
+            ReflectionTestUtils.setField(request, "hubId", UUID.randomUUID());
+
+            // when & then
+            assertThatThrownBy(() -> companyFacade.updateCompany(companyId, request, principal))
+                    .isInstanceOf(BaseException.class)
+                    .hasMessageContaining(CompanyErrorCode.COMPANY_UPDATE_DENIED.getMessage());
+
+            verify(companyService).getCompany(companyId);
+            verify(companyService, never()).updateCompany(any(), any(), any());
             verifyNoInteractions(hubClient);
             verifyNoInteractions(kakaoMapService);
         }
@@ -330,12 +401,12 @@ class CompanyFacadeTest {
         void test3() {
             // given
             CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_HUB_MANAGER, UUID.randomUUID());
-            given(companyService.deleteCompany(companyId, principal)).willThrow(new BaseException(CompanyErrorCode.COMPANY_NOT_FOUND));
+            given(companyService.deleteCompany(companyId, principal)).willThrow(new BaseException(CompanyErrorCode.COMPANY_DELETE_DENIED));
 
             // when & then
             assertThatThrownBy(() -> companyFacade.deleteCompany(companyId, principal))
                     .isInstanceOf(BaseException.class)
-                    .hasMessageContaining(CompanyErrorCode.COMPANY_NOT_FOUND.getMessage());
+                    .hasMessageContaining(CompanyErrorCode.COMPANY_DELETE_DENIED.getMessage());
 
             verify(companyService).deleteCompany(companyId, principal);
             verifyNoInteractions(productService);

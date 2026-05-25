@@ -48,7 +48,7 @@ public class CompanyFacade {
         hubClient.getHub(request.getHubId());
 
         // [외부 통신] Kakao Map Service로 좌표 정보 요청
-        CoordinateResponse coordinate = kakaoMapService.getCoordinates(request.getBaseAddress());
+        CoordinateResponse coordinate = kakaoMapService.getCoordinate(request.getBaseAddress());
 
         // [서비스 레이어] 업체 생성
         Company company = companyService.createCompany(request, coordinate);
@@ -64,10 +64,10 @@ public class CompanyFacade {
         Set<UUID> hubIds = companyPage.stream()
                 .map(Company::getHubId)
                 .collect(Collectors.toSet());
-        List<HubResponse> hubResponses = hubIds.isEmpty() ? List.of() : hubClient.getHubs(hubIds);
+        List<HubResponse> hubs = hubIds.isEmpty() ? List.of() : hubClient.getHubs(hubIds);
 
         // O(1) 조회를 위한 허브 Map 생성
-        Map<UUID, HubResponse> hubMap = hubResponses.stream()
+        Map<UUID, HubResponse> hubMap = hubs.stream()
                 .collect(Collectors.toMap(HubResponse::id, Function.identity()));
 
         return PageResponse.of(companyPage, company -> {
@@ -100,26 +100,29 @@ public class CompanyFacade {
         // [서비스 레이어] 업체 조회
         Company company = companyService.getCompany(id);
 
+        // [권한 검증] 허브 변경 시 Master가 아니면 허브 변경 불가
+        if (!company.getHubId().equals(request.getHubId()) && !principal.isMaster()) {
+            throw new BaseException(CompanyErrorCode.COMPANY_UPDATE_DENIED);
+        }
+
         // [권한 검증] Master가 아니면 담당 허브 또는 본인 업체인지 검증
         if (!principal.isAccessibleHub(company.getHubId()) && !principal.isAccessibleCompany(id)) {
             throw new BaseException(CompanyErrorCode.COMPANY_UPDATE_DENIED);
         }
 
+        // [MSA 통신] Hub Service로 허브 정보 요청
+        HubResponse hub = hubClient.getHub(request.getHubId());
+
         // [외부 통신] 주소 변경 시 Kakao Map Service로 좌표 정보 요청
+        CoordinateResponse coordinate = null;
         if (!company.getBaseAddress().equals(request.getBaseAddress())) {
-            CoordinateResponse coordinateResponse = kakaoMapService.getCoordinates(request.getBaseAddress());
-            company.updateCoordinate(coordinateResponse.latitude(), coordinateResponse.longitude());
+            coordinate = kakaoMapService.getCoordinate(request.getBaseAddress());
         }
 
-        company.update(request);
-
-        // [MSA 통신] Hub Service로 허브 정보 요청
-        HubResponse hubResponse = hubClient.getHub(company.getHubId());
-
         // [서비스 레이어] 업체 수정
-        companyService.updateCompany(company);
+        Company updatedCompany = companyService.updateCompany(company, request, coordinate);
 
-        return CompanyResponse.Update.of(company, hubResponse);
+        return CompanyResponse.Update.of(updatedCompany, hub);
     }
 
     @Transactional

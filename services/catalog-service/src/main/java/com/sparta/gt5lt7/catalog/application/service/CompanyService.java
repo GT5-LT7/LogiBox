@@ -53,8 +53,14 @@ public class CompanyService {
     }
 
     @Transactional
-    public void updateCompany(Company company) {
-        companyRepository.save(company);
+    public Company updateCompany(Company company, CompanyRequest request, CoordinateResponse coordinate) {
+        if (coordinate != null) {
+            company.updateCoordinate(coordinate.latitude(), coordinate.longitude());
+        }
+
+        company.update(request);
+
+        return companyRepository.save(company);
     }
 
     @Transactional

@@ -24,7 +24,7 @@ class KakaoMapServiceIntegrationTest {
         String address = "서울시 강남구 테헤란로 311";
 
         // When
-        CoordinateResponse result = kakaoMapService.getCoordinates(address);
+        CoordinateResponse result = kakaoMapService.getCoordinate(address);
 
         // Then
         assertThat(result.latitude()).isBetween(new BigDecimal("37.0"), new BigDecimal("37.8"));
