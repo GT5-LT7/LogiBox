@@ -48,7 +48,6 @@ class ProductControllerTest {
             ProductRequest.Create request = ProductRequest.Create.builder()
                     .name("테스트 상품")
                     .companyId(UUID.randomUUID())
-                    .categoryId(UUID.randomUUID())
                     .price(10000L)
                     .quantity(100)
                     .build();
@@ -73,7 +72,6 @@ class ProductControllerTest {
             ProductRequest.Create request = ProductRequest.Create.builder()
                     .name("테스트 상품")
                     .companyId(UUID.randomUUID())
-                    .categoryId(UUID.randomUUID())
                     .price(10000L)
                     .quantity(100)
                     .build();

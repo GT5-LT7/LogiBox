@@ -3,7 +3,6 @@ package com.sparta.gt5lt7.catalog.application;
 import com.sparta.gt5lt7.catalog.domain.entity.Product;
 import com.sparta.gt5lt7.catalog.presentation.dto.request.ActionType;
 import com.sparta.gt5lt7.common.security.CustomUserPrincipal;
-import com.sparta.gt5lt7.catalog.domain.entity.Category;
 import com.sparta.gt5lt7.catalog.global.exception.ProductErrorCode;
 import com.sparta.gt5lt7.catalog.infrastructure.client.HubClient;
 import com.sparta.gt5lt7.catalog.infrastructure.client.UserClient;
@@ -38,7 +37,6 @@ public class ProductService {
     private final HubClient hubClient;
     private final UserClient userClient;
     private final CompanyService companyService;
-    private final CategoryService categoryService;
     private final ProductRepository productRepository;
     private final StringRedisTemplate redisTemplate;
 
@@ -56,12 +54,10 @@ public class ProductService {
             throw new BaseException(ProductErrorCode.PRODUCT_CREATE_DENIED);
         }
 
-        Category category = categoryService.getCategoryById(request.getCategoryId());
         Product product = Product.builder()
                 .name(request.getName())
                 .description(request.getDescription())
                 .company(company)
-                .category(category)
                 .price(request.getPrice())
                 .quantity(request.getQuantity())
                 .build();
@@ -71,12 +67,10 @@ public class ProductService {
     }
 
     public PageResponse<ProductResponse.Summary> searchProducts(
-            String keyword, Boolean salesOnly, UUID companyId, UUID hubId, UUID categoryId,
+            String keyword, Boolean salesOnly, UUID companyId, UUID hubId,
             Pageable pageable, CustomUserPrincipal principal
     ) {
-        Page<Product> productPage = productRepository.searchProducts(
-                keyword, salesOnly, companyId, hubId, categoryId, pageable, principal
-        );
+        Page<Product> productPage = productRepository.searchProducts(keyword, salesOnly, companyId, hubId, pageable, principal);
 
         // 허브 ID를 중복 없이 추출 → Hub Service로 허브 정보 요청
         Set<UUID> hubIds = productPage.stream()
@@ -132,13 +126,7 @@ public class ProductService {
             throw new BaseException(ProductErrorCode.PRODUCT_UPDATE_DENIED);
         }
 
-        // 변경된 카테고리 처리
-        Category category = product.getCategory();
-        if (!category.getCategoryId().equals(request.getCategoryId())) {
-             category = categoryService.getCategoryById(request.getCategoryId());
-        }
-
-        product.update(request, category);
+        product.update(request);
 
         return ProductResponse.Update.from(product);
     }
@@ -288,7 +276,7 @@ public class ProductService {
 
     // 상품 조회 공통 메서드
     public Product getProductById(UUID id) {
-        return productRepository.findByIdWithCompanyAndCategory(id)
+        return productRepository.findByIdWithCompany(id)
                 .orElseThrow(() -> new BaseException(ProductErrorCode.PRODUCT_NOT_FOUND));
     }
 }

@@ -18,14 +18,12 @@ public class ProductResponse {
 
     public record Info(
             UUID productId, String name, String description, ProductStatus status,
-            CompanyResponse.Simple company, HubResponse hub, CategoryResponse.Simple category,
-            Long price, Integer quantity
+            CompanyResponse.Simple company, HubResponse hub, Long price, Integer quantity
     ) {
         public static ProductResponse.Info of(Product product, HubResponse hub) {
             return new ProductResponse.Info(
                     product.getProductId(), product.getName(), product.getDescription(), product.getStatus(),
-                    CompanyResponse.Simple.from(product.getCompany()), hub, CategoryResponse.Simple.from(product.getCategory()),
-                    product.getPrice(), product.getQuantity()
+                    CompanyResponse.Simple.from(product.getCompany()), hub, product.getPrice(), product.getQuantity()
             );
         }
     }
@@ -45,14 +43,10 @@ public class ProductResponse {
         }
     }
 
-    public record Update(
-            UUID productId, String name, String description,
-            CategoryResponse.Simple category, Long price, LocalDateTime updatedAt
-    ) {
+    public record Update(UUID productId, String name, String description, Long price, LocalDateTime updatedAt) {
         public static Update from(Product product) {
             return new Update(
-                    product.getProductId(), product.getName(), product.getDescription(),
-                    CategoryResponse.Simple.from(product.getCategory()), product.getPrice(), product.getUpdatedAt()
+                    product.getProductId(), product.getName(), product.getDescription(), product.getPrice(), product.getUpdatedAt()
             );
         }
     }
