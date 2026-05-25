@@ -76,7 +76,8 @@ public class HubService {
                     request.getLatitude(),
                     request.getLongitude()
             );
-            return HubResponse.from(hub);
+            Hub saved = hubRepository.saveAndFlush(hub);
+            return HubResponse.from(saved);
         } catch (DataIntegrityViolationException e) {
             throw new HubException(HubErrorCode.HUB_NAME_DUPLICATED);
         }
