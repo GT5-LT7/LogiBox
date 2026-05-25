@@ -80,7 +80,7 @@ class CompanyServiceTest {
         @DisplayName("성공: MASTER - 허브 상관 없음")
         void test1() {
             // given
-            CustomUserPrincipal principal = new CustomUserPrincipal(UUID.randomUUID(), UserRole.ROLE_MASTER, null);
+            CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_MASTER, null);
 
             given(companyRepository.save(any(Company.class))).willReturn(mockCompany);
             given(kakaoMapService.getCoordinates(anyString())).willReturn(mockCoordinate);
@@ -98,7 +98,7 @@ class CompanyServiceTest {
         @DisplayName("성공: HUB_MANAGER - 담당 허브 ID와 요청 허브 ID 일치")
         void test2() {
             // given
-            CustomUserPrincipal principal = new CustomUserPrincipal(UUID.randomUUID(), UserRole.ROLE_HUB_MANAGER, hubId);
+            CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_HUB_MANAGER, hubId);
 
             given(companyRepository.save(any(Company.class))).willReturn(mockCompany);
             given(kakaoMapService.getCoordinates(anyString())).willReturn(mockCoordinate);
@@ -116,7 +116,7 @@ class CompanyServiceTest {
         @DisplayName("실패: HUB_MANAGER - 담당 허브 ID와 요청 허브 ID 불일치")
         void test3() {
             // given
-            CustomUserPrincipal principal = new CustomUserPrincipal(UUID.randomUUID(), UserRole.ROLE_HUB_MANAGER, UUID.randomUUID());
+            CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_HUB_MANAGER, UUID.randomUUID());
 
             // when & then
             assertThatThrownBy(() -> companyService.createCompany(companyRequest, principal))
@@ -233,7 +233,7 @@ class CompanyServiceTest {
         @DisplayName("성공: MASTER - 허브 상관 없음")
         void test1() {
             // given
-            CustomUserPrincipal principal = new CustomUserPrincipal(UUID.randomUUID(), UserRole.ROLE_MASTER, null);
+            CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_MASTER, null);
 
             given(companyRepository.findById(companyId)).willReturn(Optional.of(mockCompany));
             given(hubClient.getHub(hubId)).willReturn(hubResponse);
@@ -250,7 +250,7 @@ class CompanyServiceTest {
         @DisplayName("성공: HUB_MANAGER - 담당 허브 ID와 요청 허브 ID 일치")
         void test2() {
             // given
-            CustomUserPrincipal principal = new CustomUserPrincipal(UUID.randomUUID(), UserRole.ROLE_HUB_MANAGER, hubId);
+            CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_HUB_MANAGER, hubId);
 
             given(companyRepository.findById(companyId)).willReturn(Optional.of(mockCompany));
             given(hubClient.getHub(hubId)).willReturn(hubResponse);
@@ -267,7 +267,7 @@ class CompanyServiceTest {
         @DisplayName("성공: COMPANY_MANAGER - 본인 업체 ID와 요청 업체 ID 일치")
         void test3() {
             // given
-            CustomUserPrincipal principal = new CustomUserPrincipal(UUID.randomUUID(), UserRole.ROLE_COMPANY_MANAGER, companyId);
+            CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_COMPANY_MANAGER, companyId);
 
             given(companyRepository.findById(companyId)).willReturn(Optional.of(mockCompany));
             given(hubClient.getHub(hubId)).willReturn(hubResponse);
@@ -284,7 +284,7 @@ class CompanyServiceTest {
         @DisplayName("실패: HUB_MANAGER - 담당 허브 ID와 요청 허브 ID 불일치")
         void test4() {
             // given
-            CustomUserPrincipal principal = new CustomUserPrincipal(UUID.randomUUID(), UserRole.ROLE_HUB_MANAGER, UUID.randomUUID());
+            CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_HUB_MANAGER, UUID.randomUUID());
 
             given(companyRepository.findById(companyId)).willReturn(Optional.of(mockCompany));
 
@@ -298,7 +298,7 @@ class CompanyServiceTest {
         @DisplayName("실패: COMPANY_MANAGER - 본인 업체 ID와 요청 업체 ID 불일치")
         void test5() {
             // given
-            CustomUserPrincipal principal = new CustomUserPrincipal(UUID.randomUUID(), UserRole.ROLE_COMPANY_MANAGER, UUID.randomUUID());
+            CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_COMPANY_MANAGER, UUID.randomUUID());
 
             given(companyRepository.findById(companyId)).willReturn(Optional.of(mockCompany));
 
@@ -319,7 +319,7 @@ class CompanyServiceTest {
         void test1() {
             // given
             UUID deletedBy = UUID.randomUUID();
-            CustomUserPrincipal principal = new CustomUserPrincipal(deletedBy, UserRole.ROLE_MASTER, null);
+            CustomUserPrincipal principal = CustomUserPrincipal.of(deletedBy, UserRole.ROLE_MASTER, null);
 
             given(companyRepository.findById(companyId)).willReturn(Optional.of(mockCompany));
 
@@ -337,7 +337,7 @@ class CompanyServiceTest {
         void test2() {
             // given
             UUID deletedBy = UUID.randomUUID();
-            CustomUserPrincipal principal = new CustomUserPrincipal(deletedBy, UserRole.ROLE_HUB_MANAGER, hubId);
+            CustomUserPrincipal principal = CustomUserPrincipal.of(deletedBy, UserRole.ROLE_HUB_MANAGER, hubId);
 
             given(companyRepository.findById(companyId)).willReturn(Optional.of(mockCompany));
 
@@ -355,7 +355,7 @@ class CompanyServiceTest {
         @DisplayName("실패: HUB_MANAGER - 담당 허브 ID와 요청 허브 ID 일치")
         void test3() {
             // given
-            CustomUserPrincipal principal = new CustomUserPrincipal(UUID.randomUUID(), UserRole.ROLE_HUB_MANAGER, UUID.randomUUID());
+            CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_HUB_MANAGER, UUID.randomUUID());
 
             given(companyRepository.findById(companyId)).willReturn(Optional.of(mockCompany));
 

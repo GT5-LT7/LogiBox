@@ -1,5 +1,7 @@
 package com.sparta.gt5lt7.catalog.domain.repository;
 
+import com.sparta.gt5lt7.common.entity.UserRole;
+import com.sparta.gt5lt7.common.security.CustomUserPrincipal;
 import com.sparta.gt5lt7.catalog.domain.entity.*;
 import com.sparta.gt5lt7.catalog.global.config.QueryDslConfig;
 import com.sparta.gt5lt7.catalog.global.config.TestJpaConfig;
@@ -13,6 +15,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -47,14 +50,14 @@ class ProductRepositoryImplTest {
 
         categoryId = categoryA.getCategoryId();
 
-        createProduct("Samsung 모니터", companyA, categoryA);
-        createProduct("SAMSUNG 키보드", companyA, categoryA);
-        createProduct("LG 울트라기어 모니터", companyB, categoryA);
-        createProduct("비비고 왕교자 만두", companyC, categoryB);
-        createProduct("마우스", companyA, categoryA);
+        createProduct("Samsung 모니터", companyA, categoryA, ProductStatus.ON_SALE);
+        createProduct("SAMSUNG 키보드(숨김)", companyA, categoryA, ProductStatus.HIDDEN);
+        createProduct("LG 울트라기어 모니터(숨김)", companyB, categoryA, ProductStatus.HIDDEN);
+        createProduct("비비고 왕교자 만두", companyC, categoryB, ProductStatus.ON_SALE);
+        createProduct("마우스", companyA, categoryA, ProductStatus.SOLD_OUT);
 
         // Soft Delete 검증용
-        Product deletedProduct = createProduct("비비고 김치(삭제됨)", companyC, categoryB);
+        Product deletedProduct = createProduct("비비고 김치(삭제됨)", companyC, categoryB, ProductStatus.ON_SALE);
         deletedProduct.softDelete(UUID.randomUUID());
 
         entityManager.flush();
@@ -68,10 +71,13 @@ class ProductRepositoryImplTest {
     @DisplayName("성공: 조건 없이 조회 시 삭제된 데이터를 제외한 5건 조회")
     void test1() {
         // given
+        CustomUserPrincipal master = createPrincipal(UserRole.ROLE_MASTER, null);
         Pageable pageable = PageRequest.of(0, 10);
 
         // when
-        Page<Product> result = productRepository.searchProducts(null, null, null, null, pageable);
+        Page<Product> result = productRepository.searchProducts(
+                null, false, null, null, null, pageable, master
+        );
 
         // then
         assertThat(result.getTotalElements()).isEqualTo(5);
@@ -82,65 +88,117 @@ class ProductRepositoryImplTest {
     @DisplayName("성공: 'samsung' 검색 시 대소문자 구분 없이 매칭되는 상품만 조회")
     void test2() {
         // given
+        CustomUserPrincipal master = createPrincipal(UserRole.ROLE_MASTER, null);
         Pageable pageable = PageRequest.of(0, 10);
 
         // when
-        Page<Product> result = productRepository.searchProducts("samsung", null, null, null, pageable);
+        Page<Product> result = productRepository.searchProducts(
+                "samsung", false, null, null, null, pageable, master
+        );
 
         // then
         assertThat(result.getTotalElements()).isEqualTo(2);
         assertThat(result.getContent())
                 .extracting(Product::getName)
-                .containsExactlyInAnyOrder("Samsung 모니터", "SAMSUNG 키보드");
+                .containsExactlyInAnyOrder("Samsung 모니터", "SAMSUNG 키보드(숨김)");
     }
 
     @Test
     @DisplayName("성공: 업체 ID 필터링 시 해당 업체에 속한 상품만 조회")
     void test3() {
         // given
+        CustomUserPrincipal master = createPrincipal(UserRole.ROLE_MASTER, null);
         Pageable pageable = PageRequest.of(0, 10);
 
         // when
-        Page<Product> result = productRepository.searchProducts(null, companyId, null, null, pageable);
+        Page<Product> result = productRepository.searchProducts(
+                null, false, companyId, null, null, pageable, master
+        );
 
         // then
         assertThat(result.getTotalElements()).isEqualTo(3);
+        assertThat(result.getContent()).hasSize(3);
     }
 
     @Test
     @DisplayName("성공: 허브 ID 필터링 시 해당 허브에 속한 상품만 조회")
     void test4() {
         // given
+        CustomUserPrincipal master = createPrincipal(UserRole.ROLE_MASTER, null);
         Pageable pageable = PageRequest.of(0, 10);
 
         // when
-        Page<Product> result = productRepository.searchProducts(null, null, hubAId, null, pageable);
+        Page<Product> result = productRepository.searchProducts(
+                null, false, null, hubAId, null, pageable, master
+        );
 
         // then
         assertThat(result.getTotalElements()).isEqualTo(4);
+        assertThat(result.getContent()).hasSize(4);
     }
 
     @Test
     @DisplayName("성공: 카테고리 ID 필터링 시 해당 카테고리에 속한 상품만 조회")
     void test5() {
         // given
+        CustomUserPrincipal master = createPrincipal(UserRole.ROLE_MASTER, null);
         Pageable pageable = PageRequest.of(0, 10);
 
         // when
-        Page<Product> result = productRepository.searchProducts(null, null, null, categoryId, pageable);
+        Page<Product> result = productRepository.searchProducts(
+                null, false, null, null, categoryId, pageable, master
+        );
 
         // then
+        assertThat(result.getTotalElements()).isEqualTo(4);
+        assertThat(result.getContent()).hasSize(4);
+    }
+
+    @Test
+    @DisplayName("성공: 판매 중 필터링 시 판매 중인 상품만 조회")
+    void test6() {
+        // given
+        CustomUserPrincipal master = createPrincipal(UserRole.ROLE_MASTER, null);
+        Pageable pageable = PageRequest.of(0, 10);
+
+        // when
+        Page<Product> result = productRepository.searchProducts(
+                null, true, null, null, null, pageable, master
+        );
+
+        // then
+        assertThat(result.getTotalElements()).isEqualTo(2);
+        assertThat(result.getContent()).hasSize(2);
+    }
+
+    @Test
+    @DisplayName("성공: HUB_MANAGER - 본인 허브 상품의 숨김 상품 조회 가능")
+    void test7() {
+        // given
+        CustomUserPrincipal hunManager = createPrincipal(UserRole.ROLE_HUB_MANAGER, hubAId);
+        Pageable pageable = PageRequest.of(0, 10);
+
+        // when
+        Page<Product> result = productRepository.searchProducts(
+                null, false, null, null, null, pageable, hunManager
+        );
+
+        // then
+        assertThat(result.getTotalElements()).isEqualTo(4);
         assertThat(result.getTotalElements()).isEqualTo(4);
     }
 
     @Test
     @DisplayName("성공: 모든 조건 적용 시 해당 조건을 모두 만족하는 상품만 조회")
-    void test6() {
+    void test8() {
         // given
+        CustomUserPrincipal master = createPrincipal(UserRole.ROLE_MASTER, null);
         Pageable pageable = PageRequest.of(0, 10);
 
         // when
-        Page<Product> result = productRepository.searchProducts("모니터", companyId, hubAId, categoryId, pageable);
+        Page<Product> result = productRepository.searchProducts(
+                "모니터", true, companyId, hubAId, categoryId, pageable, master
+        );
 
         // then
         assertThat(result.getTotalElements()).isEqualTo(1);
@@ -152,12 +210,15 @@ class ProductRepositoryImplTest {
     // ==========================================
     @Test
     @DisplayName("실패: 일치하는 검색 결과가 없으면 빈 페이지 반환")
-    void test7() {
+    void test9() {
         // given
+        CustomUserPrincipal master = createPrincipal(UserRole.ROLE_MASTER, null);
         Pageable pageable = PageRequest.of(0, 10);
 
         // when
-        Page<Product> result = productRepository.searchProducts("없는 상품", null, null, null, pageable);
+        Page<Product> result = productRepository.searchProducts(
+                "없는 상품", false, null, null, null, pageable, master
+        );
 
         // then
         assertThat(result.getTotalElements()).isEqualTo(0);
@@ -166,12 +227,15 @@ class ProductRepositoryImplTest {
 
     @Test
     @DisplayName("실패: 모든 조건 적용 시 조건을 하나라도 만족하지 않으면 빈 페이지 반환")
-    void test8() {
+    void test10() {
         // given
+        CustomUserPrincipal master = createPrincipal(UserRole.ROLE_MASTER, null);
         Pageable pageable = PageRequest.of(0, 10);
 
         // when
-        Page<Product> result = productRepository.searchProducts("모니터", companyId, hubBId, categoryId, pageable);
+        Page<Product> result = productRepository.searchProducts(
+                "모니터", true, companyId, hubBId, categoryId, pageable, master
+        );
 
         // then
         assertThat(result.getTotalElements()).isEqualTo(0);
@@ -180,12 +244,15 @@ class ProductRepositoryImplTest {
 
     @Test
     @DisplayName("예외: 키워드에 공백 문자열이 들어오면 검색 조건에서 제외")
-    void test9() {
+    void test11() {
         // given
+        CustomUserPrincipal master = createPrincipal(UserRole.ROLE_MASTER, null);
         Pageable pageable = PageRequest.of(0, 10);
 
         // when
-        Page<Product> result = productRepository.searchProducts("   ", null, null, null, pageable);
+        Page<Product> result = productRepository.searchProducts(
+                "   ", false, null, null, null, pageable, master
+        );
 
         // then
         assertThat(result.getTotalElements()).isEqualTo(5);
@@ -194,7 +261,11 @@ class ProductRepositoryImplTest {
     // ==========================================
     // 🛠️ 편의 메서드
     // ==========================================
-    private Product createProduct(String name, Company company, Category category) {
+    private CustomUserPrincipal createPrincipal(UserRole role, UUID managementId) {
+        return CustomUserPrincipal.of(UUID.randomUUID(), role, managementId);
+    }
+
+    private Product createProduct(String name, Company company, Category category, ProductStatus status) {
         Product product = Product.builder()
                 .name(name)
                 .company(company)
@@ -202,6 +273,7 @@ class ProductRepositoryImplTest {
                 .price(10000L)
                 .quantity(100)
                 .build();
+        ReflectionTestUtils.setField(product, "status", status); // 테스트용 상태 강제 주입
         return entityManager.persist(product);
     }
 
