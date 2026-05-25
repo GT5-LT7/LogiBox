@@ -47,7 +47,7 @@ public class ProductService {
 
     @Transactional
     public ProductResponse.Create createProduct(ProductRequest.Create request, CustomUserPrincipal principal) {
-        Company company = companyService.getCompanyById(request.getCompanyId());
+        Company company = companyService.getCompany(request.getCompanyId());
 
         // Master가 아니면 담당 허브 또는 본인 업체인지 검증
         if (!principal.isAccessibleHub(company.getHubId()) && !principal.isAccessibleCompany(request.getCompanyId())) {

@@ -6,9 +6,7 @@ import com.sparta.gt5lt7.catalog.domain.entity.CompanyType;
 import com.sparta.gt5lt7.catalog.domain.repository.CompanyRepository;
 import com.sparta.gt5lt7.catalog.global.exception.CompanyErrorCode;
 import com.sparta.gt5lt7.catalog.infrastructure.client.HubClient;
-import com.sparta.gt5lt7.catalog.infrastructure.client.UserClient;
 import com.sparta.gt5lt7.catalog.infrastructure.client.dto.HubResponse;
-import com.sparta.gt5lt7.catalog.infrastructure.client.dto.UserResponse;
 import com.sparta.gt5lt7.catalog.presentation.dto.request.CompanyRequest;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.*;
 import com.sparta.gt5lt7.common.dto.PageResponse;
@@ -30,18 +28,16 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class CompanyService {
     private final HubClient hubClient;
-    private final UserClient userClient;
     private final ProductService productService;
     private final KakaoMapService kakaoMapService;
     private final CompanyRepository companyRepository;
 
     public CompanyService(
-            HubClient hubClient, UserClient userClient,
+            HubClient hubClient,
             @Lazy ProductService productService, KakaoMapService kakaoMapService,
             CompanyRepository companyRepository
     ) {
         this.hubClient = hubClient;
-        this.userClient = userClient;
         this.productService = productService;
         this.kakaoMapService = kakaoMapService;
         this.companyRepository = companyRepository;
@@ -82,23 +78,9 @@ public class CompanyService {
         });
     }
 
-    public CompanyResponse.Detail getCompany(UUID id) {
-        Company company = getCompanyById(id);
-
-        // Hub Service로 허브 정보 요청
-        HubResponse hubResponse = hubClient.getHub(company.getHubId());
-
-        // 사용자 ID를 중복 없이 추출 → User Service로 사용자 정보 요청
-        Set<UUID> userIds = Set.of(company.getCreatedBy(), company.getUpdatedBy());
-        List<UserResponse> userResponses = userClient.getUsers(userIds);
-
-        // O(1) 조회를 위한 사용자 Map 생성
-        Map<UUID, UserResponse> userMap = userResponses.stream()
-                .collect(Collectors.toMap(UserResponse::id, user -> user));
-
-        return CompanyResponse.Detail.of(
-                company, hubResponse, userMap.get(company.getCreatedBy()), userMap.get(company.getUpdatedBy())
-        );
+    public Company getCompany(UUID id) {
+        return companyRepository.findById(id)
+                .orElseThrow(() -> new BaseException(CompanyErrorCode.COMPANY_NOT_FOUND));
     }
 
     public HubUsageStatusResponse checkHubUsage(UUID hubId) {
@@ -108,7 +90,7 @@ public class CompanyService {
 
     @Transactional
     public CompanyResponse.Update updateCompany(UUID id, CompanyRequest request, CustomUserPrincipal principal) {
-        Company company = getCompanyById(id);
+        Company company = getCompany(id);
 
         // Master가 아니면 담당 허브 또는 본인 업체인지 검증
         if (!principal.isAccessibleHub(company.getHubId()) && !principal.isAccessibleCompany(id)) {
@@ -131,7 +113,7 @@ public class CompanyService {
 
     @Transactional
     public CompanyResponse.Delete deleteCompany(UUID id, CustomUserPrincipal principal) {
-        Company company = getCompanyById(id);
+        Company company = getCompany(id);
 
         // Master가 아니면 담당 허브인지 검증
         if (!principal.isAccessibleHub(company.getHubId())) {
@@ -144,11 +126,5 @@ public class CompanyService {
         productService.deleteProducts(company.getCompanyId(), deletedBy);
 
         return CompanyResponse.Delete.from(company);
-    }
-
-    // 업체 조회 공통 메서드
-    public Company getCompanyById(UUID id) {
-        return companyRepository.findById(id)
-                .orElseThrow(() -> new BaseException(CompanyErrorCode.COMPANY_NOT_FOUND));
     }
 }

@@ -7,16 +7,13 @@ import com.sparta.gt5lt7.catalog.domain.entity.CompanyType;
 import com.sparta.gt5lt7.catalog.domain.repository.CompanyRepository;
 import com.sparta.gt5lt7.catalog.global.exception.CompanyErrorCode;
 import com.sparta.gt5lt7.catalog.infrastructure.client.HubClient;
-import com.sparta.gt5lt7.catalog.infrastructure.client.UserClient;
 import com.sparta.gt5lt7.catalog.infrastructure.client.dto.HubResponse;
-import com.sparta.gt5lt7.catalog.infrastructure.client.dto.UserResponse;
 import com.sparta.gt5lt7.catalog.presentation.dto.request.CompanyRequest;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.CompanyResponse;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.CoordinateResponse;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.HubUsageStatusResponse;
 import com.sparta.gt5lt7.common.exception.BaseException;
 import com.sparta.gt5lt7.common.dto.PageResponse;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -55,9 +52,6 @@ class CompanyServiceTest {
 
     @Mock
     private HubClient hubClient;
-
-    @Mock
-    private UserClient userClient;
 
     private final UUID companyId = UUID.randomUUID();
     private final UUID hubId = UUID.randomUUID();
@@ -104,60 +98,6 @@ class CompanyServiceTest {
         assertThat(response.getContent().get(0).info().hub().name()).isEqualTo(mockHub.name());
         verify(companyRepository).searchCompanies(keyword, type, hubId, pageable);
         verify(hubClient).getHubs(Set.of(hubId));
-    }
-
-    @Nested
-    @DisplayName("업체 조회 테스트")
-    class GetCompanyTest {
-        private final UUID createdBy = UUID.randomUUID();
-        private final UUID updatedBy = UUID.randomUUID();
-
-        Company mockCompany;
-
-        @BeforeEach
-        void setUp() {
-            mockCompany = createCompany(companyId, createCompanyRequest("스파르타 물류"));
-            ReflectionTestUtils.setField(mockCompany, "createdBy", createdBy);
-            ReflectionTestUtils.setField(mockCompany, "updatedBy", updatedBy);
-        }
-
-        @Test
-        @DisplayName("성공: 존재하는 업체 ID")
-        void test1() {
-            // given
-            List<UserResponse> mockUserResponses = List.of(
-                    new UserResponse(createdBy, "생성자"), new UserResponse(updatedBy, "수정자")
-            );
-
-            given(companyRepository.findById(companyId)).willReturn(Optional.of(mockCompany));
-            given(hubClient.getHub(hubId)).willReturn(mockHub);
-            given(userClient.getUsers(Set.of(createdBy, updatedBy))).willReturn(mockUserResponses);
-
-            // when
-            CompanyResponse.Detail response = companyService.getCompany(companyId);
-
-            // then
-            assertThat(response.info().name()).isEqualTo(mockCompany.getName());
-            verify(companyRepository).findById(companyId);
-            verify(hubClient).getHub(hubId);
-            verify(userClient).getUsers(Set.of(createdBy, updatedBy));
-        }
-
-        @Test
-        @DisplayName("실패: 존재하지 않는 업체 ID - COMPANY_NOT_FOUND 예외 발생")
-        void test2() {
-            // given
-            given(companyRepository.findById(companyId)).willReturn(Optional.empty());
-
-            // when & then
-            assertThatThrownBy(() -> companyService.getCompany(companyId))
-                    .isInstanceOf(BaseException.class)
-                    .hasMessageContaining(CompanyErrorCode.COMPANY_NOT_FOUND.getMessage());
-
-
-            verify(hubClient, never()).getHub(any());
-            verify(userClient, never()).getUsers(any());
-        }
     }
 
     @Test

@@ -51,7 +51,7 @@ public class CompanyController {
     public ResponseEntity<ApiResponse<CompanyResponse.Detail>> getCompany(
             @PathVariable UUID id
     ) {
-        CompanyResponse.Detail response = companyService.getCompany(id);
+        CompanyResponse.Detail response = companyFacade.getCompany(id);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 

@@ -6,13 +6,16 @@ import com.sparta.gt5lt7.catalog.domain.entity.Company;
 import com.sparta.gt5lt7.catalog.domain.entity.CompanyType;
 import com.sparta.gt5lt7.catalog.global.exception.CompanyErrorCode;
 import com.sparta.gt5lt7.catalog.infrastructure.client.HubClient;
+import com.sparta.gt5lt7.catalog.infrastructure.client.UserClient;
 import com.sparta.gt5lt7.catalog.infrastructure.client.dto.HubResponse;
+import com.sparta.gt5lt7.catalog.infrastructure.client.dto.UserResponse;
 import com.sparta.gt5lt7.catalog.presentation.dto.request.CompanyRequest;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.CompanyResponse;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.CoordinateResponse;
 import com.sparta.gt5lt7.common.entity.UserRole;
 import com.sparta.gt5lt7.common.exception.BaseException;
 import com.sparta.gt5lt7.common.security.CustomUserPrincipal;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -23,6 +26,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -43,6 +49,9 @@ class CompanyFacadeTest {
 
     @Mock
     private HubClient hubClient;
+
+    @Mock
+    private UserClient userClient;
 
     private final UUID companyId = UUID.randomUUID();
     private final UUID hubId = UUID.randomUUID();
@@ -110,6 +119,62 @@ class CompanyFacadeTest {
             verifyNoInteractions(hubClient);
             verifyNoInteractions(kakaoMapService);
             verifyNoInteractions(companyService);
+        }
+    }
+
+    @Nested
+    @DisplayName("업체 조회 테스트")
+    class GetCompanyTest {
+        private final UUID createdBy = UUID.randomUUID();
+        private final UUID updatedBy = UUID.randomUUID();
+
+        Company mockCompany;
+
+        @BeforeEach
+        void setUp() {
+            mockCompany = createCompany(companyId, createCompanyRequest("스파르타 물류"));
+            ReflectionTestUtils.setField(mockCompany, "createdBy", createdBy);
+            ReflectionTestUtils.setField(mockCompany, "updatedBy", updatedBy);
+        }
+
+        @Test
+        @DisplayName("성공: 존재하는 업체 ID")
+        void test1() {
+            // given
+            List<UserResponse> mockUserResponses = List.of(
+                    new UserResponse(createdBy, "생성자"), new UserResponse(updatedBy, "수정자")
+            );
+
+            given(companyService.getCompany(companyId)).willReturn(mockCompany);
+            given(hubClient.getHub(hubId)).willReturn(mockHub);
+            given(userClient.getUsers(Set.of(createdBy, updatedBy))).willReturn(mockUserResponses);
+
+            // when
+            CompanyResponse.Detail response = companyFacade.getCompany(companyId);
+
+            // then
+            assertThat(response.info().name()).isEqualTo(mockCompany.getName());
+            verify(companyService).getCompany(companyId);
+            verify(hubClient).getHub(hubId);
+            verify(userClient).getUsers(Set.of(createdBy, updatedBy));
+        }
+
+        @Test
+        @DisplayName("실패: 존재하지 않는 업체 ID - COMPANY_NOT_FOUND 예외 발생")
+        void test2() {
+            // given
+            given(companyService.getCompany(companyId))
+                    .willThrow(new BaseException(CompanyErrorCode.COMPANY_NOT_FOUND));
+
+            // when & then
+            assertThatThrownBy(() -> companyFacade.getCompany(companyId))
+                    .isInstanceOf(BaseException.class)
+                    .hasMessageContaining(CompanyErrorCode.COMPANY_NOT_FOUND.getMessage());
+
+
+            verify(companyService).getCompany(companyId);
+            verifyNoInteractions(hubClient);
+            verifyNoInteractions(kakaoMapService);
         }
     }
 
