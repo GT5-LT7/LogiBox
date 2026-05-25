@@ -52,20 +52,24 @@ public class HubDataSeeder {
 
     @Transactional
     public void seed() {
-        if (hubRepository.count() > 0) {
-            log.info("[HubSeeder] 허브 데이터가 이미 존재하여 시드를 스킵합니다.");
-            return;
-        }
-
         List<Hub> hubs = new ArrayList<>(HUB_SEEDS.size());
         for (HubSeed s : HUB_SEEDS) {
+            if (hubRepository.existsByNameAndDeletedAtIsNull(s.name())) {
+                log.info("[HubSeeder] 이미 존재하는 허브 스킵: {}", s.name());
+                continue;
+            }
             Coordinate coord = geocode(s.address());
             hubs.add(Hub.create(s.name(), s.address(), coord.latitude(), coord.longitude()));
             log.info("[HubSeeder] 좌표 변환 완료: {} → ({}, {})", s.name(), coord.latitude(), coord.longitude());
         }
 
+        if (hubs.isEmpty()) {
+            log.info("[HubSeeder] 모든 허브 데이터가 이미 존재하여 시드를 스킵합니다.");
+            return;
+        }
+
         hubRepository.saveAll(hubs);
-        log.info("[HubSeeder] 17개 허브 시드 완료");
+        log.info("[HubSeeder] {}개 허브 시드 완료", hubs.size());
     }
 
     private Coordinate geocode(String address) {
