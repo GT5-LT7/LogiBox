@@ -15,6 +15,8 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import com.sparta.gt5lt7.common.security.CustomUserPrincipal;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -62,5 +64,14 @@ public class HubController {
             @RequestBody @Valid HubUpdateRequest request
     ) {
         return ResponseEntity.ok(ApiResponse.updated(hubService.updateHub(hubId, request)));
+    }
+
+    @DeleteMapping("/{hubId}")
+    @PreAuthorize("hasRole('MASTER')")
+    public ResponseEntity<ApiResponse<HubResponse>> deleteHub(
+            @PathVariable UUID hubId,
+            @AuthenticationPrincipal CustomUserPrincipal principal
+    ) {
+        return ResponseEntity.ok(ApiResponse.deleted(hubService.deleteHub(hubId, principal)));
     }
 }
