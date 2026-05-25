@@ -16,10 +16,15 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.SQLException;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class HubRouteService {
+
+    // PostgreSQL & H2 unique_violation SQLState
+    private static final String SQLSTATE_UNIQUE_VIOLATION = "23505";
 
     private final HubRouteRepository hubRouteRepository;
     private final HubRepository hubRepository;
@@ -53,7 +58,23 @@ public class HubRouteService {
             );
             return HubRouteResponse.from(hubRouteRepository.save(route));
         } catch (DataIntegrityViolationException e) {
-            throw new HubRouteException(HubRouteErrorCode.HUB_ROUTE_DUPLICATED);
+            if (isUniqueConstraintViolation(e)) {
+                throw new HubRouteException(HubRouteErrorCode.HUB_ROUTE_DUPLICATED);
+            }
+            throw e;
         }
+    }
+
+    // DataIntegrityViolationException의 원인 체인을 따라가서 SQLState가 unique_violation(23505)인지 확인. PostgreSQL, H2 공통으로 23505를 사용.
+
+    private boolean isUniqueConstraintViolation(DataIntegrityViolationException e) {
+        Throwable cause = e.getCause();
+        while (cause != null) {
+            if (cause instanceof SQLException sqlEx) {
+                return SQLSTATE_UNIQUE_VIOLATION.equals(sqlEx.getSQLState());
+            }
+            cause = cause.getCause();
+        }
+        return false;
     }
 }

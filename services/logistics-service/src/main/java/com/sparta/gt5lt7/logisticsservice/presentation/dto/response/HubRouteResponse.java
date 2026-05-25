@@ -18,8 +18,8 @@ public class HubRouteResponse implements Serializable {
     private UUID routeId;
     private UUID fromHubId;
     private UUID toHubId;
-    private Double distance;
-    private Double duration;
+    private Integer distance;
+    private Integer duration;
 
     public static HubRouteResponse from(HubRoute route) {
         return HubRouteResponse.builder()

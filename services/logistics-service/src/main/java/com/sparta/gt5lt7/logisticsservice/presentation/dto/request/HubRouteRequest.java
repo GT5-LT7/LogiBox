@@ -20,11 +20,11 @@ public class HubRouteRequest {
 
     @NotNull(message = "이동 거리는 필수입니다.")
     @Min(value = 1, message = "이동 거리는 1km 이상이어야 합니다.")
-    private Double distance;
+    private Integer distance;
 
     @NotNull(message = "예상 소요 시간은 필수입니다.")
     @Min(value = 1, message = "예상 소요 시간은 1분 이상이어야 합니다.")
-    private Double duration;
+    private Integer duration;
 
     @AssertTrue(message = "출발 허브와 도착 허브는 동일할 수 없습니다.")
     public boolean isDifferentHubs() {
