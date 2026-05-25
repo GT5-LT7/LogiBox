@@ -35,8 +35,17 @@ public class HubRoute extends BaseEntity {
     private UUID toHubId;
 
     @Column(name = "distance", nullable = false)
-    private Integer distance;
+    private Double distance;
 
     @Column(name = "duration", nullable = false)
-    private Integer duration;
+    private Double duration;
+
+    public static HubRoute create(UUID fromHubId, UUID toHubId, Double distance, Double duration) {
+        return HubRoute.builder()
+                .fromHubId(fromHubId)
+                .toHubId(toHubId)
+                .distance(distance)
+                .duration(duration)
+                .build();
+    }
 }
