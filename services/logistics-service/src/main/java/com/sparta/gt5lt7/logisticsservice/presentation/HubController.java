@@ -5,10 +5,10 @@ import com.sparta.gt5lt7.common.dto.PageResponse;
 import com.sparta.gt5lt7.logisticsservice.application.HubService;
 import com.sparta.gt5lt7.logisticsservice.presentation.dto.request.HubRequest;
 import com.sparta.gt5lt7.logisticsservice.presentation.dto.request.HubSearchRequest;
+import com.sparta.gt5lt7.logisticsservice.presentation.dto.request.HubUpdateRequest;
 import com.sparta.gt5lt7.logisticsservice.presentation.dto.response.HubResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -53,5 +53,14 @@ public class HubController {
                 Function.identity()
         );
         return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @PatchMapping("/{hubId}")
+    @PreAuthorize("hasRole('MASTER')")
+    public ResponseEntity<ApiResponse<HubResponse>> updateHub(
+            @PathVariable UUID hubId,
+            @RequestBody @Valid HubUpdateRequest request
+    ) {
+        return ResponseEntity.ok(ApiResponse.updated(hubService.updateHub(hubId, request)));
     }
 }

@@ -6,8 +6,10 @@ import com.sparta.gt5lt7.logisticsservice.global.exception.HubErrorCode;
 import com.sparta.gt5lt7.logisticsservice.global.exception.HubException;
 import com.sparta.gt5lt7.logisticsservice.presentation.dto.request.HubRequest;
 import com.sparta.gt5lt7.logisticsservice.presentation.dto.request.HubSearchRequest;
+import com.sparta.gt5lt7.logisticsservice.presentation.dto.request.HubUpdateRequest;
 import com.sparta.gt5lt7.logisticsservice.presentation.dto.response.HubResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
@@ -53,5 +55,31 @@ public class HubService {
     // 허브 목록 검색
     public Page<HubResponse> searchHubs(HubSearchRequest request, Pageable pageable) {
         return hubRepository.searchHubs(request, pageable);
+    }
+
+    @Transactional
+    @CacheEvict(cacheNames = "hub", key = "#hubId")
+    public HubResponse updateHub(UUID hubId, HubUpdateRequest request) {
+        Hub hub = hubRepository.findByHubIdAndDeletedAtIsNull(hubId)
+                .orElseThrow(() -> new HubException(HubErrorCode.HUB_NOT_FOUND));
+
+        if (request.getName() != null
+                && !request.getName().equals(hub.getName())
+                && hubRepository.existsByNameAndDeletedAtIsNull(request.getName())) {
+            throw new HubException(HubErrorCode.HUB_NAME_DUPLICATED);
+        }
+
+        try {
+            hub.update(
+                    request.getName(),
+                    request.getAddress(),
+                    request.getLatitude(),
+                    request.getLongitude()
+            );
+            Hub saved = hubRepository.saveAndFlush(hub);
+            return HubResponse.from(saved);
+        } catch (DataIntegrityViolationException e) {
+            throw new HubException(HubErrorCode.HUB_NAME_DUPLICATED);
+        }
     }
 }
