@@ -1,8 +1,7 @@
-package com.sparta.gt5lt7.catalog.presentation;
+package com.sparta.gt5lt7.catalog.presentation.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sparta.gt5lt7.catalog.application.ProductService;
-import com.sparta.gt5lt7.catalog.presentation.controller.ProductController;
+import com.sparta.gt5lt7.catalog.application.service.ProductService;
 import com.sparta.gt5lt7.catalog.presentation.dto.request.ProductRequest;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.ProductResponse;
 import com.sparta.gt5lt7.common.config.WebConfig;
@@ -51,9 +50,7 @@ class ProductControllerTest {
                     .price(10000L)
                     .quantity(100)
                     .build();
-
             ProductResponse.Create response = new ProductResponse.Create(UUID.randomUUID(), "테스트 상품", LocalDateTime.now());
-
             when(productService.createProduct(any(), any())).thenReturn(response);
 
             // when & then

@@ -1,7 +1,6 @@
-package com.sparta.gt5lt7.catalog.presentation;
+package com.sparta.gt5lt7.catalog.presentation.controller;
 
-import com.sparta.gt5lt7.catalog.presentation.controller.CompanyController;
-import com.sparta.gt5lt7.catalog.application.CompanyService;
+import com.sparta.gt5lt7.catalog.application.facade.CompanyFacade;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.CompanyResponse;
 import com.sparta.gt5lt7.common.config.WebConfig;
 import com.sparta.gt5lt7.common.dto.PageResponse;
@@ -36,7 +35,7 @@ class CompanyControllerTest {
     private MockMvc mockMvc;
 
     @MockitoBean
-    private CompanyService companyService;
+    private CompanyFacade companyFacade;
 
     @Nested
     @DisplayName("커스텀 페이징 리졸버 동작 테스트")
@@ -46,7 +45,7 @@ class CompanyControllerTest {
         void test1() throws Exception {
             // given
             PageResponse<CompanyResponse.Summary> mockResponse = createSummaryResponse(30, "updatedAt: DESC");
-            given(companyService.searchCompanies(any(), any(), any(), any())).willReturn(mockResponse);
+            given(companyFacade.searchCompanies(any(), any(), any(), any())).willReturn(mockResponse);
 
             // when & then
             mockMvc.perform(get("/api/companies")
@@ -55,10 +54,9 @@ class CompanyControllerTest {
                     .andExpect(status().isOk());
 
             ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-            verify(companyService).searchCompanies(any(), any(), any(), pageableCaptor.capture());
+            verify(companyFacade).searchCompanies(any(), any(), any(), pageableCaptor.capture());
 
             Pageable capturedPageable = pageableCaptor.getValue();
-
             assertThat(capturedPageable.getPageNumber()).isEqualTo(0);
             assertThat(capturedPageable.getPageSize()).isEqualTo(30);
             assertThat(Objects.requireNonNull(capturedPageable.getSort().getOrderFor("updatedAt")).getDirection())
@@ -70,7 +68,7 @@ class CompanyControllerTest {
         void test2() throws Exception {
             // given
             PageResponse<CompanyResponse.Summary> mockResponse = createSummaryResponse(10, "createdAt: DESC");
-            given(companyService.searchCompanies(any(), any(), any(), any())).willReturn(mockResponse);
+            given(companyFacade.searchCompanies(any(), any(), any(), any())).willReturn(mockResponse);
 
             // when & then
             mockMvc.perform(get("/api/companies")
@@ -79,10 +77,9 @@ class CompanyControllerTest {
                     .andExpect(status().isOk());
 
             ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-            verify(companyService).searchCompanies(any(), any(), any(), pageableCaptor.capture());
+            verify(companyFacade).searchCompanies(any(), any(), any(), pageableCaptor.capture());
 
             Pageable capturedPageable = pageableCaptor.getValue();
-
             assertThat(capturedPageable.getPageSize()).isEqualTo(10);
             assertThat(Objects.requireNonNull(capturedPageable.getSort().getOrderFor("createdAt")).getDirection())
                     .isEqualTo(Sort.Direction.DESC);

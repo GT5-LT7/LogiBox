@@ -1,4 +1,4 @@
-package com.sparta.gt5lt7.catalog.application;
+package com.sparta.gt5lt7.catalog.application.service;
 
 import com.sparta.gt5lt7.catalog.global.exception.KakaoMapErrorCode;
 import com.sparta.gt5lt7.catalog.infrastructure.client.KakaoMapClient;
@@ -17,7 +17,7 @@ public class KakaoMapService {
     @Value("${kakao.map.auth-header}")
     private String kakaoAuthHeader;
 
-    public CoordinateResponse getCoordinates(String address) {
+    public CoordinateResponse getCoordinate(String address) {
         KakaoMapResponse response = kakaoMapClient.searchCoordinates(address.trim(), kakaoAuthHeader);
 
         if (response.documents() == null || response.documents().isEmpty()) {

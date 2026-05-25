@@ -1,7 +1,7 @@
 package com.sparta.gt5lt7.catalog.presentation.controller;
 
+import com.sparta.gt5lt7.catalog.application.facade.CompanyFacade;
 import com.sparta.gt5lt7.common.security.CustomUserPrincipal;
-import com.sparta.gt5lt7.catalog.application.CompanyService;
 import com.sparta.gt5lt7.catalog.domain.entity.CompanyType;
 import com.sparta.gt5lt7.catalog.presentation.dto.request.CompanyRequest;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.CompanyResponse;
@@ -22,7 +22,7 @@ import java.util.UUID;
 @RequestMapping("/api/companies")
 @RequiredArgsConstructor
 public class CompanyController {
-    private final CompanyService companyService;
+    private final CompanyFacade companyFacade;
 
     @PostMapping
     @PreAuthorize("hasAnyRole('MASTER', 'HUB_MANAGER')")
@@ -30,7 +30,7 @@ public class CompanyController {
             @Valid @RequestBody CompanyRequest request,
             @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
-        CompanyResponse.Create response = companyService.createCompany(request, principal);
+        CompanyResponse.Create response = companyFacade.createCompany(request, principal);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(response));
     }
 
@@ -41,7 +41,7 @@ public class CompanyController {
             @RequestParam(required = false) UUID hubId,
             Pageable pageable
     ) {
-        PageResponse<CompanyResponse.Summary> response = companyService.searchCompanies(keyword, type, hubId, pageable);
+        PageResponse<CompanyResponse.Summary> response = companyFacade.searchCompanies(keyword, type, hubId, pageable);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
@@ -49,7 +49,7 @@ public class CompanyController {
     public ResponseEntity<ApiResponse<CompanyResponse.Detail>> getCompany(
             @PathVariable UUID id
     ) {
-        CompanyResponse.Detail response = companyService.getCompany(id);
+        CompanyResponse.Detail response = companyFacade.getCompany(id);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
@@ -60,7 +60,7 @@ public class CompanyController {
             @Valid @RequestBody CompanyRequest request,
             @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
-        CompanyResponse.Update response = companyService.updateCompany(id, request, principal);
+        CompanyResponse.Update response = companyFacade.updateCompany(id, request, principal);
         return ResponseEntity.ok(ApiResponse.updated(response));
     }
 
@@ -70,7 +70,7 @@ public class CompanyController {
             @PathVariable UUID id,
             @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
-        CompanyResponse.Delete response = companyService.deleteCompany(id, principal);
+        CompanyResponse.Delete response = companyFacade.deleteCompany(id, principal);
         return ResponseEntity.ok(ApiResponse.deleted(response));
     }
 }

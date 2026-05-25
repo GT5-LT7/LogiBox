@@ -85,7 +85,6 @@ class ProductRepositoryTest {
                 .createNativeQuery("SELECT * FROM p_products WHERE product_id = ?1", Product.class)
                 .setParameter(1, targetProduct1.getProductId())
                 .getSingleResult();
-
         targetProduct2 = (Product) entityManager.getEntityManager()
                 .createNativeQuery("SELECT * FROM p_products WHERE product_id = ?1", Product.class)
                 .setParameter(1, targetProduct2.getProductId())
@@ -98,16 +97,13 @@ class ProductRepositoryTest {
 
         otherCompanyProduct = productRepository.findById(otherCompanyProduct.getProductId()).orElseThrow();
 
-        // 삭제 대상
         assertThat(targetProduct1.getDeletedAt()).isEqualTo(now);
         assertThat(targetProduct1.getDeletedBy()).isEqualTo(deletedBy);
         assertThat(targetProduct2.getDeletedAt()).isEqualTo(now);
         assertThat(targetProduct2.getDeletedBy()).isEqualTo(deletedBy);
 
-        // 제외 대상: 이미 삭제된 상품
         assertThat(deletedProduct.getDeletedBy()).isNotEqualTo(deletedBy);
 
-        // 제외 대상: 타 업체 상품
         assertThat(otherCompanyProduct.getDeletedAt()).isNull();
     }
 
