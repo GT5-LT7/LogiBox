@@ -2,9 +2,8 @@ package com.sparta.gt5lt7.logisticsservice.domain.repository;
 
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import com.sparta.gt5lt7.logisticsservice.domain.entity.Hub;
 import com.sparta.gt5lt7.logisticsservice.domain.entity.QHub;
-import com.sparta.gt5lt7.logisticsservice.presentation.dto.request.HubSearchRequest;
-import com.sparta.gt5lt7.logisticsservice.presentation.dto.response.HubResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -21,32 +20,27 @@ public class HubRepositoryImpl implements HubRepositoryCustom {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public Page<HubResponse> searchHubs(HubSearchRequest request, Pageable pageable) {
+    public Page<Hub> searchHubs(String keyword, Pageable pageable) {
         QHub hub = QHub.hub;
         BooleanBuilder builder = new BooleanBuilder();
 
-        // 삭제된 데이터 제외
         builder.and(hub.deletedAt.isNull());
 
-        // 이름/주소 키워드 검색 (OR 조건)
-        String keyword = request.getKeyword() == null ? null : request.getKeyword().trim();
-        if (StringUtils.hasText(keyword)) {
+        String trimmed = keyword == null ? null : keyword.trim();
+        if (StringUtils.hasText(trimmed)) {
             builder.and(
-                    hub.name.containsIgnoreCase(keyword)
-                            .or(hub.address.containsIgnoreCase(keyword))
+                    hub.name.containsIgnoreCase(trimmed)
+                            .or(hub.address.containsIgnoreCase(trimmed))
             );
         }
 
-        List<HubResponse> content = queryFactory
+        List<Hub> content = queryFactory
                 .selectFrom(hub)
                 .where(builder)
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .orderBy(hub.createdAt.desc())
-                .fetch()
-                .stream()
-                .map(HubResponse::from)
-                .toList();
+                .fetch();
 
         Long total = queryFactory
                 .select(hub.count())

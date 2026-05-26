@@ -105,7 +105,11 @@ public class HubRouteService {
     }
 
     public Page<HubRouteResponse> searchHubRoutes(HubRouteSearchRequest request, Pageable pageable) {
-        return hubRouteRepository.searchHubRoutes(request, pageable);
+        return hubRouteRepository.searchHubRoutes(
+                request.getFromHubId(),
+                request.getToHubId(),
+                pageable
+        ).map(HubRouteResponse::from);
     }
 
     @Transactional

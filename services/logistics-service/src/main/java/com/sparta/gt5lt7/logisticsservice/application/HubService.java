@@ -55,7 +55,8 @@ public class HubService {
 
     // 허브 목록 검색
     public Page<HubResponse> searchHubs(HubSearchRequest request, Pageable pageable) {
-        return hubRepository.searchHubs(request, pageable);
+        return hubRepository.searchHubs(request.getKeyword(), pageable)
+                .map(HubResponse::from);
     }
 
     @Transactional
