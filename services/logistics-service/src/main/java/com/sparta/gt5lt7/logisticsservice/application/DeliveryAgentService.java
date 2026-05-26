@@ -11,6 +11,7 @@ import com.sparta.gt5lt7.logisticsservice.global.exception.HubException;
 import com.sparta.gt5lt7.logisticsservice.presentation.dto.request.DeliveryAgentRequest;
 import com.sparta.gt5lt7.logisticsservice.presentation.dto.response.DeliveryAgentResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,22 +44,25 @@ public class DeliveryAgentService {
                     .orElseThrow(() -> new HubException(HubErrorCode.HUB_NOT_FOUND));
             resolvedHubId = request.getHubId();
         } else {
-            // 허브 배송 담당자: 시스템 전체 소속 → hub_id 항상 null
             resolvedHubId = null;
         }
 
         // 3. 다음 배송 순번 = 동일 scope 최대값 + 1
         int nextSequence = calculateNextSequence(request.getAgentType(), resolvedHubId);
 
-        // 4. 저장
-        DeliveryAgent agent = DeliveryAgent.create(
-                request.getUserId(),
-                resolvedHubId,
-                request.getSlackUserId(),
-                request.getAgentType(),
-                nextSequence
-        );
-        return DeliveryAgentResponse.from(deliveryAgentRepository.save(agent));
+        // 4. 저장 (동시성 경쟁으로 인한 유니크 제약 위반은 409로 변환)
+        try {
+            DeliveryAgent agent = DeliveryAgent.create(
+                    request.getUserId(),
+                    resolvedHubId,
+                    request.getSlackUserId(),
+                    request.getAgentType(),
+                    nextSequence
+            );
+            return DeliveryAgentResponse.from(deliveryAgentRepository.save(agent));
+        } catch (DataIntegrityViolationException e) {
+            throw new DeliveryAgentException(DeliveryAgentErrorCode.DELIVERY_AGENT_ALREADY_EXISTS);
+        }
     }
 
     private int calculateNextSequence(AgentType type, UUID hubId) {
