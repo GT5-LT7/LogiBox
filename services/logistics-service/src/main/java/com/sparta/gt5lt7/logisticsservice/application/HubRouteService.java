@@ -9,14 +9,19 @@ import com.sparta.gt5lt7.logisticsservice.global.exception.HubException;
 import com.sparta.gt5lt7.logisticsservice.global.exception.HubRouteErrorCode;
 import com.sparta.gt5lt7.logisticsservice.global.exception.HubRouteException;
 import com.sparta.gt5lt7.logisticsservice.presentation.dto.request.HubRouteRequest;
+import com.sparta.gt5lt7.logisticsservice.presentation.dto.request.HubRouteSearchRequest;
 import com.sparta.gt5lt7.logisticsservice.presentation.dto.response.HubRouteResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.SQLException;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -66,7 +71,6 @@ public class HubRouteService {
     }
 
     // DataIntegrityViolationException의 원인 체인을 따라가서 SQLState가 unique_violation(23505)인지 확인. PostgreSQL, H2 공통으로 23505를 사용.
-
     private boolean isUniqueConstraintViolation(DataIntegrityViolationException e) {
         Throwable cause = e.getCause();
         while (cause != null) {
@@ -77,4 +81,30 @@ public class HubRouteService {
         }
         return false;
     }
+
+    @Cacheable(cacheNames = "hubRoutes", key = "'id:' + #routeId")
+    public HubRouteResponse getHubRoute(UUID routeId) {
+        HubRoute route = hubRouteRepository.findByRouteIdAndDeletedAtIsNull(routeId)
+                .orElseThrow(() -> new HubRouteException(HubRouteErrorCode.HUB_ROUTE_NOT_FOUND));
+        return HubRouteResponse.from(route);
+    }
+
+    // P2P 경로 조회: 출발 허브 → 도착 허브 직접 경로를 반환.
+    // 모든 허브 페어는 직접 연결되어 있으므로 단일 HubRoute 레코드 조회로 끝.
+
+    @Cacheable(cacheNames = "hubRoutes", key = "'pair:' + #fromHubId + ':' + #toHubId")
+    public HubRouteResponse getHubRouteByHubs(UUID fromHubId, UUID toHubId) {
+        if (fromHubId.equals(toHubId)) {
+            throw new HubRouteException(HubRouteErrorCode.HUB_ROUTE_SAME_HUB);
+        }
+        HubRoute route = hubRouteRepository
+                .findByFromHubIdAndToHubIdAndDeletedAtIsNull(fromHubId, toHubId)
+                .orElseThrow(() -> new HubRouteException(HubRouteErrorCode.HUB_ROUTE_NOT_FOUND));
+        return HubRouteResponse.from(route);
+    }
+
+    public Page<HubRouteResponse> searchHubRoutes(HubRouteSearchRequest request, Pageable pageable) {
+        return hubRouteRepository.searchHubRoutes(request, pageable);
+    }
+
 }
