@@ -9,7 +9,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-@FeignClient(name = "logistics-service", configuration = InternalFeignConfig.class, fallback = HubClientFallback.class)
+@FeignClient(
+        name = "logistics-service",
+        configuration = InternalFeignConfig.class,
+        fallbackFactory = HubClientFallbackFactory.class
+)
 public interface HubClient {
     @GetMapping("/api/hubs/{id}")
     HubResponse getHub(@PathVariable UUID id);
