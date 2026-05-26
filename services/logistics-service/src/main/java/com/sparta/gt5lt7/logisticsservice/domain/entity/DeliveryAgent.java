@@ -17,7 +17,14 @@ import java.util.UUID;
                 @Index(name = "idx_delivery_agents_user", columnList = "user_id")
         },
         uniqueConstraints = {
-                @UniqueConstraint(name = "uk_delivery_agents_user", columnNames = "user_id")
+                @UniqueConstraint(
+                        name = "uk_delivery_agents_user",
+                        columnNames = "user_id"
+                ),
+                @UniqueConstraint(
+                        name = "uk_delivery_agents_sequence_per_scope",
+                        columnNames = {"agent_type", "hub_id", "delivery_sequence"}
+                )
         }
 )
 @Getter

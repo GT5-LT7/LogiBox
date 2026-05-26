@@ -12,14 +12,15 @@ public interface DeliveryAgentRepository extends JpaRepository<DeliveryAgent, UU
 
     boolean existsByUserIdAndDeletedAtIsNull(UUID userId);
 
-    // HUB 타입 전체 최대 배송 순번 (hub_id IS NULL 활성 레코드 대상)
+    // HUB 타입 전체 최대 배송 순번 (deleted 행 포함)
+    // 시퀀스가 단조증가하도록 삭제된 행도 함께 고려한다.
     @Query("SELECT COALESCE(MAX(d.deliverySequence), -1) FROM DeliveryAgent d " +
-            "WHERE d.agentType = :agentType AND d.hubId IS NULL AND d.deletedAt IS NULL")
+            "WHERE d.agentType = :agentType AND d.hubId IS NULL")
     Integer findMaxSequenceForHubType(@Param("agentType") AgentType agentType);
 
-    // COMPANY 타입의 특정 허브 내 최대 배송 순번
+    // COMPANY 타입의 특정 허브 내 최대 배송 순번 (deleted 행 포함).
     @Query("SELECT COALESCE(MAX(d.deliverySequence), -1) FROM DeliveryAgent d " +
-            "WHERE d.agentType = :agentType AND d.hubId = :hubId AND d.deletedAt IS NULL")
+            "WHERE d.agentType = :agentType AND d.hubId = :hubId")
     Integer findMaxSequenceForCompanyType(
             @Param("agentType") AgentType agentType,
             @Param("hubId") UUID hubId

@@ -11,12 +11,14 @@ import com.sparta.gt5lt7.logisticsservice.global.exception.HubException;
 import com.sparta.gt5lt7.logisticsservice.presentation.dto.request.DeliveryAgentRequest;
 import com.sparta.gt5lt7.logisticsservice.presentation.dto.response.DeliveryAgentResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -25,9 +27,12 @@ public class DeliveryAgentService {
     private final DeliveryAgentRepository deliveryAgentRepository;
     private final HubRepository hubRepository;
 
+    private static final int MAX_RETRY = 5;
+    private static final String UK_USER = "uk_delivery_agents_user";
+
     @Transactional
     public DeliveryAgentResponse createDeliveryAgent(DeliveryAgentRequest request) {
-        // 1. 한 사용자 = 한 배송 담당자
+        // 1. 한 사용자 = 한 배송 담당자 (선제 검증)
         if (deliveryAgentRepository.existsByUserIdAndDeletedAtIsNull(request.getUserId())) {
             throw new DeliveryAgentException(DeliveryAgentErrorCode.DELIVERY_AGENT_ALREADY_EXISTS);
         }
@@ -44,7 +49,6 @@ public class DeliveryAgentService {
                     .orElseThrow(() -> new HubException(HubErrorCode.HUB_NOT_FOUND));
             resolvedHubId = request.getHubId();
         } else {
-            // 허브 배송 담당자: 시스템 전체 소속 → hub_id가 들어오면 400으로 거절
             if (request.getHubId() != null) {
                 throw new DeliveryAgentException(
                         DeliveryAgentErrorCode.HUB_ID_NOT_ALLOWED_FOR_HUB_AGENT
@@ -53,11 +57,10 @@ public class DeliveryAgentService {
             resolvedHubId = null;
         }
 
-        // 3. 다음 배송 순번 = 동일 scope 최대값 + 1
-        int nextSequence = calculateNextSequence(request.getAgentType(), resolvedHubId);
+        // 3. 시퀀스 충돌 대비 재시도 루프
+        for (int attempt = 1; attempt <= MAX_RETRY; attempt++) {
+            int nextSequence = calculateNextSequence(request.getAgentType(), resolvedHubId);
 
-        // 4. 저장 (동시성 경쟁으로 인한 유니크 제약 위반은 409로 변환)
-        try {
             DeliveryAgent agent = DeliveryAgent.create(
                     request.getUserId(),
                     resolvedHubId,
@@ -65,10 +68,28 @@ public class DeliveryAgentService {
                     request.getAgentType(),
                     nextSequence
             );
-            return DeliveryAgentResponse.from(deliveryAgentRepository.save(agent));
-        } catch (DataIntegrityViolationException e) {
-            throw new DeliveryAgentException(DeliveryAgentErrorCode.DELIVERY_AGENT_ALREADY_EXISTS);
+
+            try {
+                return DeliveryAgentResponse.from(deliveryAgentRepository.saveAndFlush(agent));
+            } catch (DataIntegrityViolationException e) {
+                // user_id 중복은 재시도 무의미 → 즉시 409
+                if (isUserUniqueViolation(e)) {
+                    throw new DeliveryAgentException(
+                            DeliveryAgentErrorCode.DELIVERY_AGENT_ALREADY_EXISTS
+                    );
+                }
+
+                // 시퀀스 충돌이면 max+1 재계산 후 재시도
+                log.warn("[DeliveryAgentService] 시퀀스 충돌, 재시도 {}/{}", attempt, MAX_RETRY);
+
+                if (attempt == MAX_RETRY) {
+                    log.error("[DeliveryAgentService] 시퀀스 할당 재시도 한도 초과", e);
+                    throw e;
+                }
+            }
         }
+
+        throw new IllegalStateException("배송 담당자 등록 재시도 한도 초과");
     }
 
     private int calculateNextSequence(AgentType type, UUID hubId) {
@@ -79,5 +100,13 @@ public class DeliveryAgentService {
             maxSeq = deliveryAgentRepository.findMaxSequenceForCompanyType(type, hubId);
         }
         return maxSeq + 1;
+    }
+
+    // 예외가 user_id unique 제약 위반인지 판별. PostgreSQL은 메시지에 제약명을 포함하므로 contains 매칭.
+    private boolean isUserUniqueViolation(DataIntegrityViolationException e) {
+        Throwable cause = e.getMostSpecificCause();
+        if (cause == null) return false;
+        String msg = cause.getMessage();
+        return msg != null && msg.contains(UK_USER);
     }
 }
