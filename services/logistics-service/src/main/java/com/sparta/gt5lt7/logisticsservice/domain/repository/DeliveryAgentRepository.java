@@ -6,11 +6,14 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Optional;
 import java.util.UUID;
 
-public interface DeliveryAgentRepository extends JpaRepository<DeliveryAgent, UUID> {
+public interface DeliveryAgentRepository extends JpaRepository<DeliveryAgent, UUID>, DeliveryAgentRepositoryCustom {
 
     boolean existsByUserIdAndDeletedAtIsNull(UUID userId);
+
+    Optional<DeliveryAgent> findByDeliveryAgentIdAndDeletedAtIsNull(UUID deliveryAgentId);
 
     // HUB 타입 전체 최대 배송 순번 (deleted 행 포함)
     // 시퀀스가 단조증가하도록 삭제된 행도 함께 고려한다.
