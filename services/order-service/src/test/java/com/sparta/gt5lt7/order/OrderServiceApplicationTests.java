@@ -6,7 +6,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 @SpringBootTest(properties = {
         "gemini.api.key=test-api-key",
         "gemini.model=gemini-2.0-flash",
-        "slack.webhook.url=https://test.slack.webhook"
+        "slack.webhook.url=https://test.slack.webhook",
+        "eureka.client.enabled=false"
 })
 class OrderServiceApplicationTests {
 
