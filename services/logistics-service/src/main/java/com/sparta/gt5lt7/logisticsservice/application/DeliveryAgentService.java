@@ -9,10 +9,13 @@ import com.sparta.gt5lt7.logisticsservice.global.exception.DeliveryAgentExceptio
 import com.sparta.gt5lt7.logisticsservice.global.exception.HubErrorCode;
 import com.sparta.gt5lt7.logisticsservice.global.exception.HubException;
 import com.sparta.gt5lt7.logisticsservice.presentation.dto.request.DeliveryAgentRequest;
+import com.sparta.gt5lt7.logisticsservice.presentation.dto.request.DeliveryAgentSearchRequest;
 import com.sparta.gt5lt7.logisticsservice.presentation.dto.response.DeliveryAgentResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -90,6 +93,24 @@ public class DeliveryAgentService {
         }
 
         throw new IllegalStateException("배송 담당자 등록 재시도 한도 초과");
+    }
+
+
+    // 배송 담당자 단건 조회.
+    public DeliveryAgentResponse getDeliveryAgent(UUID deliveryAgentId) {
+        DeliveryAgent agent = deliveryAgentRepository
+                .findByDeliveryAgentIdAndDeletedAtIsNull(deliveryAgentId)
+                .orElseThrow(() -> new DeliveryAgentException(
+                        DeliveryAgentErrorCode.DELIVERY_AGENT_NOT_FOUND
+                ));
+        return DeliveryAgentResponse.from(agent);
+    }
+
+    // 배송 담당자 검색·페이징, QueryDSL 기반, deleted_at IS NULL 자동 필터
+    public Page<DeliveryAgentResponse> searchDeliveryAgents(
+            DeliveryAgentSearchRequest request, Pageable pageable
+    ) {
+        return deliveryAgentRepository.searchDeliveryAgents(request, pageable);
     }
 
     private int calculateNextSequence(AgentType type, UUID hubId) {
