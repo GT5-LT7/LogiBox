@@ -7,6 +7,7 @@ import lombok.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Entity
@@ -104,6 +105,7 @@ public class Delivery {
     }
 
     public void updateStatus(DeliveryStatus status) {
+        Objects.requireNonNull(status, "주문란은 비워질 수 없습니다.");
         this.deliveryStatus = status;
         this.updatedAt = LocalDateTime.now();
 
