@@ -15,7 +15,7 @@ import java.util.UUID;
         fallbackFactory = HubClientFallbackFactory.class
 )
 public interface HubClient {
-    @GetMapping("/api/hubs/{id}")
+    @GetMapping("/api/v1/hubs/{id}")
     HubResponse getHub(@PathVariable UUID id);
 
     @PostMapping("/internal/hubs")

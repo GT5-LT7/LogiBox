@@ -48,7 +48,7 @@ class CompanyControllerTest {
             given(companyFacade.searchCompanies(any(), any(), any(), any())).willReturn(mockResponse);
 
             // when & then
-            mockMvc.perform(get("/api/companies")
+            mockMvc.perform(get("/api/v1/companies")
                             .param("size", "30")
                             .param("sort", "updatedAt,asc"))
                     .andExpect(status().isOk());
@@ -71,7 +71,7 @@ class CompanyControllerTest {
             given(companyFacade.searchCompanies(any(), any(), any(), any())).willReturn(mockResponse);
 
             // when & then
-            mockMvc.perform(get("/api/companies")
+            mockMvc.perform(get("/api/v1/companies")
                             .param("size", "20")
                             .param("sort", "name,asc"))
                     .andExpect(status().isOk());
