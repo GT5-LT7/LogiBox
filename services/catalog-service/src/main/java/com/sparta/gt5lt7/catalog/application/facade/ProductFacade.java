@@ -17,12 +17,10 @@ import com.sparta.gt5lt7.catalog.presentation.dto.response.ProductResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -33,6 +31,9 @@ public class ProductFacade {
     private final CompanyService companyService;
     private final HubClient hubClient;
     private final UserClient userClient;
+    private final RedisTemplate<String, String> redisTemplate;
+
+    private static final String REDIS_ROLLBACK_KEY_PREFIX = "rollback:order:";
 
     public ProductResponse.Create createProduct(ProductRequest.Create request, CustomUserPrincipal principal) {
         Company company = companyService.getCompany(request.getCompanyId());
@@ -48,9 +49,7 @@ public class ProductFacade {
         Page<Product> productPage = productService.searchProducts(keyword, salesOnly, companyId, hubId, pageable, principal);
 
         // [MSA 통신] 허브 ID를 중복 없이 추출 → Hub Service로 허브 정보 요청
-        Set<UUID> hubIds = productPage.stream()
-                .map(product -> product.getCompany().getHubId())
-                .collect(Collectors.toSet());
+        Set<UUID> hubIds = productPage.stream().map(product -> product.getCompany().getHubId()).collect(Collectors.toSet());
         List<HubResponse> hubs = hubIds.isEmpty() ? List.of() : hubClient.getHubs(hubIds);
 
         // O(1) 조회를 위한 허브 Map 생성
@@ -100,6 +99,57 @@ public class ProductFacade {
     public ProductResponse.StatusUpdate updateProductStatus(UUID id, ProductRequest.StatusUpdate request, CustomUserPrincipal principal) {
         Product product = productService.updateProductStatus(id, request.getAction(), principal);
         return ProductResponse.StatusUpdate.from(product);
+    }
+
+    public ProductResponse.StockUpdate updateProductQuantity(UUID id, ProductRequest.StockUpdate request, CustomUserPrincipal principal) {
+        Product product = productService.getProduct(id);
+        Company company = product.getCompany();
+
+        // Master가 아니면 담당 허브 또는 본인 업체인지 검증
+        if (!principal.isAccessibleHub(company.getHubId()) && !principal.isAccessibleCompany(company.getCompanyId())) {
+            throw new BaseException(ProductErrorCode.PRODUCT_UPDATE_DENIED);
+        }
+
+        product = productService.updateProductQuantity(id, request.getUpdateQuantity());
+        return ProductResponse.StockUpdate.from(product);
+    }
+
+    public List<ProductResponse.StockUpdate> updateProductQuantityForOrder(ProductRequest.OrderStockUpdate requests) {
+        List<ProductRequest.StockItem> stockItems = requests.getStockItems();
+
+        if (stockItems.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // [Redis 활용] 원복 요청일 때, 보상 트랜잭션 중복 검증
+        boolean isRollbackProcess = stockItems.stream().allMatch(item -> item.getUpdateQuantity() > 0);
+        String redisKey = REDIS_ROLLBACK_KEY_PREFIX + requests.getOrderId();
+
+        // 1. 주문 ID로 롤백되었는지 확인
+        if (isRollbackProcess && Objects.equals(redisTemplate.hasKey(redisKey), true)) {
+            return productService.findAllByIds(stockItems);
+        }
+
+        // [데드락 방지] 상품 ID 오름차순 정렬 → 트랜잭션들이 항상 같은 순서로 락 점유
+        List<UUID> productIds = stockItems.stream().map(ProductRequest.StockItem::getProductId).sorted().toList();
+
+        // O(1) 조회를 위한 요청 Map 생성 → 중복되는 상품 ID의 변경 재고량을 병합해 안정성 확보
+        Map<UUID, Integer> quantityMap = stockItems.stream()
+                .collect(Collectors.toMap(
+                        ProductRequest.StockItem::getProductId,
+                        ProductRequest.StockItem::getUpdateQuantity,
+                        Integer::sum
+                ));
+
+        // 정렬된 순서대로 DB에서 비관적 락을 걸고 데이터 조회
+        List<Product> products =productService.updateProductQuantityForOrder(productIds, quantityMap);
+
+        // 2. 롤백 처리 성공 시, Redis에 주문 ID 저장 → TTL 만료 시간 분산 적용
+        if (isRollbackProcess) {
+            productService.saveRollbackHistoryToRedis(redisKey);
+        }
+
+        return products.stream().map(ProductResponse.StockUpdate::from).toList();
     }
 
     public ProductResponse.Delete deleteProduct(UUID id, CustomUserPrincipal principal) {

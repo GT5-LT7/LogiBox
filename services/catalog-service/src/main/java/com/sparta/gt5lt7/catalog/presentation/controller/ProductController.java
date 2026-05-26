@@ -6,7 +6,6 @@ import com.sparta.gt5lt7.catalog.presentation.dto.request.ProductRequest;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.ProductResponse;
 import com.sparta.gt5lt7.common.dto.ApiResponse;
 import com.sparta.gt5lt7.common.dto.PageResponse;
-import com.sparta.gt5lt7.catalog.application.service.ProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -23,7 +22,6 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ProductController {
     private final ProductFacade productFacade;
-    private final ProductService productService;
 
     @PostMapping
     @PreAuthorize("hasAnyRole('MASTER', 'HUB_MANAGER', 'COMPANY_MANAGER')")
@@ -88,7 +86,7 @@ public class ProductController {
             @Valid @RequestBody ProductRequest.StockUpdate request,
             @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
-        ProductResponse.StockUpdate response = productService.updateProductQuantity(id, request, principal);
+        ProductResponse.StockUpdate response = productFacade.updateProductQuantity(id, request, principal);
         return ResponseEntity.ok(ApiResponse.updated(response));
     }
 

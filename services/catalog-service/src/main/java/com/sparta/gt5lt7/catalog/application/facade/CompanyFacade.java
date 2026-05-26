@@ -1,6 +1,7 @@
 package com.sparta.gt5lt7.catalog.application.facade;
 
 import com.sparta.gt5lt7.catalog.application.service.ProductService;
+import com.sparta.gt5lt7.catalog.presentation.dto.response.HubUsageStatusResponse;
 import com.sparta.gt5lt7.common.dto.PageResponse;
 import com.sparta.gt5lt7.catalog.domain.entity.CompanyType;
 import com.sparta.gt5lt7.catalog.infrastructure.client.UserClient;
@@ -52,7 +53,6 @@ public class CompanyFacade {
 
         // [서비스 레이어] 업체 생성
         Company company = companyService.createCompany(request, coordinate);
-
         return CompanyResponse.Create.from(company);
     }
 
@@ -61,9 +61,7 @@ public class CompanyFacade {
         Page<Company> companyPage = companyService.searchCompanies(keyword, type, hubId, pageable);
 
         // [MSA 통신] 허브 ID를 중복 없이 추출 → Hub Service로 허브 정보 요청
-        Set<UUID> hubIds = companyPage.stream()
-                .map(Company::getHubId)
-                .collect(Collectors.toSet());
+        Set<UUID> hubIds = companyPage.stream().map(Company::getHubId).collect(Collectors.toSet());
         List<HubResponse> hubs = hubIds.isEmpty() ? List.of() : hubClient.getHubs(hubIds);
 
         // O(1) 조회를 위한 허브 Map 생성
@@ -96,6 +94,11 @@ public class CompanyFacade {
         return CompanyResponse.Detail.of(company, hub, createdBy, updatedBy);
     }
 
+    public HubUsageStatusResponse checkHubUsage(UUID hubId) {
+        boolean isCompanyInUse = companyService.checkHubUsage(hubId);
+        return new HubUsageStatusResponse(isCompanyInUse);
+    }
+
     public CompanyResponse.Update updateCompany(UUID id, CompanyRequest request, CustomUserPrincipal principal) {
         // [서비스 레이어] 업체 조회
         Company company = companyService.getCompany(id);
@@ -121,7 +124,6 @@ public class CompanyFacade {
 
         // [서비스 레이어] 업체 수정
         Company updatedCompany = companyService.updateCompany(company, request, coordinate);
-
         return CompanyResponse.Update.of(updatedCompany, hub);
     }
 

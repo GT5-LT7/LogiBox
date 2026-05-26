@@ -46,9 +46,8 @@ public class CompanyService {
         return companyRepository.findById(id).orElseThrow(() -> new BaseException(CompanyErrorCode.COMPANY_NOT_FOUND));
     }
 
-    public HubUsageStatusResponse checkHubUsage(UUID hubId) {
-        boolean isCompanyInUse = companyRepository.existsByHubId(hubId);
-        return new HubUsageStatusResponse(isCompanyInUse);
+    public boolean checkHubUsage(UUID hubId) {
+        return companyRepository.existsByHubId(hubId);
     }
 
     @Transactional
@@ -58,7 +57,6 @@ public class CompanyService {
         }
 
         company.update(request);
-
         return companyRepository.save(company);
     }
 
@@ -72,7 +70,6 @@ public class CompanyService {
         }
 
         company.softDelete(principal.userId());
-
         return company;
     }
 }

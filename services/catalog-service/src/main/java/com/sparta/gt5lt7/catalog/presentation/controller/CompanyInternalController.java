@@ -1,6 +1,6 @@
 package com.sparta.gt5lt7.catalog.presentation.controller;
 
-import com.sparta.gt5lt7.catalog.application.service.CompanyService;
+import com.sparta.gt5lt7.catalog.application.facade.CompanyFacade;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.HubUsageStatusResponse;
 import com.sparta.gt5lt7.common.dto.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -13,13 +13,13 @@ import java.util.UUID;
 @RequestMapping("/internal/companies")
 @RequiredArgsConstructor
 public class CompanyInternalController {
-    private final CompanyService companyService;
+    private final CompanyFacade companyFacade;
 
     @GetMapping("/hubs/{hubId}")
     public ResponseEntity<ApiResponse<HubUsageStatusResponse>> checkHubUsage(
             @PathVariable UUID hubId
     ) {
-        HubUsageStatusResponse response = companyService.checkHubUsage(hubId);
+        HubUsageStatusResponse response = companyFacade.checkHubUsage(hubId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 }

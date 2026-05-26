@@ -75,11 +75,11 @@ class CompanyServiceTest {
         given(companyRepository.searchCompanies(keyword, type, hubId, pageable)).willReturn(mockPage);
 
         // when
-        Page<Company> response = companyService.searchCompanies(keyword, type, hubId, pageable);
+        Page<Company> companyPage = companyService.searchCompanies(keyword, type, hubId, pageable);
 
         // then
-        assertThat(response.getContent()).hasSize(1);
-        assertThat(response.getContent().get(0).getName()).isEqualTo(mockCompany.getName());
+        assertThat(companyPage.getContent()).hasSize(1);
+        assertThat(companyPage.getContent().get(0).getName()).isEqualTo(mockCompany.getName());
         verify(companyRepository).searchCompanies(keyword, type, hubId, pageable);
     }
 
@@ -90,11 +90,10 @@ class CompanyServiceTest {
         given(companyRepository.existsByHubId(hubId)).willReturn(true);
 
         // when
-        HubUsageStatusResponse response = companyService.checkHubUsage(hubId);
+        boolean isCompanyInUse = companyService.checkHubUsage(hubId);
 
         // then
-        assertThat(response).isNotNull();
-        assertThat(response.used()).isTrue();
+        assertThat(isCompanyInUse).isTrue();
         verify(companyRepository).existsByHubId(hubId);
     }
 
@@ -111,12 +110,12 @@ class CompanyServiceTest {
             given(companyRepository.save(any(Company.class))).willAnswer(invocation -> invocation.getArgument(0));
 
             // when
-            Company updated = companyService.updateCompany(mockCompany, request, null);
+            Company company = companyService.updateCompany(mockCompany, request, null);
 
             // then
-            assertThat(updated.getName()).isEqualTo(request.getName());
-            assertThat(updated.getLatitude()).isEqualTo(BigDecimal.valueOf(37.503));
-            assertThat(updated.getLongitude()).isEqualTo(BigDecimal.valueOf(127.044));
+            assertThat(company.getName()).isEqualTo(request.getName());
+            assertThat(company.getLatitude()).isEqualTo(BigDecimal.valueOf(37.503));
+            assertThat(company.getLongitude()).isEqualTo(BigDecimal.valueOf(127.044));
         }
 
         @Test
@@ -127,12 +126,12 @@ class CompanyServiceTest {
             given(companyRepository.save(any(Company.class))).willAnswer(invocation -> invocation.getArgument(0));
 
             // when
-            Company updated = companyService.updateCompany(mockCompany, request, mockCoordinate);
+            Company company = companyService.updateCompany(mockCompany, request, mockCoordinate);
 
             // then
-            assertThat(updated.getName()).isEqualTo(request.getName());
-            assertThat(updated.getLatitude()).isEqualTo(mockCoordinate.latitude());
-            assertThat(updated.getLongitude()).isEqualTo(mockCoordinate.longitude());
+            assertThat(company.getName()).isEqualTo(request.getName());
+            assertThat(company.getLatitude()).isEqualTo(mockCoordinate.latitude());
+            assertThat(company.getLongitude()).isEqualTo(mockCoordinate.longitude());
         }
     }
 
