@@ -4,6 +4,7 @@ import com.sparta.gt5lt7.common.dto.ApiResponse;
 import com.sparta.gt5lt7.logisticsservice.application.DeliveryAgentService;
 import com.sparta.gt5lt7.logisticsservice.presentation.dto.request.DeliveryAgentRequest;
 import com.sparta.gt5lt7.logisticsservice.presentation.dto.request.DeliveryAgentSearchRequest;
+import com.sparta.gt5lt7.logisticsservice.presentation.dto.request.DeliveryAgentUpdateRequest;
 import com.sparta.gt5lt7.logisticsservice.presentation.dto.response.DeliveryAgentResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,19 @@ public class DeliveryAgentController {
     ) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.created(deliveryAgentService.createDeliveryAgent(request)));
+    }
+
+    @PatchMapping("/{deliveryAgentId}")
+    @PreAuthorize("hasAnyRole('MASTER', 'HUB_MANAGER')")
+    public ResponseEntity<ApiResponse<DeliveryAgentResponse>> updateDeliveryAgent(
+            @PathVariable UUID deliveryAgentId,
+            @RequestBody @Valid DeliveryAgentUpdateRequest request
+    ) {
+        return ResponseEntity.ok(
+                ApiResponse.updated(
+                        deliveryAgentService.updateDeliveryAgent(deliveryAgentId, request)
+                )
+        );
     }
 
     @GetMapping("/{deliveryAgentId}")

@@ -10,6 +10,7 @@ import com.sparta.gt5lt7.logisticsservice.global.exception.HubErrorCode;
 import com.sparta.gt5lt7.logisticsservice.global.exception.HubException;
 import com.sparta.gt5lt7.logisticsservice.presentation.dto.request.DeliveryAgentRequest;
 import com.sparta.gt5lt7.logisticsservice.presentation.dto.request.DeliveryAgentSearchRequest;
+import com.sparta.gt5lt7.logisticsservice.presentation.dto.request.DeliveryAgentUpdateRequest;
 import com.sparta.gt5lt7.logisticsservice.presentation.dto.response.DeliveryAgentResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,7 +19,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
+import java.util.Objects;
 import java.util.UUID;
 
 @Slf4j
@@ -32,6 +35,7 @@ public class DeliveryAgentService {
 
     private static final int MAX_RETRY = 5;
     private static final String UK_USER = "uk_delivery_agents_user";
+    private static final String UK_SEQUENCE = "uk_delivery_agents_sequence_per_scope";
 
     @Transactional
     public DeliveryAgentResponse createDeliveryAgent(DeliveryAgentRequest request) {
@@ -95,6 +99,58 @@ public class DeliveryAgentService {
         throw new IllegalStateException("배송 담당자 등록 재시도 한도 초과");
     }
 
+    @Transactional
+    public DeliveryAgentResponse updateDeliveryAgent(
+            UUID deliveryAgentId,
+            DeliveryAgentUpdateRequest request
+    ) {
+        DeliveryAgent agent = deliveryAgentRepository
+                .findByDeliveryAgentIdAndDeletedAtIsNull(deliveryAgentId)
+                .orElseThrow(() -> new DeliveryAgentException(
+                        DeliveryAgentErrorCode.DELIVERY_AGENT_NOT_FOUND
+                ));
+
+        boolean hubChanged = request.getHubId() != null
+                && !Objects.equals(request.getHubId(), agent.getHubId());
+
+        // 1. hubId 변경 검증 (실제로 다를 때만)
+        if (hubChanged) {
+            if (agent.getAgentType() == AgentType.HUB_DELIVERY_AGENT) {
+                throw new DeliveryAgentException(
+                        DeliveryAgentErrorCode.HUB_ID_NOT_ALLOWED_FOR_HUB_AGENT
+                );
+            }
+            hubRepository.findByHubIdAndDeletedAtIsNull(request.getHubId())
+                    .orElseThrow(() -> new HubException(HubErrorCode.HUB_NOT_FOUND));
+        }
+
+        // 2. slackUserId 변경 (시퀀스 영향 없음, 락 불필요)
+        if (StringUtils.hasText(request.getSlackUserId())) {
+            agent.updateSlackUserId(request.getSlackUserId());
+        }
+
+        // 3. hubId 변경 시 시퀀스 충돌 대비 재시도
+        if (hubChanged) {
+            for (int attempt = 1; attempt <= MAX_RETRY; attempt++) {
+                int newSequence = calculateNextSequence(agent.getAgentType(), request.getHubId());
+                agent.updateHubId(request.getHubId(), newSequence);
+                try {
+                    return DeliveryAgentResponse.from(deliveryAgentRepository.saveAndFlush(agent));
+                } catch (DataIntegrityViolationException e) {
+                    if (attempt == MAX_RETRY || !isSequenceUniqueViolation(e)) {
+                        log.error("[DeliveryAgentService] 허브 이동 시 시퀀스 할당 실패", e);
+                        throw e;
+                    }
+                    log.warn("[DeliveryAgentService] 시퀀스 충돌, 재시도 {}/{}", attempt, MAX_RETRY);
+                }
+            }
+            throw new IllegalStateException("배송 담당자 시퀀스 재할당 한도 초과");
+        }
+
+        // hubId 변경 없는 경우 (slackUserId만 변경)
+        return DeliveryAgentResponse.from(deliveryAgentRepository.saveAndFlush(agent));
+    }
+
 
     // 배송 담당자 단건 조회.
     public DeliveryAgentResponse getDeliveryAgent(UUID deliveryAgentId) {
@@ -134,5 +190,12 @@ public class DeliveryAgentService {
         if (cause == null) return false;
         String msg = cause.getMessage();
         return msg != null && msg.contains(UK_USER);
+    }
+
+    private boolean isSequenceUniqueViolation(DataIntegrityViolationException e) {
+        Throwable cause = e.getMostSpecificCause();
+        if (cause == null) return false;
+        String msg = cause.getMessage();
+        return msg != null && msg.contains(UK_SEQUENCE);
     }
 }
