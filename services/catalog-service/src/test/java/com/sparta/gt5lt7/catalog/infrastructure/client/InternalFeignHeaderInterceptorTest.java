@@ -16,11 +16,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayName("헤더 전파 인터셉터 테스트")
 public class InternalFeignHeaderInterceptorTest {
-    private final RequestTemplate template = new RequestTemplate();
-    private final InternalFeignHeaderInterceptor interceptor = new InternalFeignHeaderInterceptor();
+    private RequestTemplate template;
+    private InternalFeignHeaderInterceptor interceptor;
 
     @BeforeEach
     void setUp() {
+        template = new RequestTemplate();
+        interceptor = new InternalFeignHeaderInterceptor();
         SecurityContextHolder.clearContext();
     }
 
@@ -48,7 +50,7 @@ public class InternalFeignHeaderInterceptorTest {
     }
 
     @Test
-    @DisplayName("실패: SecurityContext에 인증 정보가 없으면 헤더가 주입되지 않고 통과")
+    @DisplayName("성공: SecurityContext에 인증 정보가 없으면 헤더가 주입되지 않고 통과")
     void test2() {
         // when
         interceptor.apply(template);
@@ -56,5 +58,6 @@ public class InternalFeignHeaderInterceptorTest {
         // then
         assertThat(template.headers().get("X-User-Id")).isNull();
         assertThat(template.headers().get("X-User-Role")).isNull();
+        assertThat(template.headers().get("X-User-Management-Id")).isNull();
     }
 }

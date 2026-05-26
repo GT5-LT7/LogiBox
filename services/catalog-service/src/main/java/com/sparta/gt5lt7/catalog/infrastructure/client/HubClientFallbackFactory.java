@@ -35,10 +35,9 @@ public class HubClientFallbackFactory implements FallbackFactory<HubClient> {
 
             @Override
             public List<HubResponse> getHubs(Set<UUID> ids) {
-                log.error("[HubClient] 목록 조회 실패로 인한 폴백 실행. 대상 ID: {}, 원인: {}", ids, cause.getMessage());
-                return ids.stream()
-                        .map(id -> new HubResponse(id, "-"))
-                        .toList();
+                String errorMessage = (cause != null && cause.getMessage() != null) ? cause.getMessage() : "Unknown";
+                log.error("[HubClient] 목록 조회 실패로 인한 폴백 실행. 대상 ID: {}, 원인: {}", ids, errorMessage);
+                return ids.stream().map(id -> new HubResponse(id, "-")).toList();
             }
         };
     }
