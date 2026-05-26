@@ -13,6 +13,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -58,6 +59,17 @@ public class HubRouteController {
     ) {
         return ResponseEntity.ok(
                 ApiResponse.success(hubRouteService.searchHubRoutes(request, pageable))
+        );
+    }
+
+    @DeleteMapping("/{routeId}")
+    @PreAuthorize("hasRole('MASTER')")
+    public ResponseEntity<ApiResponse<HubRouteResponse>> deleteHubRoute(
+            @PathVariable UUID routeId,
+            @AuthenticationPrincipal com.sparta.gt5lt7.common.security.CustomUserPrincipal principal
+    ) {
+        return ResponseEntity.ok(
+                ApiResponse.deleted(hubRouteService.deleteHubRoute(routeId, principal))
         );
     }
 }

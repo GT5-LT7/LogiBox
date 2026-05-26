@@ -11,6 +11,7 @@ import com.sparta.gt5lt7.logisticsservice.global.exception.HubRouteException;
 import com.sparta.gt5lt7.logisticsservice.presentation.dto.request.HubRouteRequest;
 import com.sparta.gt5lt7.logisticsservice.presentation.dto.request.HubRouteSearchRequest;
 import com.sparta.gt5lt7.logisticsservice.presentation.dto.response.HubRouteResponse;
+import com.sparta.gt5lt7.common.security.CustomUserPrincipal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -105,6 +106,17 @@ public class HubRouteService {
 
     public Page<HubRouteResponse> searchHubRoutes(HubRouteSearchRequest request, Pageable pageable) {
         return hubRouteRepository.searchHubRoutes(request, pageable);
+    }
+
+    @Transactional
+    @CacheEvict(cacheNames = "hubRoutes", allEntries = true)
+    public HubRouteResponse deleteHubRoute(UUID routeId, CustomUserPrincipal principal) {
+        HubRoute route = hubRouteRepository.findByRouteIdAndDeletedAtIsNull(routeId)
+                .orElseThrow(() -> new HubRouteException(HubRouteErrorCode.HUB_ROUTE_NOT_FOUND));
+
+        route.softDelete(principal.userId());
+
+        return HubRouteResponse.from(route);
     }
 
 }
