@@ -90,4 +90,29 @@ public class Delivery {
             this.deliveryStatus = DeliveryStatus.READY;
         }
     }
+
+    public void assignDeliveryAgent(UUID deliveryAgentId) {
+        this.deliveryAgentId = deliveryAgentId;
+    }
+
+    public void updateStatus(DeliveryStatus status) {
+        this.deliveryStatus = status;
+
+        if (status == DeliveryStatus.IN_TRANSIT) {
+            this.departedAt = LocalDateTime.now();
+        }
+
+        if (status == DeliveryStatus.ARRIVED_HUB) {
+            this.arrivedAt = LocalDateTime.now();
+        }
+
+        if (status == DeliveryStatus.DELIVERED) {
+            this.completedAt = LocalDateTime.now();
+        }
+    }
+
+    public void softDelete(UUID deletedBy) {
+        this.deletedAt = LocalDateTime.now();
+        this.deletedBy = deletedBy;
+    }
 }
