@@ -91,4 +91,9 @@ public class ProductFacade {
 
         return ProductResponse.Detail.of(product, hub, createdBy, updatedBy);
     }
+
+    public ProductResponse.Update updateProduct(UUID id, ProductRequest.Update request, CustomUserPrincipal principal) {
+        Product product = productService.updateProduct(id, request, principal);
+        return ProductResponse.Update.from(product);
+    }
 }

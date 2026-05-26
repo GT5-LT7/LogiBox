@@ -64,7 +64,7 @@ public class ProductService {
     }
 
     @Transactional
-    public ProductResponse.Update updateProduct(UUID id, ProductRequest.Update request, CustomUserPrincipal principal) {
+    public Product updateProduct(UUID id, ProductRequest.Update request, CustomUserPrincipal principal) {
         Product product = getProduct(id);
         Company company = product.getCompany();
 
@@ -75,7 +75,7 @@ public class ProductService {
 
         product.update(request);
 
-        return ProductResponse.Update.from(product);
+        return product;
     }
 
     @Transactional
