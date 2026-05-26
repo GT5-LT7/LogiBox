@@ -100,10 +100,12 @@ public class Delivery {
 
     public void assignDeliveryAgent(UUID deliveryAgentId) {
         this.deliveryAgentId = deliveryAgentId;
+        this.updatedAt = LocalDateTime.now();
     }
 
     public void updateStatus(DeliveryStatus status) {
         this.deliveryStatus = status;
+        this.updatedAt = LocalDateTime.now();
 
         if (status == DeliveryStatus.IN_TRANSIT) {
             this.departedAt = LocalDateTime.now();
