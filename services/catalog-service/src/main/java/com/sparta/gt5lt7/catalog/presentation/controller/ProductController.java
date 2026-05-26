@@ -1,5 +1,6 @@
 package com.sparta.gt5lt7.catalog.presentation.controller;
 
+import com.sparta.gt5lt7.catalog.application.facade.ProductFacade;
 import com.sparta.gt5lt7.common.security.CustomUserPrincipal;
 import com.sparta.gt5lt7.catalog.presentation.dto.request.ProductRequest;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.ProductResponse;
@@ -21,6 +22,7 @@ import java.util.UUID;
 @RequestMapping("/api/products")
 @RequiredArgsConstructor
 public class ProductController {
+    private final ProductFacade productFacade;
     private final ProductService productService;
 
     @PostMapping
@@ -29,7 +31,7 @@ public class ProductController {
             @Valid @RequestBody ProductRequest.Create request,
             @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
-        ProductResponse.Create response = productService.createProduct(request, principal);
+        ProductResponse.Create response = productFacade.createProduct(request, principal);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(response));
     }
 

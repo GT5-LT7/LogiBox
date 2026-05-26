@@ -1,5 +1,6 @@
 package com.sparta.gt5lt7.catalog.application.service;
 
+import com.sparta.gt5lt7.common.exception.BaseException;
 import com.sparta.gt5lt7.catalog.domain.entity.Product;
 import com.sparta.gt5lt7.catalog.presentation.dto.request.ActionType;
 import com.sparta.gt5lt7.common.security.CustomUserPrincipal;
@@ -8,7 +9,6 @@ import com.sparta.gt5lt7.catalog.infrastructure.client.HubClient;
 import com.sparta.gt5lt7.catalog.infrastructure.client.UserClient;
 import com.sparta.gt5lt7.catalog.infrastructure.client.dto.HubResponse;
 import com.sparta.gt5lt7.catalog.infrastructure.client.dto.UserResponse;
-import com.sparta.gt5lt7.common.exception.BaseException;
 import com.sparta.gt5lt7.common.dto.PageResponse;
 import com.sparta.gt5lt7.catalog.domain.entity.Company;
 import com.sparta.gt5lt7.catalog.domain.repository.ProductRepository;
@@ -36,7 +36,6 @@ import java.util.stream.Collectors;
 public class ProductService {
     private final HubClient hubClient;
     private final UserClient userClient;
-    private final CompanyService companyService;
     private final ProductRepository productRepository;
     private final StringRedisTemplate redisTemplate;
 
@@ -46,9 +45,7 @@ public class ProductService {
     private static final long RANDOM_BUFFER_MAX_SECONDS = 180L; // 최대 3분 랜덤 버퍼
 
     @Transactional
-    public ProductResponse.Create createProduct(ProductRequest.Create request, CustomUserPrincipal principal) {
-        Company company = companyService.getCompany(request.getCompanyId());
-
+    public Product createProduct(Company company, ProductRequest.Create request, CustomUserPrincipal principal) {
         // Master가 아니면 담당 허브 또는 본인 업체인지 검증
         if (!principal.isAccessibleHub(company.getHubId()) && !principal.isAccessibleCompany(request.getCompanyId())) {
             throw new BaseException(ProductErrorCode.PRODUCT_CREATE_DENIED);
@@ -61,9 +58,7 @@ public class ProductService {
                 .price(request.getPrice())
                 .quantity(request.getQuantity())
                 .build();
-
-        Product savedProduct = productRepository.save(product);
-        return ProductResponse.Create.from(savedProduct);
+        return productRepository.save(product);
     }
 
     public PageResponse<ProductResponse.Summary> searchProducts(
@@ -112,8 +107,8 @@ public class ProductService {
                 .collect(Collectors.toMap(UserResponse::id, user -> user));
 
         // 생성자/수정자 정보 처리
-        UserResponse createdBy = resolveUser(product.getCreatedBy(), userMap);
-        UserResponse updatedBy = resolveUser(product.getUpdatedBy(), userMap);
+        UserResponse createdBy = UserResponse.from(product.getCreatedBy(), userMap);
+        UserResponse updatedBy = UserResponse.from(product.getUpdatedBy(), userMap);
 
         return ProductResponse.Detail.of(product, hub, createdBy, updatedBy);
     }
@@ -280,13 +275,5 @@ public class ProductService {
     public Product getProductById(UUID id) {
         return productRepository.findByIdWithCompany(id)
                 .orElseThrow(() -> new BaseException(ProductErrorCode.PRODUCT_NOT_FOUND));
-    }
-
-    // 사용자 정보 처리 메서드
-    private UserResponse resolveUser(UUID userId, Map<UUID, UserResponse> userMap) {
-        if (userMap.containsKey(userId)) {
-            return userMap.get(userId);
-        }
-        return new UserResponse(userId, "탈퇴 회원");
     }
 }

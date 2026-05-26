@@ -92,8 +92,8 @@ public class CompanyFacade {
                 .collect(Collectors.toMap(UserResponse::id, user -> user));
 
         // 생성자/수정자 정보 처리
-        UserResponse createdBy = resolveUser(company.getCreatedBy(), userMap);
-        UserResponse updatedBy = resolveUser(company.getUpdatedBy(), userMap);
+        UserResponse createdBy = UserResponse.from(company.getCreatedBy(), userMap);
+        UserResponse updatedBy = UserResponse.from(company.getUpdatedBy(), userMap);
 
         return CompanyResponse.Detail.of(company, hub, createdBy, updatedBy);
     }
@@ -132,13 +132,5 @@ public class CompanyFacade {
         Company company = companyService.deleteCompany(id, principal);
         productService.deleteProducts(company.getCompanyId(), principal.userId());
         return CompanyResponse.Delete.from(company);
-    }
-
-    // 사용자 정보 처리 메서드
-    private UserResponse resolveUser(UUID userId, Map<UUID, UserResponse> userMap) {
-        if (userMap.containsKey(userId)) {
-            return userMap.get(userId);
-        }
-        return new UserResponse(userId, "탈퇴 회원");
     }
 }
