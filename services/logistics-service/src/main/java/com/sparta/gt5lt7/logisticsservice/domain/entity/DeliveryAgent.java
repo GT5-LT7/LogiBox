@@ -46,4 +46,20 @@ public class DeliveryAgent extends com.sparta.gt5lt7.common.entity.BaseEntity {
 
     @Column(name = "delivery_sequence", nullable = false)
     private Integer deliverySequence;
+
+    public static DeliveryAgent create(
+            UUID userId,
+            UUID hubId,
+            String slackUserId,
+            AgentType agentType,
+            Integer deliverySequence
+    ) {
+        return DeliveryAgent.builder()
+                .userId(userId)
+                .hubId(hubId)
+                .slackUserId(slackUserId)
+                .agentType(agentType)
+                .deliverySequence(deliverySequence)
+                .build();
+    }
 }
