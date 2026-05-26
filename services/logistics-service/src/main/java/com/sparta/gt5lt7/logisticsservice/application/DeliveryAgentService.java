@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.util.Objects;
 import java.util.UUID;
 
 @Slf4j
@@ -109,7 +110,8 @@ public class DeliveryAgentService {
                 ));
 
         // 1. hubId 변경 처리
-        if (request.getHubId() != null) {
+        if (request.getHubId() != null
+                && !Objects.equals(request.getHubId(), agent.getHubId())) {
             // HUB 타입은 hub_id 변경 불가
             if (agent.getAgentType() == AgentType.HUB_DELIVERY_AGENT) {
                 throw new DeliveryAgentException(
