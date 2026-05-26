@@ -1,8 +1,10 @@
 package com.sparta.gt5lt7.logisticsservice.application;
 
 import com.sparta.gt5lt7.logisticsservice.domain.entity.DeliveryAgent;
+import com.sparta.gt5lt7.logisticsservice.domain.entity.DeliveryStatus;
 import com.sparta.gt5lt7.logisticsservice.domain.entity.type.AgentType;
 import com.sparta.gt5lt7.logisticsservice.domain.repository.DeliveryAgentRepository;
+import com.sparta.gt5lt7.logisticsservice.domain.repository.DeliveryRepository;
 import com.sparta.gt5lt7.logisticsservice.domain.repository.HubRepository;
 import com.sparta.gt5lt7.logisticsservice.global.exception.DeliveryAgentErrorCode;
 import com.sparta.gt5lt7.logisticsservice.global.exception.DeliveryAgentException;
@@ -21,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -32,6 +35,7 @@ public class DeliveryAgentService {
 
     private final DeliveryAgentRepository deliveryAgentRepository;
     private final HubRepository hubRepository;
+    private final DeliveryRepository deliveryRepository;
 
     private static final int MAX_RETRY = 5;
     private static final String UK_USER = "uk_delivery_agents_user";
@@ -149,6 +153,35 @@ public class DeliveryAgentService {
 
         // hubId 변경 없는 경우 (slackUserId만 변경)
         return DeliveryAgentResponse.from(deliveryAgentRepository.saveAndFlush(agent));
+    }
+
+    @Transactional
+    public DeliveryAgentResponse deleteDeliveryAgent(
+            UUID deliveryAgentId,
+            com.sparta.gt5lt7.common.security.CustomUserPrincipal principal
+    ) {
+        DeliveryAgent agent = deliveryAgentRepository
+                .findByDeliveryAgentIdAndDeletedAtIsNull(deliveryAgentId)
+                .orElseThrow(() -> new DeliveryAgentException(
+                        DeliveryAgentErrorCode.DELIVERY_AGENT_NOT_FOUND
+                ));
+
+        // 진행 중 배송 확인 (DELIVERED, FAILED 외 상태)
+        boolean hasOngoing = deliveryRepository
+                .existsByDeliveryAgentIdAndDeliveryStatusNotInAndDeletedAtIsNull(
+                        deliveryAgentId,
+                        List.of(DeliveryStatus.DELIVERED, DeliveryStatus.FAILED)
+                );
+        if (hasOngoing) {
+            throw new DeliveryAgentException(
+                    DeliveryAgentErrorCode.AGENT_HAS_ONGOING_DELIVERY
+            );
+        }
+
+        // 소프트 삭제
+        agent.softDelete(principal.userId());
+
+        return DeliveryAgentResponse.from(agent);
     }
 
 
