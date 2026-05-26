@@ -42,6 +42,10 @@ public class HubRouteSeeder {
     ApplicationRunner seedHubRoutes() {
         return args -> {
             seed();
+            if (Thread.currentThread().isInterrupted()) {
+                log.warn("[HubRouteSeeder] 인터럽트 상태 감지, 캐시 워밍업 스킵");
+                return;
+            }
             warmCache();
         };
     }
