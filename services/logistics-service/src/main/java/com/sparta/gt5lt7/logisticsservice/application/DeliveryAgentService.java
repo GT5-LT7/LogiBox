@@ -35,6 +35,7 @@ public class DeliveryAgentService {
 
     private static final int MAX_RETRY = 5;
     private static final String UK_USER = "uk_delivery_agents_user";
+    private static final String UK_SEQUENCE = "uk_delivery_agents_sequence_per_scope";
 
     @Transactional
     public DeliveryAgentResponse createDeliveryAgent(DeliveryAgentRequest request) {
@@ -109,29 +110,44 @@ public class DeliveryAgentService {
                         DeliveryAgentErrorCode.DELIVERY_AGENT_NOT_FOUND
                 ));
 
-        // 1. hubId 변경 처리
-        if (request.getHubId() != null
-                && !Objects.equals(request.getHubId(), agent.getHubId())) {
-            // HUB 타입은 hub_id 변경 불가
+        boolean hubChanged = request.getHubId() != null
+                && !Objects.equals(request.getHubId(), agent.getHubId());
+
+        // 1. hubId 변경 검증 (실제로 다를 때만)
+        if (hubChanged) {
             if (agent.getAgentType() == AgentType.HUB_DELIVERY_AGENT) {
                 throw new DeliveryAgentException(
                         DeliveryAgentErrorCode.HUB_ID_NOT_ALLOWED_FOR_HUB_AGENT
                 );
             }
-            // 새 허브 존재 검증
             hubRepository.findByHubIdAndDeletedAtIsNull(request.getHubId())
                     .orElseThrow(() -> new HubException(HubErrorCode.HUB_NOT_FOUND));
-
-            // 새 허브에서의 max+1 시퀀스 자동 부여
-            int newSequence = calculateNextSequence(agent.getAgentType(), request.getHubId());
-            agent.updateHubId(request.getHubId(), newSequence);
         }
 
-        // 2. slackUserId 변경 처리
+        // 2. slackUserId 변경 (시퀀스 영향 없음, 락 불필요)
         if (StringUtils.hasText(request.getSlackUserId())) {
             agent.updateSlackUserId(request.getSlackUserId());
         }
 
+        // 3. hubId 변경 시 시퀀스 충돌 대비 재시도
+        if (hubChanged) {
+            for (int attempt = 1; attempt <= MAX_RETRY; attempt++) {
+                int newSequence = calculateNextSequence(agent.getAgentType(), request.getHubId());
+                agent.updateHubId(request.getHubId(), newSequence);
+                try {
+                    return DeliveryAgentResponse.from(deliveryAgentRepository.saveAndFlush(agent));
+                } catch (DataIntegrityViolationException e) {
+                    if (attempt == MAX_RETRY || !isSequenceUniqueViolation(e)) {
+                        log.error("[DeliveryAgentService] 허브 이동 시 시퀀스 할당 실패", e);
+                        throw e;
+                    }
+                    log.warn("[DeliveryAgentService] 시퀀스 충돌, 재시도 {}/{}", attempt, MAX_RETRY);
+                }
+            }
+            throw new IllegalStateException("배송 담당자 시퀀스 재할당 한도 초과");
+        }
+
+        // hubId 변경 없는 경우 (slackUserId만 변경)
         return DeliveryAgentResponse.from(deliveryAgentRepository.saveAndFlush(agent));
     }
 
@@ -174,5 +190,12 @@ public class DeliveryAgentService {
         if (cause == null) return false;
         String msg = cause.getMessage();
         return msg != null && msg.contains(UK_USER);
+    }
+
+    private boolean isSequenceUniqueViolation(DataIntegrityViolationException e) {
+        Throwable cause = e.getMostSpecificCause();
+        if (cause == null) return false;
+        String msg = cause.getMessage();
+        return msg != null && msg.contains(UK_SEQUENCE);
     }
 }
