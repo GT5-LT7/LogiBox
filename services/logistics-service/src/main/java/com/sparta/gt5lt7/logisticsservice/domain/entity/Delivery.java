@@ -1,0 +1,93 @@
+package com.sparta.gt5lt7.logisticsservice.domain.entity;
+
+import com.sparta.gt5lt7.logisticsservice.domain.entity.DeliveryStatus;
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+@Entity
+@Table(name = "p_deliveries")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Builder
+public class Delivery {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "delivery_id", nullable = false, updatable = false)
+    private UUID id;
+
+    @Column(name = "order_id", nullable = false)
+    private UUID orderId;
+
+    @Column(name = "from_hub_id", nullable = false)
+    private UUID fromHubId;
+
+    @Column(name = "to_hub_id", nullable = false)
+    private UUID toHubId;
+
+    @Column(name = "receiver_company_id", nullable = false)
+    private UUID receiverCompanyId;
+
+    @Column(name = "receiver_address", nullable = false, length = 225)
+    private String receiverAddress;
+
+    @Column(name = "delivery_agent_id")
+    private UUID deliveryAgentId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "delivery_status", nullable = false, length = 30)
+    @Builder.Default
+    private DeliveryStatus deliveryStatus = DeliveryStatus.READY;
+
+    @Column(name = "request_message", length = 225)
+    private String requestMessage;
+
+    @Column(name = "departed_at")
+    private LocalDateTime departedAt;
+
+    @Column(name = "arrived_at")
+    private LocalDateTime arrivedAt;
+
+    @Column(name = "completed_at")
+    private LocalDateTime completedAt;
+
+    @Column(name = "ai_log_id", nullable = false)
+    private UUID aiLogId;
+
+    @Column(name = "slack_id", nullable = false)
+    private UUID slackId;
+
+    @Column(name = "routes_id", nullable = false)
+    private UUID routesId;
+
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "created_by", nullable = false)
+    private UUID createdBy;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @Column(name = "updated_by")
+    private UUID updatedBy;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    @Column(name = "deleted_by")
+    private UUID deletedBy;
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+
+        if (this.deliveryStatus == null) {
+            this.deliveryStatus = DeliveryStatus.READY;
+        }
+    }
+}
