@@ -79,9 +79,7 @@ public class ProductService {
     }
 
     @Transactional
-    public ProductResponse.StatusUpdate updateProductStatus(UUID id, ProductRequest.StatusUpdate request, CustomUserPrincipal principal) {
-        ActionType action = request.getAction();
-
+    public Product updateProductStatus(UUID id, ActionType action, CustomUserPrincipal principal) {
         // Master가 아니면 STOP 액션 불가
         if (action == ActionType.STOP && !principal.isMaster()) {
             throw new BaseException(ProductErrorCode.PRODUCT_UPDATE_DENIED);
@@ -97,7 +95,7 @@ public class ProductService {
 
         product.updateStatus(action);
 
-        return ProductResponse.StatusUpdate.from(product);
+        return product;
     }
 
     @Transactional

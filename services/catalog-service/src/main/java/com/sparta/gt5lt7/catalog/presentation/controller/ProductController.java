@@ -77,7 +77,7 @@ public class ProductController {
             @Valid @RequestBody ProductRequest.StatusUpdate request,
             @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
-        ProductResponse.StatusUpdate response = productService.updateProductStatus(id, request, principal);
+        ProductResponse.StatusUpdate response = productFacade.updateProductStatus(id, request, principal);
         return ResponseEntity.ok(ApiResponse.updated(response));
     }
 
