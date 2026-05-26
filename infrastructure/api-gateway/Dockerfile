@@ -1,4 +1,7 @@
-FROM eclipse-temurin:17-jdk-alpine
+FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
-COPY build/libs/*.jar app.jar
+RUN addgroup -S app && adduser -S app -G app
+COPY infrastructure/api-gateway/build/libs/*-SNAPSHOT.jar app.jar
+USER app
+EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
