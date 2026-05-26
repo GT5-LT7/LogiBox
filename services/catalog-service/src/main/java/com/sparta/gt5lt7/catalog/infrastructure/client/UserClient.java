@@ -10,7 +10,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-@FeignClient(name = "user-service", configuration = InternalFeignConfig.class, fallback = UserClientFallback.class)
+@FeignClient(
+        name = "user-service",
+        configuration = InternalFeignConfig.class,
+        fallbackFactory = UserClientFallbackFactory.class
+)
 public interface UserClient {
     @PostMapping("/internal/users")
     List<UserResponse> getUsers(@RequestBody Set<UUID> ids);
