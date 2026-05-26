@@ -98,7 +98,7 @@ public class ProductController {
             @PathVariable UUID id,
             @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
-        ProductResponse.Delete response = productService.deleteProduct(id, principal);
+        ProductResponse.Delete response = productFacade.deleteProduct(id, principal);
         return ResponseEntity.ok(ApiResponse.deleted(response));
     }
 }

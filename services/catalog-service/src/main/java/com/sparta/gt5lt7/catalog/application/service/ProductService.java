@@ -201,7 +201,7 @@ public class ProductService {
         return responses;
     }
 
-    public ProductResponse.Delete deleteProduct(UUID id, CustomUserPrincipal principal) {
+    public Product deleteProduct(UUID id, CustomUserPrincipal principal) {
         Product product = getProduct(id);
 
         // Master가 아니면 담당 허브인지 검증
@@ -212,7 +212,7 @@ public class ProductService {
         // Soft Delete 처리
         product.softDelete(principal.userId());
 
-        return ProductResponse.Delete.from(product);
+        return product;
     }
 
     // 업체 ID 기반 연쇄 삭제 메서드

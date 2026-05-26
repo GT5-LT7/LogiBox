@@ -96,4 +96,9 @@ public class ProductFacade {
         Product product = productService.updateProduct(id, request, principal);
         return ProductResponse.Update.from(product);
     }
+
+    public ProductResponse.Delete deleteProduct(UUID id, CustomUserPrincipal principal) {
+        Product product = productService.deleteProduct(id, principal);
+        return ProductResponse.Delete.from(product);
+    }
 }
