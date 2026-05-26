@@ -55,7 +55,7 @@ public class ProductController {
             @PathVariable UUID id,
             @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
-        ProductResponse.Detail response = productService.getProduct(id, principal);
+        ProductResponse.Detail response = productFacade.getProduct(id, principal);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 

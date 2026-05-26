@@ -1,7 +1,11 @@
 package com.sparta.gt5lt7.catalog.application.facade;
 
+import com.sparta.gt5lt7.common.exception.BaseException;
+import com.sparta.gt5lt7.catalog.global.exception.ProductErrorCode;
 import com.sparta.gt5lt7.catalog.infrastructure.client.HubClient;
+import com.sparta.gt5lt7.catalog.infrastructure.client.UserClient;
 import com.sparta.gt5lt7.catalog.infrastructure.client.dto.HubResponse;
+import com.sparta.gt5lt7.catalog.infrastructure.client.dto.UserResponse;
 import com.sparta.gt5lt7.common.dto.PageResponse;
 import com.sparta.gt5lt7.common.security.CustomUserPrincipal;
 import com.sparta.gt5lt7.catalog.application.service.CompanyService;
@@ -28,6 +32,7 @@ public class ProductFacade {
     private final ProductService productService;
     private final CompanyService companyService;
     private final HubClient hubClient;
+    private final UserClient userClient;
 
     public ProductResponse.Create createProduct(ProductRequest.Create request, CustomUserPrincipal principal) {
         Company company = companyService.getCompany(request.getCompanyId());
@@ -55,5 +60,35 @@ public class ProductFacade {
             HubResponse hub = hubMap.get(product.getCompany().getHubId());
             return ProductResponse.Summary.of(product, hub);
         });
+    }
+
+    public ProductResponse.Detail getProduct(UUID id, CustomUserPrincipal principal) {
+        // [서비스 레이어] 상품 조회
+        Product product = productService.getProduct(id);
+        Company company = product.getCompany();
+
+        // [권한 검증] 숨김 상품일 때 권한 처리
+        if (product.isHidden()) {
+            if (principal == null ||
+                    (!principal.isAccessibleHub(company.getHubId()) && !principal.isAccessibleCompany(company.getCompanyId()))) {
+                throw new BaseException(ProductErrorCode.PRODUCT_NOT_FOUND);
+            }
+        }
+
+        // [MSA 통신] Hub Service로 허브 정보 요청
+        HubResponse hub = hubClient.getHub(company.getHubId());
+
+        // [MSA 통신] 사용자 ID를 중복 없이 추출 → User Service로 사용자 정보 요청
+        Set<UUID> userIds = Set.of(product.getCreatedBy(), product.getUpdatedBy());
+        List<UserResponse> users = userClient.getUsers(userIds);
+
+        // O(1) 조회를 위한 사용자 Map 생성
+        Map<UUID, UserResponse> userMap = users.stream().collect(Collectors.toMap(UserResponse::id, user -> user));
+
+        // 생성자/수정자 정보 처리
+        UserResponse createdBy = UserResponse.from(product.getCreatedBy(), userMap);
+        UserResponse updatedBy = UserResponse.from(product.getUpdatedBy(), userMap);
+
+        return ProductResponse.Detail.of(product, hub, createdBy, updatedBy);
     }
 }

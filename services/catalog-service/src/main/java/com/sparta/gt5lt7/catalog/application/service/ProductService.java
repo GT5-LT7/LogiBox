@@ -5,10 +5,6 @@ import com.sparta.gt5lt7.catalog.domain.entity.Product;
 import com.sparta.gt5lt7.catalog.presentation.dto.request.ActionType;
 import com.sparta.gt5lt7.common.security.CustomUserPrincipal;
 import com.sparta.gt5lt7.catalog.global.exception.ProductErrorCode;
-import com.sparta.gt5lt7.catalog.infrastructure.client.HubClient;
-import com.sparta.gt5lt7.catalog.infrastructure.client.UserClient;
-import com.sparta.gt5lt7.catalog.infrastructure.client.dto.HubResponse;
-import com.sparta.gt5lt7.catalog.infrastructure.client.dto.UserResponse;
 import com.sparta.gt5lt7.catalog.domain.entity.Company;
 import com.sparta.gt5lt7.catalog.domain.repository.ProductRepository;
 import com.sparta.gt5lt7.catalog.presentation.dto.request.ProductRequest;
@@ -32,8 +28,6 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class ProductService {
-    private final HubClient hubClient;
-    private final UserClient userClient;
     private final ProductRepository productRepository;
     private final StringRedisTemplate redisTemplate;
 
@@ -65,39 +59,13 @@ public class ProductService {
         return productRepository.searchProducts(keyword, salesOnly, companyId, hubId, pageable, principal);
     }
 
-    public ProductResponse.Detail getProduct(UUID id, CustomUserPrincipal principal) {
-        Product product = getProductById(id);
-        Company company = product.getCompany();
-
-        // 숨김 상품일 때 권한 처리
-        if (product.isHidden()) {
-            if (principal == null ||
-                    (!principal.isAccessibleHub(company.getHubId()) && !principal.isAccessibleCompany(company.getCompanyId()))) {
-                throw new BaseException(ProductErrorCode.PRODUCT_NOT_FOUND);
-            }
-        }
-
-        // Hub Service로 허브 정보 요청
-        HubResponse hub = hubClient.getHub(company.getHubId());
-
-        // 사용자 ID를 중복 없이 추출 → User Service로 사용자 정보 요청
-        Set<UUID> userIds = Set.of(product.getCreatedBy(), product.getUpdatedBy());
-        List<UserResponse> users = userClient.getUsers(userIds);
-
-        // O(1) 조회를 위한 사용자 Map 생성
-        Map<UUID, UserResponse> userMap = users.stream()
-                .collect(Collectors.toMap(UserResponse::id, user -> user));
-
-        // 생성자/수정자 정보 처리
-        UserResponse createdBy = UserResponse.from(product.getCreatedBy(), userMap);
-        UserResponse updatedBy = UserResponse.from(product.getUpdatedBy(), userMap);
-
-        return ProductResponse.Detail.of(product, hub, createdBy, updatedBy);
+    public Product getProduct(UUID id) {
+        return productRepository.findByIdWithCompany(id).orElseThrow(() -> new BaseException(ProductErrorCode.PRODUCT_NOT_FOUND));
     }
 
     @Transactional
     public ProductResponse.Update updateProduct(UUID id, ProductRequest.Update request, CustomUserPrincipal principal) {
-        Product product = getProductById(id);
+        Product product = getProduct(id);
         Company company = product.getCompany();
 
         // Master가 아니면 담당 허브 또는 본인 업체인지 검증
@@ -119,7 +87,7 @@ public class ProductService {
             throw new BaseException(ProductErrorCode.PRODUCT_UPDATE_DENIED);
         }
 
-        Product product = getProductById(id);
+        Product product = getProduct(id);
         Company company = product.getCompany();
 
         // Master가 아니면 담당 허브 또는 본인 업체인지 검증
@@ -234,7 +202,7 @@ public class ProductService {
     }
 
     public ProductResponse.Delete deleteProduct(UUID id, CustomUserPrincipal principal) {
-        Product product = getProductById(id);
+        Product product = getProduct(id);
 
         // Master가 아니면 담당 허브인지 검증
         if (!principal.isAccessibleHub(product.getCompany().getHubId())) {
@@ -251,10 +219,5 @@ public class ProductService {
     @Transactional
     public void deleteProducts(UUID companyId, UUID deletedBy) {
         productRepository.softDeleteByProductId(companyId, deletedBy, LocalDateTime.now());
-    }
-
-    // 상품 조회 공통 메서드
-    public Product getProductById(UUID id) {
-        return productRepository.findByIdWithCompany(id).orElseThrow(() -> new BaseException(ProductErrorCode.PRODUCT_NOT_FOUND));
     }
 }
