@@ -76,15 +76,15 @@ public class ProductService {
         Set<UUID> hubIds = productPage.stream()
                 .map(product -> product.getCompany().getHubId())
                 .collect(Collectors.toSet());
-        List<HubResponse> hubResponses = hubIds.isEmpty() ? List.of() : hubClient.getHubs(hubIds);
+        List<HubResponse> hubs = hubIds.isEmpty() ? List.of() : hubClient.getHubs(hubIds);
 
         // O(1) 조회를 위한 허브 Map 생성
-        Map<UUID, HubResponse> hubMap = hubResponses.stream()
+        Map<UUID, HubResponse> hubMap = hubs.stream()
                 .collect(Collectors.toMap(HubResponse::id, Function.identity()));
 
         return PageResponse.of(productPage, product -> {
-            HubResponse hubResponse = hubMap.get(product.getCompany().getHubId());
-            return ProductResponse.Summary.of(product, hubResponse);
+            HubResponse hub = hubMap.get(product.getCompany().getHubId());
+            return ProductResponse.Summary.of(product, hub);
         });
     }
 
@@ -101,19 +101,21 @@ public class ProductService {
         }
 
         // Hub Service로 허브 정보 요청
-        HubResponse hubResponse = hubClient.getHub(company.getHubId());
+        HubResponse hub = hubClient.getHub(company.getHubId());
 
         // 사용자 ID를 중복 없이 추출 → User Service로 사용자 정보 요청
         Set<UUID> userIds = Set.of(product.getCreatedBy(), product.getUpdatedBy());
-        List<UserResponse> userResponses = userClient.getUsers(userIds);
+        List<UserResponse> users = userClient.getUsers(userIds);
 
         // O(1) 조회를 위한 사용자 Map 생성
-        Map<UUID, UserResponse> userMap = userResponses.stream()
+        Map<UUID, UserResponse> userMap = users.stream()
                 .collect(Collectors.toMap(UserResponse::id, user -> user));
 
-        return ProductResponse.Detail.of(
-                product, hubResponse, userMap.get(product.getCreatedBy()), userMap.get(product.getUpdatedBy())
-        );
+        // 생성자/수정자 정보 처리
+        UserResponse createdBy = resolveUser(product.getCreatedBy(), userMap);
+        UserResponse updatedBy = resolveUser(product.getUpdatedBy(), userMap);
+
+        return ProductResponse.Detail.of(product, hub, createdBy, updatedBy);
     }
 
     @Transactional
@@ -278,5 +280,13 @@ public class ProductService {
     public Product getProductById(UUID id) {
         return productRepository.findByIdWithCompany(id)
                 .orElseThrow(() -> new BaseException(ProductErrorCode.PRODUCT_NOT_FOUND));
+    }
+
+    // 사용자 정보 처리 메서드
+    private UserResponse resolveUser(UUID userId, Map<UUID, UserResponse> userMap) {
+        if (userMap.containsKey(userId)) {
+            return userMap.get(userId);
+        }
+        return new UserResponse(userId, "탈퇴 회원");
     }
 }

@@ -47,7 +47,7 @@ public class CompanyFacade {
         // [MSA 통신] Hub Service로 허브 정보 요청
         hubClient.getHub(request.getHubId());
 
-        // [외부 통신] Kakao Map Service로 좌표 정보 요청
+        // [외부 API 통신] Kakao Map Service로 좌표 정보 요청
         CoordinateResponse coordinate = kakaoMapService.getCoordinate(request.getBaseAddress());
 
         // [서비스 레이어] 업체 생성
@@ -71,8 +71,8 @@ public class CompanyFacade {
                 .collect(Collectors.toMap(HubResponse::id, Function.identity()));
 
         return PageResponse.of(companyPage, company -> {
-            HubResponse hubResponse = hubMap.get(company.getHubId());
-            return CompanyResponse.Summary.of(company, hubResponse);
+            HubResponse hub = hubMap.get(company.getHubId());
+            return CompanyResponse.Summary.of(company, hub);
         });
     }
 
@@ -91,16 +91,18 @@ public class CompanyFacade {
         Map<UUID, UserResponse> userMap = users.stream()
                 .collect(Collectors.toMap(UserResponse::id, user -> user));
 
-        return CompanyResponse.Detail.of(
-                company, hub, userMap.get(company.getCreatedBy()), userMap.get(company.getUpdatedBy())
-        );
+        // 생성자/수정자 정보 처리
+        UserResponse createdBy = resolveUser(company.getCreatedBy(), userMap);
+        UserResponse updatedBy = resolveUser(company.getUpdatedBy(), userMap);
+
+        return CompanyResponse.Detail.of(company, hub, createdBy, updatedBy);
     }
 
     public CompanyResponse.Update updateCompany(UUID id, CompanyRequest request, CustomUserPrincipal principal) {
         // [서비스 레이어] 업체 조회
         Company company = companyService.getCompany(id);
 
-        // [권한 검증] 허브 변경 시 Master가 아니면 허브 변경 불가
+        // [권한 검증] 허브 변경 시 Master가 아니면 불가
         if (!company.getHubId().equals(request.getHubId()) && !principal.isMaster()) {
             throw new BaseException(CompanyErrorCode.COMPANY_UPDATE_DENIED);
         }
@@ -113,7 +115,7 @@ public class CompanyFacade {
         // [MSA 통신] Hub Service로 허브 정보 요청
         HubResponse hub = hubClient.getHub(request.getHubId());
 
-        // [외부 통신] 주소 변경 시 Kakao Map Service로 좌표 정보 요청
+        // [외부 API 통신] 주소 변경 시 Kakao Map Service로 좌표 정보 요청
         CoordinateResponse coordinate = null;
         if (!company.getBaseAddress().equals(request.getBaseAddress())) {
             coordinate = kakaoMapService.getCoordinate(request.getBaseAddress());
@@ -130,5 +132,13 @@ public class CompanyFacade {
         Company company = companyService.deleteCompany(id, principal);
         productService.deleteProducts(company.getCompanyId(), principal.userId());
         return CompanyResponse.Delete.from(company);
+    }
+
+    // 사용자 정보 처리 메서드
+    private UserResponse resolveUser(UUID userId, Map<UUID, UserResponse> userMap) {
+        if (userMap.containsKey(userId)) {
+            return userMap.get(userId);
+        }
+        return new UserResponse(userId, "탈퇴 회원");
     }
 }
