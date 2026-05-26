@@ -20,8 +20,9 @@ public class DeliveryRoute {
     @Column(name = "delivery_route_id", nullable = false, updatable = false)
     private UUID id;
 
-    @Column(name = "delivery_id", nullable = false)
-    private UUID deliveryId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "delivery_id", nullable = false)
+    private Delivery delivery;
 
     @Column(name = "sequence", nullable = false)
     private Integer sequence;

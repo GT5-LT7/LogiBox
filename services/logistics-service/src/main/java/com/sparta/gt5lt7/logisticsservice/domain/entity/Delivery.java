@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -61,8 +63,13 @@ public class Delivery {
     @Column(name = "slack_id", nullable = false)
     private UUID slackId;
 
-    @Column(name = "routes_id", nullable = false)
-    private UUID routesId;
+    @OneToMany(
+            mappedBy = "delivery",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    @Builder.Default
+    private List<DeliveryRoute> routes = new ArrayList<>();
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
