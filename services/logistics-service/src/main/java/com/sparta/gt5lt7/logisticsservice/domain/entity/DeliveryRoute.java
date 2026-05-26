@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 import java.util.UUID;
 
 @Entity
@@ -86,11 +87,17 @@ public class DeliveryRoute {
     }
 
     public void updateStatus(DeliveryRouteStatus status) {
+        Objects.requireNonNull(status, "해당란은 비워둘 수 없습니다.");
         this.deliveryRouteStatus = status;
         this.updatedAt = LocalDateTime.now();
     }
 
     public void completeRoute(Double actualDistance, Integer actualDuration) {
+        Objects.requireNonNull(actualDistance, "해당란은 비워둘 수 없습니다.");
+        Objects.requireNonNull(actualDuration, "해당란은 비워둘 수 없습니다.");
+        if (actualDistance < 0 || actualDuration < 0) {
+            throw new IllegalArgumentException("거리와 시간 값은 음수가 될 수 없습니다.");
+        }
         this.actualDistance = actualDistance;
         this.actualDuration = actualDuration;
         this.deliveryRouteStatus = DeliveryRouteStatus.COMPLETED;
