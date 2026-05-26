@@ -110,7 +110,12 @@ public class DeliveryAgentService {
     public Page<DeliveryAgentResponse> searchDeliveryAgents(
             DeliveryAgentSearchRequest request, Pageable pageable
     ) {
-        return deliveryAgentRepository.searchDeliveryAgents(request, pageable);
+        return deliveryAgentRepository.searchDeliveryAgents(
+                request.getHubId(),
+                request.getAgentType(),
+                request.getSlackUserId(),
+                pageable
+        ).map(DeliveryAgentResponse::from);
     }
 
     private int calculateNextSequence(AgentType type, UUID hubId) {
