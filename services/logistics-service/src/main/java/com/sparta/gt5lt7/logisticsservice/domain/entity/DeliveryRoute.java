@@ -82,16 +82,19 @@ public class DeliveryRoute {
 
     public void assignHubDeliveryAgent(UUID hubDeliveryAgentId) {
         this.hubDeliveryAgentId = hubDeliveryAgentId;
+        this.updatedAt = LocalDateTime.now();
     }
 
     public void updateStatus(DeliveryRouteStatus status) {
         this.deliveryRouteStatus = status;
+        this.updatedAt = LocalDateTime.now();
     }
 
     public void completeRoute(Double actualDistance, Integer actualDuration) {
         this.actualDistance = actualDistance;
         this.actualDuration = actualDuration;
         this.deliveryRouteStatus = DeliveryRouteStatus.COMPLETED;
+        this.updatedAt = LocalDateTime.now();
     }
 
     public void softDelete(UUID deletedBy) {
