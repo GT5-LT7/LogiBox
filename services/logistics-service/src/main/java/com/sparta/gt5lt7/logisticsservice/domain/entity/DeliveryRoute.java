@@ -78,4 +78,23 @@ public class DeliveryRoute {
             this.deliveryRouteStatus = DeliveryRouteStatus.READY;
         }
     }
+
+    public void assignHubDeliveryAgent(UUID hubDeliveryAgentId) {
+        this.hubDeliveryAgentId = hubDeliveryAgentId;
+    }
+
+    public void updateStatus(DeliveryRouteStatus status) {
+        this.deliveryRouteStatus = status;
+    }
+
+    public void completeRoute(Double actualDistance, Integer actualDuration) {
+        this.actualDistance = actualDistance;
+        this.actualDuration = actualDuration;
+        this.deliveryRouteStatus = DeliveryRouteStatus.COMPLETED;
+    }
+
+    public void softDelete(UUID deletedBy) {
+        this.deletedAt = LocalDateTime.now();
+        this.deletedBy = deletedBy;
+    }
 }
