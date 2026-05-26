@@ -92,10 +92,10 @@ public class CompanyFacade {
                 .collect(Collectors.toMap(UserResponse::id, user -> user));
 
         // 생성자/수정자 정보 처리
-        UserResponse creatorBy = resolveUser(company.getCreatedBy(), userMap);
-        UserResponse updaterBy = resolveUser(company.getUpdatedBy(), userMap);
+        UserResponse createdBy = resolveUser(company.getCreatedBy(), userMap);
+        UserResponse updatedBy = resolveUser(company.getUpdatedBy(), userMap);
 
-        return CompanyResponse.Detail.of(company, hub, creatorBy, updaterBy);
+        return CompanyResponse.Detail.of(company, hub, createdBy, updatedBy);
     }
 
     public CompanyResponse.Update updateCompany(UUID id, CompanyRequest request, CustomUserPrincipal principal) {
