@@ -44,6 +44,12 @@ public class DeliveryAgentService {
                     .orElseThrow(() -> new HubException(HubErrorCode.HUB_NOT_FOUND));
             resolvedHubId = request.getHubId();
         } else {
+            // 허브 배송 담당자: 시스템 전체 소속 → hub_id가 들어오면 400으로 거절
+            if (request.getHubId() != null) {
+                throw new DeliveryAgentException(
+                        DeliveryAgentErrorCode.HUB_ID_NOT_ALLOWED_FOR_HUB_AGENT
+                );
+            }
             resolvedHubId = null;
         }
 
