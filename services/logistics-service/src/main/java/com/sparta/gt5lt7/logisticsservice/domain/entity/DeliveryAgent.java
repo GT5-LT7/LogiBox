@@ -69,4 +69,14 @@ public class DeliveryAgent extends com.sparta.gt5lt7.common.entity.BaseEntity {
                 .deliverySequence(deliverySequence)
                 .build();
     }
+
+    // 소속 허브 변경 + 새 시퀀스 부여, COMPANY 타입에서만 호출됨 (Service에서 보장).
+    public void updateHubId(UUID newHubId, Integer newSequence) {
+        this.hubId = newHubId;
+        this.deliverySequence = newSequence;
+    }
+
+    public void updateSlackUserId(String slackUserId) {
+        this.slackUserId = slackUserId;
+    }
 }

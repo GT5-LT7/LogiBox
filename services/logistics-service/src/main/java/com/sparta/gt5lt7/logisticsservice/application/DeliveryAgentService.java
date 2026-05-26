@@ -10,6 +10,7 @@ import com.sparta.gt5lt7.logisticsservice.global.exception.HubErrorCode;
 import com.sparta.gt5lt7.logisticsservice.global.exception.HubException;
 import com.sparta.gt5lt7.logisticsservice.presentation.dto.request.DeliveryAgentRequest;
 import com.sparta.gt5lt7.logisticsservice.presentation.dto.request.DeliveryAgentSearchRequest;
+import com.sparta.gt5lt7.logisticsservice.presentation.dto.request.DeliveryAgentUpdateRequest;
 import com.sparta.gt5lt7.logisticsservice.presentation.dto.response.DeliveryAgentResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +19,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.UUID;
 
@@ -93,6 +95,42 @@ public class DeliveryAgentService {
         }
 
         throw new IllegalStateException("배송 담당자 등록 재시도 한도 초과");
+    }
+
+    @Transactional
+    public DeliveryAgentResponse updateDeliveryAgent(
+            UUID deliveryAgentId,
+            DeliveryAgentUpdateRequest request
+    ) {
+        DeliveryAgent agent = deliveryAgentRepository
+                .findByDeliveryAgentIdAndDeletedAtIsNull(deliveryAgentId)
+                .orElseThrow(() -> new DeliveryAgentException(
+                        DeliveryAgentErrorCode.DELIVERY_AGENT_NOT_FOUND
+                ));
+
+        // 1. hubId 변경 처리
+        if (request.getHubId() != null) {
+            // HUB 타입은 hub_id 변경 불가
+            if (agent.getAgentType() == AgentType.HUB_DELIVERY_AGENT) {
+                throw new DeliveryAgentException(
+                        DeliveryAgentErrorCode.HUB_ID_NOT_ALLOWED_FOR_HUB_AGENT
+                );
+            }
+            // 새 허브 존재 검증
+            hubRepository.findByHubIdAndDeletedAtIsNull(request.getHubId())
+                    .orElseThrow(() -> new HubException(HubErrorCode.HUB_NOT_FOUND));
+
+            // 새 허브에서의 max+1 시퀀스 자동 부여
+            int newSequence = calculateNextSequence(agent.getAgentType(), request.getHubId());
+            agent.updateHubId(request.getHubId(), newSequence);
+        }
+
+        // 2. slackUserId 변경 처리
+        if (StringUtils.hasText(request.getSlackUserId())) {
+            agent.updateSlackUserId(request.getSlackUserId());
+        }
+
+        return DeliveryAgentResponse.from(deliveryAgentRepository.saveAndFlush(agent));
     }
 
 
