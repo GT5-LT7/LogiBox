@@ -44,7 +44,7 @@ public class ProductController {
             Pageable pageable,
             @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
-        PageResponse<ProductResponse.Summary> response = productService.searchProducts(
+        PageResponse<ProductResponse.Summary> response = productFacade.searchProducts(
                 keyword, salesOnly, companyId, hubId, pageable, principal
         );
         return ResponseEntity.ok(ApiResponse.success(response));

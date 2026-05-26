@@ -22,8 +22,7 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
 
     @Override
     public Page<Product> searchProducts(
-            String keyword, Boolean salesOnly, UUID companyId, UUID hubId,
-            Pageable pageable, CustomUserPrincipal principal
+            String keyword, Boolean salesOnly, UUID companyId, UUID hubId, Pageable pageable, CustomUserPrincipal principal
     ) {
         QProduct product = QProduct.product;
         QCompany company = QCompany.company; // 조인용 Q클래스

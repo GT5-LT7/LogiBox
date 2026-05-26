@@ -43,8 +43,7 @@ public class CompanyService {
     }
 
     public Company getCompany(UUID id) {
-        return companyRepository.findById(id)
-                .orElseThrow(() -> new BaseException(CompanyErrorCode.COMPANY_NOT_FOUND));
+        return companyRepository.findById(id).orElseThrow(() -> new BaseException(CompanyErrorCode.COMPANY_NOT_FOUND));
     }
 
     public HubUsageStatusResponse checkHubUsage(UUID hubId) {

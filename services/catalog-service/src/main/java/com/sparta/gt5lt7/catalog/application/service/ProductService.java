@@ -9,7 +9,6 @@ import com.sparta.gt5lt7.catalog.infrastructure.client.HubClient;
 import com.sparta.gt5lt7.catalog.infrastructure.client.UserClient;
 import com.sparta.gt5lt7.catalog.infrastructure.client.dto.HubResponse;
 import com.sparta.gt5lt7.catalog.infrastructure.client.dto.UserResponse;
-import com.sparta.gt5lt7.common.dto.PageResponse;
 import com.sparta.gt5lt7.catalog.domain.entity.Company;
 import com.sparta.gt5lt7.catalog.domain.repository.ProductRepository;
 import com.sparta.gt5lt7.catalog.presentation.dto.request.ProductRequest;
@@ -26,7 +25,6 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -61,26 +59,10 @@ public class ProductService {
         return productRepository.save(product);
     }
 
-    public PageResponse<ProductResponse.Summary> searchProducts(
-            String keyword, Boolean salesOnly, UUID companyId, UUID hubId,
-            Pageable pageable, CustomUserPrincipal principal
+    public Page<Product> searchProducts(
+            String keyword, Boolean salesOnly, UUID companyId, UUID hubId, Pageable pageable, CustomUserPrincipal principal
     ) {
-        Page<Product> productPage = productRepository.searchProducts(keyword, salesOnly, companyId, hubId, pageable, principal);
-
-        // 허브 ID를 중복 없이 추출 → Hub Service로 허브 정보 요청
-        Set<UUID> hubIds = productPage.stream()
-                .map(product -> product.getCompany().getHubId())
-                .collect(Collectors.toSet());
-        List<HubResponse> hubs = hubIds.isEmpty() ? List.of() : hubClient.getHubs(hubIds);
-
-        // O(1) 조회를 위한 허브 Map 생성
-        Map<UUID, HubResponse> hubMap = hubs.stream()
-                .collect(Collectors.toMap(HubResponse::id, Function.identity()));
-
-        return PageResponse.of(productPage, product -> {
-            HubResponse hub = hubMap.get(product.getCompany().getHubId());
-            return ProductResponse.Summary.of(product, hub);
-        });
+        return productRepository.searchProducts(keyword, salesOnly, companyId, hubId, pageable, principal);
     }
 
     public ProductResponse.Detail getProduct(UUID id, CustomUserPrincipal principal) {
@@ -273,7 +255,6 @@ public class ProductService {
 
     // 상품 조회 공통 메서드
     public Product getProductById(UUID id) {
-        return productRepository.findByIdWithCompany(id)
-                .orElseThrow(() -> new BaseException(ProductErrorCode.PRODUCT_NOT_FOUND));
+        return productRepository.findByIdWithCompany(id).orElseThrow(() -> new BaseException(ProductErrorCode.PRODUCT_NOT_FOUND));
     }
 }

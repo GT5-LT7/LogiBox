@@ -67,8 +67,7 @@ public class CompanyFacade {
         List<HubResponse> hubs = hubIds.isEmpty() ? List.of() : hubClient.getHubs(hubIds);
 
         // O(1) 조회를 위한 허브 Map 생성
-        Map<UUID, HubResponse> hubMap = hubs.stream()
-                .collect(Collectors.toMap(HubResponse::id, Function.identity()));
+        Map<UUID, HubResponse> hubMap = hubs.stream().collect(Collectors.toMap(HubResponse::id, Function.identity()));
 
         return PageResponse.of(companyPage, company -> {
             HubResponse hub = hubMap.get(company.getHubId());
@@ -88,8 +87,7 @@ public class CompanyFacade {
         List<UserResponse> users = userClient.getUsers(userIds);
 
         // O(1) 조회를 위한 사용자 Map 생성
-        Map<UUID, UserResponse> userMap = users.stream()
-                .collect(Collectors.toMap(UserResponse::id, user -> user));
+        Map<UUID, UserResponse> userMap = users.stream().collect(Collectors.toMap(UserResponse::id, user -> user));
 
         // 생성자/수정자 정보 처리
         UserResponse createdBy = UserResponse.from(company.getCreatedBy(), userMap);
