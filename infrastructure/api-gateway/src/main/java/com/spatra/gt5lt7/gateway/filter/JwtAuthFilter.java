@@ -18,6 +18,7 @@ import java.nio.charset.StandardCharsets;
 
 @Component
 public class JwtAuthFilter extends AbstractGatewayFilterFactory<JwtAuthFilter.Config> {
+
     @Value("${jwt.secret}")
     private String secretKey;
 
@@ -28,39 +29,47 @@ public class JwtAuthFilter extends AbstractGatewayFilterFactory<JwtAuthFilter.Co
     @Override
     public GatewayFilter apply(Config config) {
         return (exchange, chain) -> {
-            ServerHttpRequest sanitizedRequest = exchange.getRequest().mutate()
-                    .headers(headers -> {
-                        headers.remove("X-User-Id");
-                        headers.remove("X-User-Role");
-                        headers.remove("X-User-Management-Id");
-                    }).build();
-
-            var sanitizedExchange = exchange.mutate().request(sanitizedRequest).build();
-
+            //인증 불필요 경로
             if (!config.isRequireAuth()) {
-                return chain.filter(sanitizedExchange);
+                return chain.filter(exchange);
             }
 
-            String token = extractToken(sanitizedRequest);
+            String token = extractToken(exchange.getRequest());
 
+            //토큰 없음
             if (token == null) {
-                sanitizedExchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
-                return sanitizedExchange.getResponse().setComplete();
+                exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+                return exchange.getResponse().setComplete();
             }
 
             try {
                 Claims claims = parseClaims(token);
+                String role = claims.get("role", String.class);
 
-                ServerHttpRequest mutatedRequest = sanitizedRequest.mutate()
+                // 권한 검증
+                if (config.getRequiredRole() != null
+                        && !hasRole(role, config.getRequiredRole())) {
+                    exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
+                    return exchange.getResponse().setComplete();
+                }
+
+                // 하위 서비스에 헤더로 유저 정보 전달
+                String hubId = claims.get("hubId", String.class);
+                String companyId = claims.get("companyId", String.class);
+
+                ServerHttpRequest mutatedRequest = exchange.getRequest().mutate()
                         .header("X-User-Id", claims.getSubject())
-                        .header("X-User-Role", claims.get("role", String.class))
-                        .header("X-User-Management-Id", claims.get("managementId", String.class))
+                        .header("X-User-Role", role)
+                        .header("X-Hub-Id", hubId != null ? hubId : "")
+                        .header("X-Company-Id", companyId != null ? companyId : "")
                         .build();
 
-                return chain.filter(sanitizedExchange.mutate().request(mutatedRequest).build());
+
+                return chain.filter(exchange.mutate().request(mutatedRequest).build());
+
             } catch (Exception e) {
-                sanitizedExchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
-                return sanitizedExchange.getResponse().setComplete();
+                exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+                return exchange.getResponse().setComplete();
             }
         };
     }

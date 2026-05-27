@@ -6,66 +6,98 @@ spring:
     name: api-gateway
   cloud:
     gateway:
-      server:
-        webflux:
-          routes:
-            # 외부에서 내부 서비스용 API 호출 시 차단
-            - id: block-external-internal-api
-              uri: no-reply://
-              predicates:
-                - Path=/internal/**
-              filters:
-                - SetStatus=403
+      routes:
+        # ── User Service ──────────────────────────
+        # 회원가입 / 로그인 (인증 불필요)
+        - id: user-public
+          uri: lb://user-service
+          predicates:
+            - Path=/api/users/signup, /api/users/login
+          filters:
+            - name: JwtAuthFilter
+              args:
+                requireAuth: false
 
-            # user-service - 비인증 허용
-            - id: user-public
-              uri: lb://user-service
-              predicates:
-                - Path=/api/v1/users/signup, /api/v1/users/login
-              filters:
-                - name: JwtAuthFilter
-                  args:
-                    requireAuth: false
+        # 회원가입 승인/거절 (MASTER, HUB_MANAGER)
+        - id: user-approve
+          uri: lb://user-service
+          predicates:
+            - Path=/api/users/signup/approve/**
+          filters:
+            - name: JwtAuthFilter
+              args:
+                requireAuth: true
+                requiredRole: ROLE_HUB_MANAGER
 
-            # user-service - 인증 필수
-            - id: user-service
-              uri: lb://user-service
-              predicates:
-                - Path=/api/v1/users/**
-              filters:
-                - name: JwtAuthFilter
-                  args:
-                    requireAuth: true
+        # 사용자 조회/수정/삭제 (인증 필요)
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/api/users/**
+          filters:
+            - name: JwtAuthFilter
+              args:
+                requireAuth: true
 
-            # logistics-service - 인증 필수
-            - id: logistics-service
-              uri: lb://logistics-service
-              predicates:
-                - Path=/api/v1/hubs/**, /api/v1/hub-routes/**, /api/v1/delivery-agents/**
-              filters:
-                - name: JwtAuthFilter
-                  args:
-                    requireAuth: true
+        # ── Hub Service ───────────────────────────
+        - id: hub-service
+          uri: lb://hub-service
+          predicates:
+            - Path=/api/hubs/**
+          filters:
+            - name: JwtAuthFilter
+              args:
+                requireAuth: true
 
-            # catalog-service - 인증 필수
-            - id: catalog-service
-              uri: lb://catalog-service
-              predicates:
-                - Path=/api/v1/companies/**, /api/v1/products/**
-              filters:
-                - name: JwtAuthFilter
-                  args:
-                    requireAuth: true
+        # ── Company Service ───────────────────────
+        - id: company-service
+          uri: lb://company-service
+          predicates:
+            - Path=/api/companies/**
+          filters:
+            - name: JwtAuthFilter
+              args:
+                requireAuth: true
 
-            # order-service - 인증 필수
-            - id: order-service
-              uri: lb://order-service
-              predicates:
-                - Path=/api/v1/orders/**
-              filters:
-                - name: JwtAuthFilter
-                  args:
-                    requireAuth: true
+        # ── Product Service ───────────────────────
+        - id: product-service
+          uri: lb://product-service
+          predicates:
+            - Path=/api/products/**
+          filters:
+            - name: JwtAuthFilter
+              args:
+                requireAuth: true
+
+        # ── Order Service ─────────────────────────
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+            - Path=/api/orders/**
+          filters:
+            - name: JwtAuthFilter
+              args:
+                requireAuth: true
+
+        # ── Delivery Service ──────────────────────
+        - id: delivery-service
+          uri: lb://delivery-service
+          predicates:
+            - Path=/api/deliveries/**
+          filters:
+            - name: JwtAuthFilter
+              args:
+                requireAuth: true
+
+        # ── Slack AI Service ──────────────────────
+        - id: slack-ai-service
+          uri: lb://slack-ai-service
+          predicates:
+            - Path=/api/ai/**, /api/slack/**
+          filters:
+            - name: JwtAuthFilter
+              args:
+                requireAuth: true
 
 eureka:
   client:
@@ -74,3 +106,7 @@ eureka:
 
 jwt:
   secret: ${JWT_SECRET_KEY}
+
+logging:
+  level:
+    org.springframework.cloud.gateway: INFO
