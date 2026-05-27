@@ -3,14 +3,16 @@ package com.sparta.gt5lt7.logisticsservice.application.service;
 import com.sparta.gt5lt7.logisticsservice.application.event.OrderCreatedEvent;
 import com.sparta.gt5lt7.logisticsservice.domain.entity.Delivery;
 import com.sparta.gt5lt7.logisticsservice.domain.entity.DeliveryRoute;
+import com.sparta.gt5lt7.logisticsservice.domain.entity.HubRoute;
 import com.sparta.gt5lt7.logisticsservice.domain.entity.DeliveryRouteStatus;
 import com.sparta.gt5lt7.logisticsservice.domain.entity.DeliveryStatus;
 import com.sparta.gt5lt7.logisticsservice.domain.repository.DeliveryRepository;
-import com.sparta.gt5lt7.logisticsservice.domain.repository.DeliveryRouteRepository;
+import com.sparta.gt5lt7.logisticsservice.domain.repository.HubRouteRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -18,7 +20,7 @@ import java.util.UUID;
 public class DeliveryCreateService {
 
     private final DeliveryRepository deliveryRepository;
-    private final DeliveryRouteRepository deliveryRouteRepository;
+    private final HubRouteRepository hubRouteRepository;
 
     @Transactional
     public void createDeliveryFromOrder(OrderCreatedEvent event) {
@@ -40,20 +42,31 @@ public class DeliveryCreateService {
                 .createdBy(UUID.randomUUID())
                 .build();
 
-        Delivery savedDelivery = deliveryRepository.save(delivery);
+        List<HubRoute> hubRoutes = hubRouteRepository
+                .findByFromHubIdAndToHubIdAndDeletedAtIsNull(fromHubId, toHubId);
 
-        DeliveryRoute route = DeliveryRoute.builder()
-                .delivery(savedDelivery)
-                .sequence(1)
-                .fromHubId(fromHubId)
-                .toHubId(toHubId)
-                .estimatedDistance(0.0)
-                .estimatedDuration(0)
-                .deliveryRouteStatus(DeliveryRouteStatus.READY)
-                .hubDeliveryAgentId(UUID.randomUUID())
-                .createdBy(UUID.randomUUID())
-                .build();
+        if (hubRoutes.isEmpty()) {
+            throw new IllegalArgumentException("허브 간 배송 경로를 찾을 수 없습니다.");
+        }
 
-        deliveryRouteRepository.save(route);
+        for (int i = 0; i < hubRoutes.size(); i++) {
+            HubRoute hubRoute = hubRoutes.get(i);
+
+            DeliveryRoute deliveryRoute = DeliveryRoute.builder()
+                    .delivery(delivery)
+                    .sequence(i + 1)
+                    .fromHubId(hubRoute.getFromHubId())
+                    .toHubId(hubRoute.getToHubId())
+                    .estimatedDistance(hubRoute.getDistance().doubleValue())
+                    .estimatedDuration(hubRoute.getDuration())
+                    .deliveryRouteStatus(DeliveryRouteStatus.READY)
+                    .hubDeliveryAgentId(UUID.randomUUID())
+                    .createdBy(UUID.randomUUID())
+                    .build();
+
+            delivery.addRoute(deliveryRoute);
+        }
+
+        deliveryRepository.save(delivery);
     }
 }
