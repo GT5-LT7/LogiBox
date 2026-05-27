@@ -9,6 +9,8 @@ import com.sparta.gt5lt7.logisticsservice.presentation.dto.request.HubUpdateRequ
 import com.sparta.gt5lt7.logisticsservice.presentation.dto.response.HubResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -19,6 +21,7 @@ import com.sparta.gt5lt7.common.security.CustomUserPrincipal;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 
@@ -28,6 +31,13 @@ import java.util.function.Function;
 public class HubController {
 
     private final HubService hubService;
+    private static final Set<Integer> ALLOWED_SIZES = Set.of(10, 30, 50);
+
+    private Pageable capSize(Pageable p) {
+        return ALLOWED_SIZES.contains(p.getPageSize())
+                ? p
+                : PageRequest.of(p.getPageNumber(), 10, p.getSort());
+    }
 
     @PostMapping
     @PreAuthorize("hasRole('MASTER')")
@@ -46,15 +56,13 @@ public class HubController {
 
     @GetMapping
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<PageResponse<HubResponse>>> searchHubs(
-            HubSearchRequest request,
-            @PageableDefault(size = 10, sort = "createdAt",  direction = Sort.Direction.DESC) Pageable pageable
+    public ResponseEntity<ApiResponse<Page<HubResponse>>> searchHubs(
+            @ModelAttribute HubSearchRequest request,
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        PageResponse<HubResponse> response = PageResponse.of(
-                hubService.searchHubs(request, pageable),
-                Function.identity()
+        return ResponseEntity.ok(
+                ApiResponse.success(hubService.searchHubs(request, capSize(pageable)))
         );
-        return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @PatchMapping("/{hubId}")
