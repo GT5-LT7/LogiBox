@@ -1,5 +1,6 @@
 package com.sparta.gt5lt7.common.config;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.domain.AuditorAware;
@@ -9,6 +10,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Configuration
+@ConditionalOnProperty(name = "spring.jpa.auditing.enabled", havingValue = "true", matchIfMissing = true)
 @EnableJpaAuditing(auditorAwareRef = "userAuditorAware")
 public class JpaConfig {
 
