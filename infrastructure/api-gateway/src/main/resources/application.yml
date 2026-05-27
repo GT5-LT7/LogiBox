@@ -46,7 +46,8 @@ spring:
                 - name: JwtAuthFilter
                   args:
                     requireAuth: true
-            # 4. 카탈로그 서비스 (질문자님 담당 - v1 반영) - 인증 필수 라우트
+
+            # catalog-service - 인증 필수
             - id: catalog-service
               uri: lb://catalog-service
               predicates:
