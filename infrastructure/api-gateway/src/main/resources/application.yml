@@ -6,33 +6,66 @@ spring:
     name: api-gateway
   cloud:
     gateway:
-      routes:
-        - id: user-public
-          uri: lb://user-service
-          predicates:
-            - Path=/api/users/signup, /api/users/login
-          filters:
-            - name: JwtAuthFilter
-              args:
-                requireAuth: false
+      server:
+        webflux:
+          routes:
+            # 외부에서 내부 서비스용 API 호출 시 차단
+            - id: block-external-internal-api
+              uri: no-reply://
+              predicates:
+                - Path=/internal/**
+              filters:
+                - SetStatus=403
 
-        - id: user-service
-          uri: lb://user-service
-          predicates:
-            - Path=/api/users/**
-          filters:
-            - name: JwtAuthFilter
-              args:
-                requireAuth: true
+            # user-service - 비인증 허용
+            - id: user-public
+              uri: lb://user-service
+              predicates:
+                - Path=/api/v1/users/signup, /api/v1/users/login
+              filters:
+                - name: JwtAuthFilter
+                  args:
+                    requireAuth: false
 
-        - id: order-service
-          uri: lb://order-service
-          predicates:
-            - Path=/api/orders/**
-          filters:
-            - name: JwtAuthFilter
-              args:
-                requireAuth: true
+            # user-service - 인증 필수
+            - id: user-service
+              uri: lb://user-service
+              predicates:
+                - Path=/api/v1/users/**
+              filters:
+                - name: JwtAuthFilter
+                  args:
+                    requireAuth: true
+
+            # logistics-service - 인증 필수
+            - id: logistics-service
+              uri: lb://logistics-service
+              predicates:
+                - Path=/api/v1/hubs/**, /api/v1/hub-routes/**, /api/v1/delivery-agents/**
+              filters:
+                - name: JwtAuthFilter
+                  args:
+                    requireAuth: true
+
+            # catalog-service - 인증 필수
+            - id: catalog-service
+              uri: lb://catalog-service
+              predicates:
+                - Path=/api/v1/companies/**, /api/v1/products/**
+              filters:
+                - name: JwtAuthFilter
+                  args:
+                    requireAuth: true
+
+            # order-service - 인증 필수
+            - id: order-service
+              uri: lb://order-service
+              predicates:
+                - Path=/api/v1/orders/**
+              filters:
+                - name: JwtAuthFilter
+                  args:
+                    requireAuth: true
 
 eureka:
   client:
@@ -40,4 +73,4 @@ eureka:
       defaultZone: http://eureka-server:8761/eureka/
 
 jwt:
-  secret: "your-secret-key-here-must-be-long-enough"
+  secret: ${JWT_SECRET_KEY}

@@ -18,7 +18,6 @@ import java.nio.charset.StandardCharsets;
 
 @Component
 public class JwtAuthFilter extends AbstractGatewayFilterFactory<JwtAuthFilter.Config> {
-
     @Value("${jwt.secret}")
     private String secretKey;
 
@@ -29,30 +28,39 @@ public class JwtAuthFilter extends AbstractGatewayFilterFactory<JwtAuthFilter.Co
     @Override
     public GatewayFilter apply(Config config) {
         return (exchange, chain) -> {
+            ServerHttpRequest sanitizedRequest = exchange.getRequest().mutate()
+                    .headers(headers -> {
+                        headers.remove("X-User-Id");
+                        headers.remove("X-User-Role");
+                        headers.remove("X-User-Management-Id");
+                    }).build();
+
+            var sanitizedExchange = exchange.mutate().request(sanitizedRequest).build();
+
             if (!config.isRequireAuth()) {
-                return chain.filter(exchange);
+                return chain.filter(sanitizedExchange);
             }
 
-            String token = extractToken(exchange.getRequest());
+            String token = extractToken(sanitizedRequest);
 
             if (token == null) {
-                exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
-                return exchange.getResponse().setComplete();
+                sanitizedExchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+                return sanitizedExchange.getResponse().setComplete();
             }
 
             try {
                 Claims claims = parseClaims(token);
 
-                ServerHttpRequest mutatedRequest = exchange.getRequest().mutate()
+                ServerHttpRequest mutatedRequest = sanitizedRequest.mutate()
                         .header("X-User-Id", claims.getSubject())
                         .header("X-User-Role", claims.get("role", String.class))
+                        .header("X-User-Management-Id", claims.get("managementId", String.class))
                         .build();
 
-                return chain.filter(exchange.mutate().request(mutatedRequest).build());
-
+                return chain.filter(sanitizedExchange.mutate().request(mutatedRequest).build());
             } catch (Exception e) {
-                exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
-                return exchange.getResponse().setComplete();
+                sanitizedExchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+                return sanitizedExchange.getResponse().setComplete();
             }
         };
     }

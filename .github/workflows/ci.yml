@@ -30,12 +30,12 @@ jobs:
         id: filter
         with:
           filters: |
-            eureka-server: 'infrastructure/eureka-server/**'
-            api-gateway: 'infrastructure/api-gateway/**'
-            user-service: 'services/user-service/**'
-            logistics-service: 'services/logistics-service/**'
-            catalog-service: 'services/catalog-service/**'
-            order-service: 'services/order-service/**'
+            eureka-server: ['infrastructure/eureka-server/**', 'module/**']
+            api-gateway: ['infrastructure/api-gateway/**', 'module/**']
+            user-service: ['services/user-service/**', 'module/**']
+            logistics-service: ['services/logistics-service/**', 'module/**']
+            catalog-service: ['services/catalog-service/**', 'module/**']
+            order-service: ['services/order-service/**', 'module/**']
 
   # 2. 감지된 프로젝트들만 타겟팅해서 빌드 및 Docker 검증 수행
   build-and-test:
@@ -79,6 +79,17 @@ jobs:
 
       # 4. 루트의 gradlew를 사용해 특정 모듈만 빌드
       - name: 빌드 및 테스트
+        env:
+          JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+
+          KAKAO_API_KEY: ${{ (matrix.project == 'catalog-service' || matrix.project == 'logistics-service') && secrets.KAKAO_API_KEY || '' }}
+
+          GEMINI_API_KEY: ${{ matrix.project == 'order-service' && secrets.GEMINI_API_KEY || '' }}
+          SLACK_WEBHOOK_URL: ${{ matrix.project == 'order-service' && secrets.SLACK_WEBHOOK_URL || '' }}
+          RABBITMQ_DEFAULT_USER: ${{ secrets.RABBITMQ_DEFAULT_USER }}
+          RABBITMQ_DEFAULT_PASS: ${{ secrets.RABBITMQ_DEFAULT_PASS }}
         run: ./gradlew ${{ steps.vars.outputs.target }}:build --no-daemon
 
       - name: 테스트 결과 업로드

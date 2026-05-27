@@ -6,6 +6,7 @@ import com.sparta.gt5lt7.common.exception.ErrorCode;
 import com.sparta.gt5lt7.common.dto.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -31,9 +32,7 @@ public class GlobalExceptionHandler {
                 .map(error -> new ApiResponse.ValidationError(error.getField(), error.getDefaultMessage()))
                 .toList();
 
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(message, errors));
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.error(message, errors));
     }
 
     // 접근 권한 없음 (403)
@@ -54,6 +53,13 @@ public class GlobalExceptionHandler {
         return buildResponse(CommonErrorCode.METHOD_NOT_ALLOWED);
     }
 
+    // 낙관적 락 동시 수정 충돌 (409)
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<ApiResponse<Void>> handleOptimisticLockException() {
+        return buildResponse(CommonErrorCode.CONCURRENT_UPDATE_CONFLICT);
+    }
+
+    // 서버 내부 에러 (500)
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleException(Exception e) {
         return buildResponse(CommonErrorCode.INTERNAL_SERVER_ERROR);
@@ -61,9 +67,6 @@ public class GlobalExceptionHandler {
 
     private ResponseEntity<ApiResponse<Void>> buildResponse(ErrorCode errorCode) {
         String message = String.format("[%s] %s", errorCode.getCode(), errorCode.getMessage());
-
-        return ResponseEntity
-                .status(errorCode.getStatus())
-                .body(ApiResponse.error(message));
+        return ResponseEntity.status(errorCode.getStatus()).body(ApiResponse.error(message));
     }
 }
