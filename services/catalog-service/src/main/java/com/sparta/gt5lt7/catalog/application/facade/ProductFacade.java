@@ -23,6 +23,7 @@ import org.springframework.stereotype.Component;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Component
 @RequiredArgsConstructor
@@ -78,7 +79,8 @@ public class ProductFacade {
         HubResponse hub = hubClient.getHub(company.getHubId());
 
         // [MSA 통신] 사용자 ID를 중복 없이 추출 → User Service로 사용자 정보 요청
-        Set<UUID> userIds = Set.of(product.getCreatedBy(), product.getUpdatedBy());
+        Set<UUID> userIds = Stream.of(product.getCreatedBy(), product.getUpdatedBy())
+                .filter(Objects::nonNull).collect(Collectors.toSet());
         List<UserResponse> users = userClient.getUsers(userIds);
 
         // O(1) 조회를 위한 사용자 Map 생성
