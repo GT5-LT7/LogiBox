@@ -43,7 +43,7 @@ public class DeliveryCreateService {
                 .build();
 
         List<HubRoute> hubRoutes = hubRouteRepository
-                .findByFromHubIdAndToHubIdAndDeletedAtIsNull(fromHubId, toHubId);
+                .findAllByFromHubIdAndDeletedAtIsNull(fromHubId);
 
         if (hubRoutes.isEmpty()) {
             throw new IllegalArgumentException("허브 간 배송 경로를 찾을 수 없습니다.");
