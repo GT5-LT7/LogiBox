@@ -1,0 +1,218 @@
+version: '3.8'
+
+services:
+  # === INFRASTRUCTURE ===
+  eureka-server:
+    build: ./infrastructure/eureka-server
+    ports:
+      - "8761:8761"
+    networks:
+      - logibox-network
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8761/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  api-gateway:
+    build: ./infrastructure/api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - JWT_SECRET=${JWT_SECRET_KEY}
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - logibox-network
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes # 데이터 보존 활성화
+    networks:
+      - logibox-network
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - "5672:5672" # 애플리케이션 통신용
+      - "15672:15672" # 대시보드 모니터링 관리 도구 웹 포트
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+    networks:
+      - logibox-network
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # === DATABASES ===
+  user-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: userdb
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5441:5432"
+    networks:
+      - logibox-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d userdb" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  logistics-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: logisticsdb
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5442:5432"
+    networks:
+      - logibox-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d logisticsdb" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  catalog-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: catalogdb
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5443:5432"
+    networks:
+      - logibox-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d catalogdb" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  order-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: orderdb
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5444:5432"
+    networks:
+      - logibox-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d orderdb" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # === SERVICES ===
+  user-service:
+    build: ./services/user-service
+    ports:
+      - "19091:19091"
+    environment:
+      - JWT_SECRET=${JWT_SECRET_KEY}
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://user-db:5432/userdb
+      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      user-db:
+        condition: service_healthy
+    networks:
+      - logibox-network
+
+  logistics-service:
+    build: ./services/logistics-service
+    ports:
+      - "19092:19092"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://logistics-db:5432/logisticsdb
+      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - KAKAO_API_KEY=${KAKAO_API_KEY}
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      logistics-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - logibox-network
+
+  catalog-service:
+    build: ./services/catalog-service
+    ports:
+      - "19093:19093"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://catalog-db:5432/catalogdb
+      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - KAKAO_API_KEY=${KAKAO_API_KEY}
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      catalog-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - logibox-network
+
+  order-service:
+    build: ./services/order-service
+    ports:
+      - "19094:19094"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://order-db:5432/orderdb
+      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_RABBITMQ_PORT=5672
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      order-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - logibox-network
+
+networks:
+  logibox-network:
+    driver: bridge

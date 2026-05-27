@@ -1,10 +1,10 @@
 rootProject.name = 'logibox'
 
-//include ':infrastructure:eureka-server'
-//include ':infrastructure:api-gateway'
+include ':infrastructure:eureka-server'
+include ':infrastructure:api-gateway'
 
 include ':module'
-//include ':services:user-service'
+include ':services:user-service'
 include ':services:logistics-service'
 include ':services:catalog-service'
 include ':services:order-service'

@@ -54,7 +54,7 @@ class ProductControllerTest {
             when(productService.createProduct(any(), any())).thenReturn(response);
 
             // when & then
-            mockMvc.perform(MockMvcRequestBuilders.post("/api/products")
+            mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/products")
                             .header("X-User-Id", userId)
                             .header("X-User-Role", "ROLE_MASTER")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -74,7 +74,7 @@ class ProductControllerTest {
                     .build();
 
             // when & then
-            mockMvc.perform(MockMvcRequestBuilders.post("/api/products")
+            mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/products")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isForbidden());
