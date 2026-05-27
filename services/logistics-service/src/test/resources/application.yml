@@ -13,6 +13,10 @@ spring:
     redis:
       host: localhost
       port: 6379
+  rabbitmq:
+    listener:
+      simple:
+        auto-startup: false
 
 eureka:
   client:
