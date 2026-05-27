@@ -1,0 +1,49 @@
+server:
+  port: 19094
+
+spring:
+  application:
+    name: order-service
+  data:
+    redis:
+      host: redis
+      port: 6379
+  datasource:
+    url: jdbc:postgresql://order-db:5432/orderdb
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: true
+
+  rabbitmq:
+    host: rabbitmq
+    port: 5672
+    username: ${RABBITMQ_DEFAULT_USER}
+    password: ${RABBITMQ_DEFAULT_PASS}
+
+  logging:
+    level:
+      org.hibernate.SQL: debug
+
+  gemini:
+    api:
+      key: ${GEMINI_API_KEY}
+    model: gemini-2.0-flash
+
+  slack:
+    webhook:
+      url: ${SLACK_WEBHOOK_URL}
+
+jwt:
+  secret-key: ${JWT_SECRET_KEY}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka/
