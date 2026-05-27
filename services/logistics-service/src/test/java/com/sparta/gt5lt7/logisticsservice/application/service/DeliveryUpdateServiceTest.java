@@ -1,7 +1,7 @@
 package com.sparta.gt5lt7.logisticsservice.application.service;
 
 import com.sparta.gt5lt7.logisticsservice.domain.entity.Delivery;
-import com.sparta.gt5lt7.logisticsservice.domain.enums.DeliveryStatus;
+import com.sparta.gt5lt7.logisticsservice.domain.entity.DeliveryStatus;
 import com.sparta.gt5lt7.logisticsservice.domain.repository.DeliveryRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
