@@ -19,14 +19,12 @@ spring:
     show_sql: true  # 콘솔에 쿼리 출력
 
 kakao:
-  map:
-    auth-header: "KakaoAK ${KAKAO_API_KEY}"
+  local:
+    base-url: https://dapi.kakao.com
+    api-key: ${KAKAO_API_KEY}
+  mobility:
+    base-url: https://apis-navi.kakaomobility.com
 
 eureka:
   client:
     enabled: false  # Eureka 비활성화
-
-logging:
-  level:
-    org.hibernate.SQL: debug
-    org.hibernate.orm.jdbc.bind: trace
