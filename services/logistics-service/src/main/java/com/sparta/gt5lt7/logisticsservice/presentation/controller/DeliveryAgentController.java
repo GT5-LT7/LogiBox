@@ -15,6 +15,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import com.sparta.gt5lt7.common.security.CustomUserPrincipal;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 
 import java.util.UUID;
 
@@ -43,6 +46,19 @@ public class DeliveryAgentController {
         return ResponseEntity.ok(
                 ApiResponse.updated(
                         deliveryAgentService.updateDeliveryAgent(deliveryAgentId, request)
+                )
+        );
+    }
+
+    @DeleteMapping("/{deliveryAgentId}")
+    @PreAuthorize("hasAnyRole('MASTER', 'HUB_MANAGER')")
+    public ResponseEntity<ApiResponse<DeliveryAgentResponse>> deleteDeliveryAgent(
+            @PathVariable UUID deliveryAgentId,
+            @AuthenticationPrincipal CustomUserPrincipal principal
+    ) {
+        return ResponseEntity.ok(
+                ApiResponse.deleted(
+                        deliveryAgentService.deleteDeliveryAgent(deliveryAgentId, principal)
                 )
         );
     }
