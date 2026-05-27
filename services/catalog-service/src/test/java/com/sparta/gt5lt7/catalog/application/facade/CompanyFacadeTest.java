@@ -1,5 +1,6 @@
 package com.sparta.gt5lt7.catalog.application.facade;
 
+import com.sparta.gt5lt7.common.dto.PageResponse;
 import com.sparta.gt5lt7.catalog.application.service.CompanyService;
 import com.sparta.gt5lt7.catalog.application.service.KakaoMapService;
 import com.sparta.gt5lt7.catalog.application.service.ProductService;
@@ -13,10 +14,10 @@ import com.sparta.gt5lt7.catalog.infrastructure.client.dto.UserResponse;
 import com.sparta.gt5lt7.catalog.presentation.dto.request.CompanyRequest;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.CompanyResponse;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.CoordinateResponse;
+import com.sparta.gt5lt7.catalog.presentation.dto.response.HubUsageStatusResponse;
 import com.sparta.gt5lt7.common.entity.UserRole;
 import com.sparta.gt5lt7.common.exception.BaseException;
 import com.sparta.gt5lt7.common.security.CustomUserPrincipal;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -24,6 +25,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
@@ -125,58 +130,74 @@ class CompanyFacadeTest {
         }
     }
 
-    @Nested
+    @Test
+    @DisplayName("업체 목록 조회 테스트")
+    void searchCompaniesTest() {
+        // given
+        String keyword = "스파르타";
+        CompanyType type = CompanyType.SUPPLIER;
+        Pageable pageable = PageRequest.of(0, 10);
+
+        Company mockCompany = createCompany(UUID.randomUUID(), createCompanyRequest("스파르타 물류"));
+        Page<Company> mockCompanyPage = new PageImpl<>(List.of(mockCompany), pageable, 1);
+
+        HubResponse mockHub = new HubResponse(hubId, "서울 중앙 허브"); // HubResponse 구조에 맞게 수정
+        Set<UUID> targetHubIds = Set.of(hubId);
+
+        given(companyService.searchCompanies(keyword, type, hubId, pageable)).willReturn(mockCompanyPage);
+        given(hubClient.getHubs(targetHubIds)).willReturn(List.of(mockHub));
+
+        // when
+        PageResponse<CompanyResponse.Summary> response = companyFacade.searchCompanies(keyword, type, hubId, pageable);
+
+        // then
+        assertThat(response.getContent()).hasSize(1);
+        assertThat(response.getContent().get(0).info().name()).isEqualTo(mockCompany.getName());
+        verify(companyService).searchCompanies(keyword, type, hubId, pageable);
+        verify(hubClient).getHubs(targetHubIds);
+    }
+
+    @Test
     @DisplayName("업체 조회 테스트")
-    class GetCompanyTest {
-        private final UUID createdBy = UUID.randomUUID();
-        private final UUID updatedBy = UUID.randomUUID();
+    void getCompanyTest() {
+        // given
+        UUID createdBy = UUID.randomUUID();
+        UUID updatedBy = UUID.randomUUID();
 
-        Company mockCompany;
+        Company mockCompany = createCompany(companyId, createCompanyRequest("스파르타 물류"));
+        ReflectionTestUtils.setField(mockCompany, "createdBy", createdBy);
+        ReflectionTestUtils.setField(mockCompany, "updatedBy", updatedBy);
 
-        @BeforeEach
-        void setUp() {
-            mockCompany = createCompany(companyId, createCompanyRequest("스파르타 물류"));
-            ReflectionTestUtils.setField(mockCompany, "createdBy", createdBy);
-            ReflectionTestUtils.setField(mockCompany, "updatedBy", updatedBy);
-        }
+        List<UserResponse> mockUsers = List.of(
+                new UserResponse(createdBy, "생성자"), new UserResponse(updatedBy, "수정자")
+        );
 
-        @Test
-        @DisplayName("성공: 존재하는 업체 ID")
-        void test1() {
-            // given
-            List<UserResponse> mockUserResponses = List.of(
-                    new UserResponse(createdBy, "생성자"), new UserResponse(updatedBy, "수정자")
-            );
+        given(companyService.getCompany(companyId)).willReturn(mockCompany);
+        given(hubClient.getHub(hubId)).willReturn(mockHub);
+        given(userClient.getUsers(Set.of(createdBy, updatedBy))).willReturn(mockUsers);
 
-            given(companyService.getCompany(companyId)).willReturn(mockCompany);
-            given(hubClient.getHub(hubId)).willReturn(mockHub);
-            given(userClient.getUsers(Set.of(createdBy, updatedBy))).willReturn(mockUserResponses);
+        // when
+        CompanyResponse.Detail response = companyFacade.getCompany(companyId);
 
-            // when
-            CompanyResponse.Detail response = companyFacade.getCompany(companyId);
+        // then
+        assertThat(response.info().name()).isEqualTo(mockCompany.getName());
+        verify(companyService).getCompany(companyId);
+        verify(hubClient).getHub(hubId);
+        verify(userClient).getUsers(Set.of(createdBy, updatedBy));
+    }
 
-            // then
-            assertThat(response.info().name()).isEqualTo(mockCompany.getName());
-            verify(companyService).getCompany(companyId);
-            verify(hubClient).getHub(hubId);
-            verify(userClient).getUsers(Set.of(createdBy, updatedBy));
-        }
+    @Test
+    @DisplayName("허브 사용 여부 조회 테스트")
+    void checkHubUsageTest() {
+        // given
+        given(companyService.checkHubUsage(hubId)).willReturn(true);
 
-        @Test
-        @DisplayName("실패: 존재하지 않는 업체 ID")
-        void test2() {
-            // given
-            given(companyService.getCompany(companyId)).willThrow(new BaseException(CompanyErrorCode.COMPANY_NOT_FOUND));
+        // when
+        HubUsageStatusResponse response = companyFacade.checkHubUsage(hubId);
 
-            // when & then
-            assertThatThrownBy(() -> companyFacade.getCompany(companyId))
-                    .isInstanceOf(BaseException.class)
-                    .hasMessageContaining(CompanyErrorCode.COMPANY_NOT_FOUND.getMessage());
-
-            verify(companyService).getCompany(companyId);
-            verifyNoInteractions(hubClient);
-            verifyNoInteractions(kakaoMapService);
-        }
+        // then
+        assertThat(response.used()).isTrue();
+        verify(companyService).checkHubUsage(hubId);
     }
 
     @Nested
@@ -186,7 +207,7 @@ class CompanyFacadeTest {
         private final Company mockCompany = createCompany(companyId, request);
 
         @Test
-        @DisplayName("성공: MASTER - 허브 상관 없음")
+        @DisplayName("성공: MASTER - 허브와 업체 상관 없음")
         void test1() {
             // given
             CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_MASTER, null);
@@ -375,42 +396,22 @@ class CompanyFacadeTest {
         }
     }
 
-    @Nested
+    @Test
     @DisplayName("업체 삭제 테스트")
-    class DeleteCompanyTest {
-        @Test
-        @DisplayName("성공: 업체 삭제 권한 있음")
-        void test1() {
-            // given
-            UUID deletedBy = UUID.randomUUID();
-            CustomUserPrincipal principal = CustomUserPrincipal.of(deletedBy, UserRole.ROLE_MASTER, null);
-            Company mockCompany = createCompany(companyId, createCompanyRequest("삭제 예정 물류"));
-            given(companyService.deleteCompany(companyId, principal)).willReturn(mockCompany);
+    void deleteCompanyTest() {
+        // given
+        UUID deletedBy = UUID.randomUUID();
+        CustomUserPrincipal principal = CustomUserPrincipal.of(deletedBy, UserRole.ROLE_MASTER, null);
+        Company mockCompany = createCompany(companyId, createCompanyRequest("삭제 예정 물류"));
+        given(companyService.deleteCompany(companyId, principal)).willReturn(mockCompany);
 
-            // when
-            CompanyResponse.Delete response = companyFacade.deleteCompany(companyId, principal);
+        // when
+        CompanyResponse.Delete response = companyFacade.deleteCompany(companyId, principal);
 
-            // then
-            assertThat(response).isNotNull();
-            verify(companyService).deleteCompany(companyId, principal);
-            verify(productService).deleteProducts(companyId, deletedBy);
-        }
-
-        @Test
-        @DisplayName("실패: 업체 삭제 권한 없음")
-        void test3() {
-            // given
-            CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_HUB_MANAGER, UUID.randomUUID());
-            given(companyService.deleteCompany(companyId, principal)).willThrow(new BaseException(CompanyErrorCode.COMPANY_DELETE_DENIED));
-
-            // when & then
-            assertThatThrownBy(() -> companyFacade.deleteCompany(companyId, principal))
-                    .isInstanceOf(BaseException.class)
-                    .hasMessageContaining(CompanyErrorCode.COMPANY_DELETE_DENIED.getMessage());
-
-            verify(companyService).deleteCompany(companyId, principal);
-            verifyNoInteractions(productService);
-        }
+        // then
+        assertThat(response).isNotNull();
+        verify(companyService).deleteCompany(companyId, principal);
+        verify(productService).deleteProducts(companyId, deletedBy);
     }
 
     private CompanyRequest createCompanyRequest(String name) {

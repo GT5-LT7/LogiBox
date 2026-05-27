@@ -1,11 +1,11 @@
 package com.sparta.gt5lt7.catalog.presentation.controller;
 
+import com.sparta.gt5lt7.catalog.application.facade.ProductFacade;
 import com.sparta.gt5lt7.common.security.CustomUserPrincipal;
 import com.sparta.gt5lt7.catalog.presentation.dto.request.ProductRequest;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.ProductResponse;
 import com.sparta.gt5lt7.common.dto.ApiResponse;
 import com.sparta.gt5lt7.common.dto.PageResponse;
-import com.sparta.gt5lt7.catalog.application.service.ProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -21,7 +21,7 @@ import java.util.UUID;
 @RequestMapping("/api/v1/products")
 @RequiredArgsConstructor
 public class ProductController {
-    private final ProductService productService;
+    private final ProductFacade productFacade;
 
     @PostMapping
     @PreAuthorize("hasAnyRole('MASTER', 'HUB_MANAGER', 'COMPANY_MANAGER')")
@@ -29,7 +29,7 @@ public class ProductController {
             @Valid @RequestBody ProductRequest.Create request,
             @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
-        ProductResponse.Create response = productService.createProduct(request, principal);
+        ProductResponse.Create response = productFacade.createProduct(request, principal);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(response));
     }
 
@@ -42,7 +42,7 @@ public class ProductController {
             Pageable pageable,
             @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
-        PageResponse<ProductResponse.Summary> response = productService.searchProducts(
+        PageResponse<ProductResponse.Summary> response = productFacade.searchProducts(
                 keyword, salesOnly, companyId, hubId, pageable, principal
         );
         return ResponseEntity.ok(ApiResponse.success(response));
@@ -53,7 +53,7 @@ public class ProductController {
             @PathVariable UUID id,
             @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
-        ProductResponse.Detail response = productService.getProduct(id, principal);
+        ProductResponse.Detail response = productFacade.getProduct(id, principal);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
@@ -64,7 +64,7 @@ public class ProductController {
             @Valid @RequestBody ProductRequest.Update request,
             @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
-        ProductResponse.Update response = productService.updateProduct(id, request, principal);
+        ProductResponse.Update response = productFacade.updateProduct(id, request, principal);
         return ResponseEntity.ok(ApiResponse.updated(response));
     }
 
@@ -75,7 +75,7 @@ public class ProductController {
             @Valid @RequestBody ProductRequest.StatusUpdate request,
             @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
-        ProductResponse.StatusUpdate response = productService.updateProductStatus(id, request, principal);
+        ProductResponse.StatusUpdate response = productFacade.updateProductStatus(id, request, principal);
         return ResponseEntity.ok(ApiResponse.updated(response));
     }
 
@@ -86,7 +86,7 @@ public class ProductController {
             @Valid @RequestBody ProductRequest.StockUpdate request,
             @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
-        ProductResponse.StockUpdate response = productService.updateProductQuantity(id, request, principal);
+        ProductResponse.StockUpdate response = productFacade.updateProductQuantity(id, request, principal);
         return ResponseEntity.ok(ApiResponse.updated(response));
     }
 
@@ -96,7 +96,7 @@ public class ProductController {
             @PathVariable UUID id,
             @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
-        ProductResponse.Delete response = productService.deleteProduct(id, principal);
+        ProductResponse.Delete response = productFacade.deleteProduct(id, principal);
         return ResponseEntity.ok(ApiResponse.deleted(response));
     }
 }

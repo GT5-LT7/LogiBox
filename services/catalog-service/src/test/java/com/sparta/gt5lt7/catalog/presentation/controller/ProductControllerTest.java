@@ -1,7 +1,7 @@
 package com.sparta.gt5lt7.catalog.presentation.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sparta.gt5lt7.catalog.application.service.ProductService;
+import com.sparta.gt5lt7.catalog.application.facade.ProductFacade;
 import com.sparta.gt5lt7.catalog.presentation.dto.request.ProductRequest;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.ProductResponse;
 import com.sparta.gt5lt7.common.config.WebConfig;
@@ -34,7 +34,7 @@ class ProductControllerTest {
     private ObjectMapper objectMapper;
 
     @MockitoBean
-    private ProductService productService;
+    private ProductFacade productFacade;
 
     @Nested
     @DisplayName("게이트웨이 인증 필터 동작 테스트")
@@ -51,7 +51,7 @@ class ProductControllerTest {
                     .quantity(100)
                     .build();
             ProductResponse.Create response = new ProductResponse.Create(UUID.randomUUID(), "테스트 상품", LocalDateTime.now());
-            when(productService.createProduct(any(), any())).thenReturn(response);
+            when(productFacade.createProduct(any(), any())).thenReturn(response);
 
             // when & then
             mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/products")
