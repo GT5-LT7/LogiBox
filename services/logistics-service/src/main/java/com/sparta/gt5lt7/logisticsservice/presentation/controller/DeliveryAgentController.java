@@ -9,7 +9,9 @@ import com.sparta.gt5lt7.logisticsservice.presentation.dto.response.DeliveryAgen
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +21,7 @@ import com.sparta.gt5lt7.common.security.CustomUserPrincipal;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 
+import java.util.Set;
 import java.util.UUID;
 
 @RestController
@@ -27,6 +30,13 @@ import java.util.UUID;
 public class DeliveryAgentController {
 
     private final DeliveryAgentService deliveryAgentService;
+    private static final Set<Integer> ALLOWED_SIZES = Set.of(10, 30, 50);
+
+    private Pageable capSize(Pageable p) {
+        return ALLOWED_SIZES.contains(p.getPageSize())
+                ? p
+                : PageRequest.of(p.getPageNumber(), 10, p.getSort());
+    }
 
     @PostMapping
     @PreAuthorize("hasAnyRole('MASTER', 'HUB_MANAGER')")
@@ -77,10 +87,10 @@ public class DeliveryAgentController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<Page<DeliveryAgentResponse>>> searchDeliveryAgents(
             @ModelAttribute DeliveryAgentSearchRequest request,
-            @PageableDefault(size = 20) Pageable pageable
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         return ResponseEntity.ok(
-                ApiResponse.success(deliveryAgentService.searchDeliveryAgents(request, pageable))
+                ApiResponse.success(deliveryAgentService.searchDeliveryAgents(request, capSize(pageable)))
         );
     }
 }
