@@ -123,14 +123,20 @@ public class ProductFacade {
             return Collections.emptyList();
         }
 
-        // [Redis 활용] 원복 요청일 때, 보상 트랜잭션 중복 검증
+        // [Redis 활용] 롤백 요청일 때, 보상 트랜잭션 중복 검증
         boolean isRollbackProcess = stockItems.stream().allMatch(item -> item.getUpdateQuantity() > 0);
         String redisKey = REDIS_ROLLBACK_KEY_PREFIX + requests.getOrderId();
 
         // 1. 주문 ID로 롤백되었는지 확인
-        if (isRollbackProcess && Objects.equals(redisTemplate.hasKey(redisKey), true)) {
-            List<Product> products = productService.findAllByIds(stockItems);
-            return products.stream().map(ProductResponse.StockUpdate::from).toList();
+        if (isRollbackProcess) {
+            // 최초 요청 시 임시 선점
+            boolean isFirstRequest = productService.reserveRollbackHistory(redisKey);
+
+            // 이미 처리 중이거나 완료된 요청 ⇾ 단순 조회 후 반환
+            if (!isFirstRequest) {
+                List<Product> products = productService.findAllByIds(stockItems);
+                return products.stream().map(ProductResponse.StockUpdate::from).toList();
+            }
         }
 
         // O(1) 조회를 위한 요청 Map 생성 → 중복되는 상품 ID의 변경 재고량을 병합해 안정성 확보
@@ -144,15 +150,23 @@ public class ProductFacade {
         // [데드락 방지] 상품 ID 오름차순 정렬 → 트랜잭션들이 항상 같은 순서로 락 점유
         List<UUID> productIds = quantityMap.keySet().stream().sorted().toList();
 
-        // 정렬된 순서대로 DB에서 비관적 락을 걸고 데이터 조회
-        List<Product> products = productService.updateProductQuantityForOrder(productIds, quantityMap);
+        try {
+            // 정렬된 순서대로 DB에서 비관적 락을 걸고 데이터 조회
+            List<Product> products = productService.updateProductQuantityForOrder(productIds, quantityMap);
 
-        // 2. 롤백 처리 성공 시, Redis에 주문 ID 저장 → TTL 만료 시간 분산 적용
-        if (isRollbackProcess) {
-            productService.saveRollbackHistoryToRedis(redisKey);
+            // 2-1. 롤백 처리 성공 시, Redis에 주문 ID 저장 → TTL 만료 시간 분산 적용
+            if (isRollbackProcess) {
+                productService.confirmRollbackHistory(redisKey);
+            }
+
+            return products.stream().map(ProductResponse.StockUpdate::from).toList();
+        } catch (Exception e) {
+            // 2-2. 예외 발생 시 Redis 키 삭제
+            if (isRollbackProcess) {
+                productService.clearRollbackHistory(redisKey);
+            }
+            throw e;
         }
-
-        return products.stream().map(ProductResponse.StockUpdate::from).toList();
     }
 
     public ProductResponse.Delete deleteProduct(UUID id, CustomUserPrincipal principal) {

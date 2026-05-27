@@ -107,6 +107,7 @@ public class ProductService {
         return product;
     }
 
+    // 상품 ID 기반 상품 목록 조회
     public List<Product> findAllByIds(List<ProductRequest.StockItem> stockItems) {
         List<UUID> productIds = stockItems.stream().map(ProductRequest.StockItem::getProductId).collect(Collectors.toList());
         return productRepository.findAllById(productIds);
@@ -121,7 +122,7 @@ public class ProductService {
             throw new BaseException(ProductErrorCode.PRODUCT_NOT_FOUND);
         }
 
-        // 재고 차감 및 원복
+        // 재고 차감 및 롤백
         for (Product product : products) {
             int quantity = product.getQuantity() + quantityMap.get(product.getProductId());
 
@@ -135,10 +136,22 @@ public class ProductService {
         return products;
     }
 
-    public void saveRollbackHistoryToRedis(String redisKey) {
+    // [Redis 활용] 최초 요청 확인 및 임시 선점
+    public boolean reserveRollbackHistory(String redisKey) {
+        Boolean result = redisTemplate.opsForValue().setIfAbsent(redisKey, "processing", 30, TimeUnit.SECONDS);
+        return Boolean.TRUE.equals(result);
+    }
+
+    // [Redis 활용] 롤백 성공 시 랜덤 TTL 부여
+    public void confirmRollbackHistory(String redisKey) {
         long randomBufferSeconds = ThreadLocalRandom.current().nextLong(RANDOM_BUFFER_MAX_SECONDS + 1);
         long totalTimeoutSeconds = BASE_TIMEOUT_SECONDS + randomBufferSeconds;
         redisTemplate.opsForValue().set(redisKey, "processed", totalTimeoutSeconds, TimeUnit.SECONDS);
+    }
+
+    // [Redis 활용] 에외 발생 시 Redis 키 삭제
+    public void clearRollbackHistory(String redisKey) {
+        redisTemplate.delete(redisKey);
     }
 
     @Transactional

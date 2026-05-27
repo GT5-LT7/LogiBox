@@ -230,7 +230,7 @@ class ProductServiceTest {
     }
 
     @Test
-    @DisplayName("상품 ID 목록으로 상품 목록 조회 테스트")
+    @DisplayName("상품 ID 기반 상품 목록 조회 테스트")
     void findAllByIdsTest() {
         // given
         ProductRequest.StockItem item = new ProductRequest.StockItem(productId, 2);
@@ -271,21 +271,79 @@ class ProductServiceTest {
         assertThat(product2.getQuantity()).isEqualTo(25);
     }
 
-    @Test
-    @DisplayName("Redis에 원복 성공 기록 저장 테스트")
-    void saveRollbackHistoryToRedisTest() {
-        // given
-        String redisKey = "rollback:order:123";
-        ValueOperations<String, String> valueOperations = mock(ValueOperations.class);
-        given(redisTemplate.opsForValue()).willReturn(valueOperations);
-        doNothing().when(valueOperations).set(eq(redisKey), eq("processed"), anyLong(), eq(TimeUnit.SECONDS));
+    @Nested
+    @DisplayName("Redis 롤백 기록 제어 테스트")
+    class RedisRollbackHistoryTest {
+        private final String redisKey = "rollback:order:123";
 
-        // when
-        productService.saveRollbackHistoryToRedis(redisKey);
+        @Test
+        @DisplayName("성공: 최초 요청 시 Redis 임시 선점 및 true 반환")
+        void reserveRollbackHistoryTest1() {
+            // given
+            @SuppressWarnings("unchecked")
+            ValueOperations<String, String> valueOperations = mock(ValueOperations.class);
 
-        // then
-        verify(redisTemplate).opsForValue();
-        verify(valueOperations).set(eq(redisKey), eq("processed"), anyLong(), eq(TimeUnit.SECONDS));
+            given(redisTemplate.opsForValue()).willReturn(valueOperations);
+            given(valueOperations.setIfAbsent(eq(redisKey), eq("processing"), eq(30L), eq(TimeUnit.SECONDS)))
+                    .willReturn(true);
+
+            // when
+            boolean result = productService.reserveRollbackHistory(redisKey);
+
+            // then
+            assertThat(result).isTrue();
+            verify(valueOperations).setIfAbsent(eq(redisKey), eq("processing"), eq(30L), eq(TimeUnit.SECONDS));
+        }
+
+        @Test
+        @DisplayName("성공: 이미 처리 중이거나 완료된 요청 시 false 반환")
+        void reserveRollbackHistoryTest2() {
+            // given
+            @SuppressWarnings("unchecked")
+            ValueOperations<String, String> valueOperations = mock(ValueOperations.class);
+
+            given(redisTemplate.opsForValue()).willReturn(valueOperations);
+            given(valueOperations.setIfAbsent(eq(redisKey), eq("processing"), eq(30L), eq(TimeUnit.SECONDS)))
+                    .willReturn(false);
+
+            // when
+            boolean result = productService.reserveRollbackHistory(redisKey);
+
+            // then
+            assertThat(result).isFalse();
+            verify(valueOperations).setIfAbsent(eq(redisKey), eq("processing"), eq(30L), eq(TimeUnit.SECONDS));
+        }
+
+        @Test
+        @DisplayName("성공: 롤백 성공 시 Redis 기록 확정")
+        void confirmRollbackHistoryTest() {
+            // given
+            @SuppressWarnings("unchecked")
+            ValueOperations<String, String> valueOperations = mock(ValueOperations.class);
+
+            given(redisTemplate.opsForValue()).willReturn(valueOperations);
+            doNothing().when(valueOperations).set(eq(redisKey), eq("processed"), anyLong(), eq(TimeUnit.SECONDS));
+
+            // when
+            productService.confirmRollbackHistory(redisKey);
+
+            // then
+            verify(redisTemplate).opsForValue();
+            verify(valueOperations).set(eq(redisKey), eq("processed"), anyLong(), eq(TimeUnit.SECONDS));
+        }
+
+        @Test
+        @DisplayName("성공: 예외 발생 시 Redis 키 삭제")
+        void clearRollbackHistoryTest() {
+            // given
+            given(redisTemplate.delete(redisKey)).willReturn(true);
+
+            // when
+            productService.clearRollbackHistory(redisKey);
+
+            // then
+            verify(redisTemplate).delete(redisKey);
+        }
     }
 
     @Nested

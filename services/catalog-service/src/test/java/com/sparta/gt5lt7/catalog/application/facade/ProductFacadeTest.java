@@ -215,7 +215,7 @@ class ProductFacadeTest {
         private final String redisKey = "rollback:order:" + orderId;
 
         @Test
-        @DisplayName("성공: 처리된 원복 요청")
+        @DisplayName("성공: 이미 처리 중이거나 완료된 요청")
         void test1() {
             // given
             ProductRequest.StockItem stockItem = new ProductRequest.StockItem(productId, 5);
@@ -224,7 +224,7 @@ class ProductFacadeTest {
             Company mockCompany = createCompany(companyId, hubId);
             Product mockProduct = createProduct(productId, "테스트 상품", mockCompany, 10L, 10);
 
-            given(redisTemplate.hasKey(redisKey)).willReturn(true);
+            given(productService.reserveRollbackHistory(redisKey)).willReturn(false);
             given(productService.findAllByIds(anyList())).willReturn(List.of(mockProduct));
 
             // when
@@ -232,13 +232,15 @@ class ProductFacadeTest {
 
             // then
             assertThat(responses).hasSize(1);
+            verify(productService).reserveRollbackHistory(redisKey);
             verify(productService).findAllByIds(anyList());
             verify(productService, never()).updateProductQuantityForOrder(anyList(), anyMap());
-            verify(productService, never()).saveRollbackHistoryToRedis(anyString());
+            verify(productService, never()).confirmRollbackHistory(anyString());
+            verify(productService, never()).clearRollbackHistory(anyString());
         }
 
         @Test
-        @DisplayName("성공: 새로운 원복 요청")
+        @DisplayName("성공: 새로운 요청")
         void test2() {
             // given
             UUID productId2 = UUID.randomUUID();
@@ -253,15 +255,35 @@ class ProductFacadeTest {
 
             List<UUID> sortedIds = Stream.of(productId2, productId).sorted().toList();
 
-            given(redisTemplate.hasKey(redisKey)).willReturn(false);
+            given(productService.reserveRollbackHistory(redisKey)).willReturn(true);
             given(productService.updateProductQuantityForOrder(eq(sortedIds), anyMap())).willReturn(List.of(product1, product2));
 
             // when
             productFacade.updateProductQuantityForOrder(requests);
 
             // then
+            verify(productService).reserveRollbackHistory(redisKey);
             verify(productService).updateProductQuantityForOrder(eq(sortedIds), anyMap());
-            verify(productService).saveRollbackHistoryToRedis(redisKey);
+            verify(productService).confirmRollbackHistory(redisKey);
+            verify(productService, never()).clearRollbackHistory(anyString());
+        }
+
+        @Test
+        @DisplayName("실패: 최초 요청 중 예외 발생")
+        void test3() {
+            // given
+            ProductRequest.StockItem stockItem = new ProductRequest.StockItem(productId, 5);
+            ProductRequest.OrderStockUpdate requests = new ProductRequest.OrderStockUpdate(orderId, List.of(stockItem));
+
+            given(productService.reserveRollbackHistory(redisKey)).willReturn(true);
+            given(productService.updateProductQuantityForOrder(anyList(), anyMap()))
+                    .willThrow(new BaseException(ProductErrorCode.OUT_OF_STOCK));
+
+            // when & then
+            assertThatThrownBy(() -> productFacade.updateProductQuantityForOrder(requests)).isInstanceOf(BaseException.class);
+            verify(productService).reserveRollbackHistory(redisKey);
+            verify(productService).clearRollbackHistory(redisKey);
+            verify(productService, never()).confirmRollbackHistory(anyString());
         }
     }
 
