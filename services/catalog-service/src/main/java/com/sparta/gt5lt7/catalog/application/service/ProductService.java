@@ -8,7 +8,6 @@ import com.sparta.gt5lt7.catalog.global.exception.ProductErrorCode;
 import com.sparta.gt5lt7.catalog.domain.entity.Company;
 import com.sparta.gt5lt7.catalog.domain.repository.ProductRepository;
 import com.sparta.gt5lt7.catalog.presentation.dto.request.ProductRequest;
-import com.sparta.gt5lt7.catalog.presentation.dto.response.ProductResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -108,9 +107,9 @@ public class ProductService {
         return product;
     }
 
-    public List<ProductResponse.StockUpdate> findAllByIds(List<ProductRequest.StockItem> stockItems) {
+    public List<Product> findAllByIds(List<ProductRequest.StockItem> stockItems) {
         List<UUID> productIds = stockItems.stream().map(ProductRequest.StockItem::getProductId).collect(Collectors.toList());
-        return productRepository.findAllById(productIds).stream().map(ProductResponse.StockUpdate::from).collect(Collectors.toList());
+        return productRepository.findAllById(productIds);
     }
 
     @Transactional
@@ -134,7 +133,6 @@ public class ProductService {
     public void saveRollbackHistoryToRedis(String redisKey) {
         long randomBufferSeconds = ThreadLocalRandom.current().nextLong(RANDOM_BUFFER_MAX_SECONDS + 1);
         long totalTimeoutSeconds = BASE_TIMEOUT_SECONDS + randomBufferSeconds;
-
         redisTemplate.opsForValue().set(redisKey, "processed", totalTimeoutSeconds, TimeUnit.SECONDS);
     }
 

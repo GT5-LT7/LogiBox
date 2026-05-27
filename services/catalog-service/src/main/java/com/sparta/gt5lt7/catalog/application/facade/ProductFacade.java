@@ -127,7 +127,8 @@ public class ProductFacade {
 
         // 1. 주문 ID로 롤백되었는지 확인
         if (isRollbackProcess && Objects.equals(redisTemplate.hasKey(redisKey), true)) {
-            return productService.findAllByIds(stockItems);
+            List<Product> products = productService.findAllByIds(stockItems);
+            return products.stream().map(ProductResponse.StockUpdate::from).toList();
         }
 
         // [데드락 방지] 상품 ID 오름차순 정렬 → 트랜잭션들이 항상 같은 순서로 락 점유

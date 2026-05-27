@@ -8,7 +8,6 @@ import com.sparta.gt5lt7.catalog.domain.repository.CompanyRepository;
 import com.sparta.gt5lt7.catalog.global.exception.CompanyErrorCode;
 import com.sparta.gt5lt7.catalog.presentation.dto.request.CompanyRequest;
 import com.sparta.gt5lt7.catalog.presentation.dto.response.CoordinateResponse;
-import com.sparta.gt5lt7.catalog.presentation.dto.response.HubUsageStatusResponse;
 import com.sparta.gt5lt7.common.exception.BaseException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
