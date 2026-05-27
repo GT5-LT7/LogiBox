@@ -248,7 +248,7 @@ class ProductServiceTest {
     }
 
     @Test
-    @DisplayName("주문 전용 상품 재고 변경 테스트")
+    @DisplayName("주문 상품 재고 변경 테스트")
     void UpdateProductQuantityForOrderTest() {
         // given
         UUID product2Id = UUID.randomUUID();

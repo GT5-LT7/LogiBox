@@ -116,6 +116,11 @@ public class ProductService {
     public List<Product> updateProductQuantityForOrder(List<UUID> productIds, Map<UUID, Integer> quantityMap) {
         List<Product> products = productRepository.findAllByIdInForUpdate(productIds);
 
+        // 요청된 상품 수와 조회된 상품 수 비교
+        if (products.size() != productIds.size()) {
+            throw new BaseException(ProductErrorCode.PRODUCT_NOT_FOUND);
+        }
+
         // 재고 차감 및 원복
         for (Product product : products) {
             int quantity = product.getQuantity() + quantityMap.get(product.getProductId());

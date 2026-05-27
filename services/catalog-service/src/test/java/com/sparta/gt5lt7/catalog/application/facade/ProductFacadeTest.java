@@ -209,7 +209,7 @@ class ProductFacadeTest {
     }
 
     @Nested
-    @DisplayName("주문 재고 변경 및 Redis 롤백 중복 검증 테스트")
+    @DisplayName("주문 상품 재고 변경 및 Redis 롤백 중복 검증 테스트")
     class UpdateProductQuantityForOrderTest {
         private final UUID orderId = UUID.randomUUID();
         private final String redisKey = "rollback:order:" + orderId;

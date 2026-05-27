@@ -133,9 +133,6 @@ public class ProductFacade {
             return products.stream().map(ProductResponse.StockUpdate::from).toList();
         }
 
-        // [데드락 방지] 상품 ID 오름차순 정렬 → 트랜잭션들이 항상 같은 순서로 락 점유
-        List<UUID> productIds = stockItems.stream().map(ProductRequest.StockItem::getProductId).sorted().toList();
-
         // O(1) 조회를 위한 요청 Map 생성 → 중복되는 상품 ID의 변경 재고량을 병합해 안정성 확보
         Map<UUID, Integer> quantityMap = stockItems.stream()
                 .collect(Collectors.toMap(
@@ -144,8 +141,11 @@ public class ProductFacade {
                         Integer::sum
                 ));
 
+        // [데드락 방지] 상품 ID 오름차순 정렬 → 트랜잭션들이 항상 같은 순서로 락 점유
+        List<UUID> productIds = quantityMap.keySet().stream().sorted().toList();
+
         // 정렬된 순서대로 DB에서 비관적 락을 걸고 데이터 조회
-        List<Product> products =productService.updateProductQuantityForOrder(productIds, quantityMap);
+        List<Product> products = productService.updateProductQuantityForOrder(productIds, quantityMap);
 
         // 2. 롤백 처리 성공 시, Redis에 주문 ID 저장 → TTL 만료 시간 분산 적용
         if (isRollbackProcess) {

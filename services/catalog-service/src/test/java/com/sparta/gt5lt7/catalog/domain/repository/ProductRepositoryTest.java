@@ -108,7 +108,7 @@ class ProductRepositoryTest {
     }
 
     @Test
-    @DisplayName("재고 변경을 위한 상품 목록 비관적 락 조회 테스트")
+    @DisplayName("상품 재고 변경을 위한 상품 목록 비관적 락 조회 테스트")
     void findAllByIdInForUpdateTest() {
         // given
         Company company = createCompany();
