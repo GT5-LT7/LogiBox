@@ -1,0 +1,31 @@
+server:
+  port: 19092
+
+spring:
+  application:
+    name: logistics-service
+  data:
+    redis:
+      host: redis
+      port: 6379
+  datasource:
+    url: jdbc:postgresql://logistics-db:5432/logisticsdb
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+
+kakao:
+  local:
+    base-url: https://dapi.kakao.com
+    api-key: ${KAKAO_API_KEY}
+  mobility:
+    base-url: https://apis-navi.kakaomobility.com
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka/

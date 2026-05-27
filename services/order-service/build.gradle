@@ -5,6 +5,7 @@ plugins {
 
 dependencies {
     implementation project(':module')
+    annotationProcessor project(':module')
 
     // QueryDSL
     implementation 'com.querydsl:querydsl-jpa:5.0.0:jakarta'
@@ -12,28 +13,25 @@ dependencies {
     annotationProcessor 'jakarta.annotation:jakarta.annotation-api'
     annotationProcessor 'jakarta.persistence:jakarta.persistence-api'
 
-    annotationProcessor project(':module')
+    // PostgreSQL
+    runtimeOnly 'org.postgresql:postgresql'
 
-    implementation 'org.springframework.boot:spring-boot-starter'
-    implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.boot:spring-boot-starter-security'
-    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    // H2
+    testImplementation 'com.h2database:h2'
 
-    implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
+    // Redis
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
     // RabbitMQ
     implementation 'org.springframework.boot:spring-boot-starter-amqp'
     testImplementation 'org.springframework.amqp:spring-rabbit-test'
 
-    // PostgreSQL
-    runtimeOnly 'org.postgresql:postgresql'
-
-    // H2
-    runtimeOnly 'com.h2database:h2'
-
+    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'org.springframework.security:spring-security-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    testImplementation 'org.springframework.security:spring-security-test'
 }
 
 def querydslDir = layout.buildDirectory.dir("generated/querydsl").get().asFile
@@ -41,7 +39,7 @@ def querydslDir = layout.buildDirectory.dir("generated/querydsl").get().asFile
 sourceSets {
     main {
         java {
-            // 1. catalog-service의 소스 경로 유지
+            // 1. order-service의 소스 경로 유지
             srcDirs = ['src/main/java']
 
             // 2. 공통 모듈의 소스 경로 추가
