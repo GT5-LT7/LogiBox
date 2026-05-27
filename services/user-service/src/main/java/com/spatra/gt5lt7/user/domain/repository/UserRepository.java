@@ -6,15 +6,14 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface UserRepository extends JpaRepository<User, UUID> {
+public interface UserRepository extends JpaRepository<User, UUID>, UserRepositoryCustom {
 
     Optional<User> findByUsername(String username);
-
     Optional<User> findByEmail(String email);
-
     boolean existsByUsername(String username);
-
     boolean existsByEmail(String email);
+    Optional<User> findByUserIdAndDeletedAtIsNull(UUID userId);
+    Optional<User> findByUsernameAndDeletedAtIsNull(String username);
 
     // 소프트 삭제 안된 유저만 조회
     Optional<User> findByUserIdAndDeletedAtIsNull(UUID userId);

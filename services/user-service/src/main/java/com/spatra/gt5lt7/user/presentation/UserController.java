@@ -71,4 +71,35 @@ public class UserController {
         userService.deleteUser(id, userDetails.getUserId());
         return ResponseEntity.ok(ApiResponse.deleted(null));
     }
+    // 사용자 수정 (MASTER 또는 본인)
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<UserResponse>> updateUser(
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdateUserRequest request,
+            @RequestHeader("X-User-Id") String userId,
+            @RequestHeader("X-User-Role") String userRole
+    ) {
+        return ResponseEntity.ok(
+                ApiResponse.updated(
+                        userService.updateUser(id, request, UUID.fromString(userId), userRole)
+                )
+        );
+    }
+    // 사용자 목록 + 검색 (MASTER)
+    @GetMapping
+    @PreAuthorize("hasRole('ROLE_MASTER')")
+    public ResponseEntity<ApiResponse<PageResponse<UserResponse>>> searchUsers(
+            @ModelAttribute UserSearchCondition condition,
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC)
+            Pageable pageable
+    ) {
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        PageResponse.from(
+                                userRepository.searchUsers(condition, pageable),
+                                userService.searchUsers(condition, pageable).getContent()
+                        )
+                )
+        );
+    }
 }

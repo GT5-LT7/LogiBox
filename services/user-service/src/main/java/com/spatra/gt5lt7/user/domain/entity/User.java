@@ -1,6 +1,7 @@
 package com.spatra.gt5lt7.user.domain.entity;
 
 import com.spatra.gt5lt7.common.entity.BaseEntity;
+import com.spatra.gt5lt7.common.entity.UserRole;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -30,6 +31,12 @@ public class User extends BaseEntity {
 
     @Column(name = "slack_user_id", nullable = false, length = 100)
     private String slackUserId;
+
+    @Column(name = "hub_id")
+    private UUID hubId;
+
+    @Column(name = "company_id")
+    private UUID companyId;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false)
