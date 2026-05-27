@@ -73,4 +73,4 @@ eureka:
       defaultZone: http://eureka-server:8761/eureka/
 
 jwt:
-  secret: ${JWT_SECRET_KEY:dGVzdC1zZWNyZXQta2V5LWZvci1jaS1tdXN0LWJlLWxvbmctZW5vdWdo}
+  secret: ${JWT_SECRET_KEY}
