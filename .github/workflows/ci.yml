@@ -110,4 +110,4 @@ jobs:
       # 5. 특정 프로젝트의 Dockerfile 위치 명시
       - name: Dockerfile 문법 및 빌드 검증
         run: |
-          docker build -t ${{ matrix.project }}:latest -f ${{ steps.vars.outputs.dir }}/Dockerfile .
+          docker build -t ${{ matrix.project }}:latest -f ${{ steps.vars.outputs.dir }}/Dockerfile ${{ steps.vars.outputs.dir }}

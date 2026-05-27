@@ -9,7 +9,7 @@ services:
     networks:
       - logibox-network
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8761/actuator/health" ]
+      test: ["CMD", "wget", "-q", "-O-", "http://localhost:8761/actuator/health"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -52,7 +52,7 @@ services:
     networks:
       - logibox-network
     healthcheck:
-      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
+      test: ["CMD-SHELL", "rabbitmqctl status || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 3

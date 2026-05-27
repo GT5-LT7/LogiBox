@@ -1,0 +1,43 @@
+spring:
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: true
+
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: ${RABBITMQ_DEFAULT_USER}
+    password: ${RABBITMQ_DEFAULT_PASS}
+
+logging:
+  level:
+    org.hibernate.SQL: debug
+
+gemini:
+  api:
+    key: test-gemini-api-key
+  model: gemini-2.0-flash
+
+slack:
+  webhook:
+    url: https://test.slack.webhook
+
+jwt:
+  secret-key: ${JWT_SECRET_KEY}
+
+eureka:
+  client:
+    enabled: false

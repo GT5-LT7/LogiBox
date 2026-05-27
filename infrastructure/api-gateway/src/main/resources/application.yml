@@ -11,7 +11,7 @@ spring:
           routes:
             # 외부에서 내부 서비스용 API 호출 시 차단
             - id: block-external-internal-api
-              uri: no-reply://
+              uri: forward:/block
               predicates:
                 - Path=/internal/**
               filters:
