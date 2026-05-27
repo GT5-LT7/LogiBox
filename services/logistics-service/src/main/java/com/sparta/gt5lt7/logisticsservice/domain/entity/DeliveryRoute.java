@@ -104,6 +104,10 @@ public class DeliveryRoute {
         this.updatedAt = LocalDateTime.now();
     }
 
+    public void assignDelivery(Delivery delivery) {
+        this.delivery = delivery;
+    }
+
     public void softDelete(UUID deletedBy) {
         this.deletedAt = LocalDateTime.now();
         this.deletedBy = deletedBy;
