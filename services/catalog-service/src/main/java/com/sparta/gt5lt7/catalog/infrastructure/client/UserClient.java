@@ -1,5 +1,6 @@
 package com.sparta.gt5lt7.catalog.infrastructure.client;
 
+import com.sparta.gt5lt7.common.dto.ApiResponse;
 import com.sparta.gt5lt7.common.config.InternalFeignConfig;
 import com.sparta.gt5lt7.catalog.infrastructure.client.dto.UserResponse;
 import org.springframework.cloud.openfeign.FeignClient;
@@ -17,5 +18,5 @@ import java.util.UUID;
 )
 public interface UserClient {
     @PostMapping("/internal/users")
-    List<UserResponse> getUsers(@RequestBody Set<UUID> ids);
+    ApiResponse<List<UserResponse>> getUsers(@RequestBody Set<UUID> ids);
 }

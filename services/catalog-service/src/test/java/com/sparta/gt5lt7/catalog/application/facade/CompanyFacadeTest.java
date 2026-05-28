@@ -1,5 +1,6 @@
 package com.sparta.gt5lt7.catalog.application.facade;
 
+import com.sparta.gt5lt7.common.dto.ApiResponse;
 import com.sparta.gt5lt7.common.dto.PageResponse;
 import com.sparta.gt5lt7.catalog.application.service.CompanyService;
 import com.sparta.gt5lt7.catalog.application.service.KakaoMapService;
@@ -74,13 +75,14 @@ class CompanyFacadeTest {
         private final CoordinateResponse mockCoordinate = new CoordinateResponse(
                 new BigDecimal("37.5"), new BigDecimal("127.0")
         );
+        ApiResponse<HubResponse> mockHubFeign = ApiResponse.success(mockHub);
 
         @Test
         @DisplayName("성공: MASTER - 허브 상관 없음")
         void test1() {
             // given
             CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_MASTER, null);
-            given(hubClient.getHub(hubId)).willReturn(mockHub);
+            given(hubClient.getHub(hubId)).willReturn(mockHubFeign);
             given(kakaoMapService.getCoordinate(companyRequest.getBaseAddress())).willReturn(mockCoordinate);
             given(companyService.createCompany(companyRequest, mockCoordinate)).willReturn(mockCompany);
 
@@ -99,7 +101,7 @@ class CompanyFacadeTest {
         void test2() {
             // given
             CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_HUB_MANAGER, hubId);
-            given(hubClient.getHub(companyRequest.getHubId())).willReturn(mockHub);
+            given(hubClient.getHub(companyRequest.getHubId())).willReturn(mockHubFeign);
             given(kakaoMapService.getCoordinate(companyRequest.getBaseAddress())).willReturn(mockCoordinate);
             given(companyService.createCompany(companyRequest, mockCoordinate)).willReturn(mockCompany);
 
@@ -141,11 +143,13 @@ class CompanyFacadeTest {
         Company mockCompany = createCompany(UUID.randomUUID(), createCompanyRequest("스파르타 물류"));
         Page<Company> mockCompanyPage = new PageImpl<>(List.of(mockCompany), pageable, 1);
 
-        HubResponse mockHub = new HubResponse(hubId, "서울 중앙 허브"); // HubResponse 구조에 맞게 수정
+        HubResponse mockHub = new HubResponse(hubId, "서울 중앙 허브");
+        ApiResponse<List<HubResponse>> mockHubFeign = ApiResponse.success(List.of(mockHub));
+
         Set<UUID> targetHubIds = Set.of(hubId);
 
         given(companyService.searchCompanies(keyword, type, hubId, pageable)).willReturn(mockCompanyPage);
-        given(hubClient.getHubs(targetHubIds)).willReturn(List.of(mockHub));
+        given(hubClient.getHubs(targetHubIds)).willReturn(mockHubFeign);
 
         // when
         PageResponse<CompanyResponse.Summary> response = companyFacade.searchCompanies(keyword, type, hubId, pageable);
@@ -172,9 +176,12 @@ class CompanyFacadeTest {
                 new UserResponse(createdBy, "생성자"), new UserResponse(updatedBy, "수정자")
         );
 
+        ApiResponse<HubResponse> mockHubFeign = ApiResponse.success(mockHub);
+        ApiResponse<List<UserResponse>> mockUserFeign = ApiResponse.success(mockUsers);
+
         given(companyService.getCompany(companyId)).willReturn(mockCompany);
-        given(hubClient.getHub(hubId)).willReturn(mockHub);
-        given(userClient.getUsers(Set.of(createdBy, updatedBy))).willReturn(mockUsers);
+        given(hubClient.getHub(hubId)).willReturn(mockHubFeign);
+        given(userClient.getUsers(Set.of(createdBy, updatedBy))).willReturn(mockUserFeign);
 
         // when
         CompanyResponse.Detail response = companyFacade.getCompany(companyId);
@@ -205,6 +212,7 @@ class CompanyFacadeTest {
     class UpdateCompanyTest {
         private final CompanyRequest request = createCompanyRequest("스파르타 물류");
         private final Company mockCompany = createCompany(companyId, request);
+        private final ApiResponse<HubResponse> mockHubFeign = ApiResponse.success(mockHub);
 
         @Test
         @DisplayName("성공: MASTER - 허브와 업체 상관 없음")
@@ -213,7 +221,7 @@ class CompanyFacadeTest {
             CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_MASTER, null);
             given(companyService.getCompany(companyId)).willReturn(mockCompany);
             given(companyService.updateCompany(mockCompany, request, null)).willReturn(mockCompany);
-            given(hubClient.getHub(hubId)).willReturn(mockHub);
+            given(hubClient.getHub(hubId)).willReturn(mockHubFeign);
 
             // when
             CompanyResponse.Update response = companyFacade.updateCompany(companyId, request, principal);
@@ -233,7 +241,7 @@ class CompanyFacadeTest {
             CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_HUB_MANAGER, hubId);
             given(companyService.getCompany(companyId)).willReturn(mockCompany);
             given(companyService.updateCompany(mockCompany, request, null)).willReturn(mockCompany);
-            given(hubClient.getHub(hubId)).willReturn(mockHub);
+            given(hubClient.getHub(hubId)).willReturn(mockHubFeign);
 
             // when
             CompanyResponse.Update response = companyFacade.updateCompany(companyId, request, principal);
@@ -253,7 +261,7 @@ class CompanyFacadeTest {
             CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_COMPANY_MANAGER, companyId);
             given(companyService.getCompany(companyId)).willReturn(mockCompany);
             given(companyService.updateCompany(mockCompany, request, null)).willReturn(mockCompany);
-            given(hubClient.getHub(hubId)).willReturn(mockHub);
+            given(hubClient.getHub(hubId)).willReturn(mockHubFeign);
 
             // when
             CompanyResponse.Update response = companyFacade.updateCompany(companyId, request, principal);
@@ -279,7 +287,7 @@ class CompanyFacadeTest {
             given(companyService.getCompany(companyId)).willReturn(mockCompany);
             given(companyService.updateCompany(mockCompany, request, mockCoordinate)).willReturn(mockCompany);
             given(kakaoMapService.getCoordinate(request.getBaseAddress())).willReturn(mockCoordinate);
-            given(hubClient.getHub(hubId)).willReturn(mockHub);
+            given(hubClient.getHub(hubId)).willReturn(mockHubFeign);
 
             // when
             CompanyResponse.Update response = companyFacade.updateCompany(companyId, request, principal);
@@ -304,7 +312,7 @@ class CompanyFacadeTest {
 
             given(companyService.getCompany(companyId)).willReturn(mockCompany);
             given(companyService.updateCompany(mockCompany, request, null)).willReturn(mockCompany);
-            given(hubClient.getHub(newHubId)).willReturn(new HubResponse(newHubId, "새로운 허브"));
+            given(hubClient.getHub(newHubId)).willReturn(ApiResponse.success(new HubResponse(newHubId, "새로운 허브")));
 
             // when
             CompanyResponse.Update response = companyFacade.updateCompany(companyId, request, principal);
