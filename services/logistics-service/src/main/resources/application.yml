@@ -36,3 +36,12 @@ kakao:
     api-key: ${KAKAO_API_KEY}
   mobility:
     base-url: https://apis-navi.kakaomobility.com
+
+management:
+  zipkin:
+    tracing:
+      endpoint: http://localhost:9411/api/v2/spans
+
+  tracing:
+    sampling:
+      probability: 1.0

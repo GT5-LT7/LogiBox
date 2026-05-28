@@ -7,6 +7,12 @@ dependencies {
     implementation project(':module')
     annotationProcessor project(':module') // 공통 모듈의 엔티티를 Q클래스로 생성하도록 추가
 
+    // Zipkin
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+    implementation 'io.micrometer:micrometer-tracing-bridge-brave'
+    implementation 'io.zipkin.reporter2:zipkin-reporter-brave'
+
     // QueryDSL
     implementation 'com.querydsl:querydsl-jpa:5.0.0:jakarta'
     annotationProcessor 'com.querydsl:querydsl-apt:5.0.0:jakarta'
