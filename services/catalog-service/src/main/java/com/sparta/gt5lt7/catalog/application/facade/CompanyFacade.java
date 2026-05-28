@@ -60,7 +60,7 @@ public class CompanyFacade {
 
         // [MSA 통신] 허브 ID를 중복 없이 추출 → Hub Service로 허브 정보 요청
         Set<UUID> hubIds = companyPage.stream().map(Company::getHubId).collect(Collectors.toSet());
-        List<HubResponse> hubs = hubIds.isEmpty() ? List.of() : hubClient.getHubs(hubIds);
+        List<HubResponse> hubs = hubIds.isEmpty() ? List.of() : hubClient.getHubs(hubIds).getData();
 
         // O(1) 조회를 위한 허브 Map 생성
         Map<UUID, HubResponse> hubMap = hubs.stream().collect(Collectors.toMap(HubResponse::id, Function.identity()));
@@ -76,12 +76,12 @@ public class CompanyFacade {
         Company company = companyService.getCompany(id);
 
         // [MSA 통신] Hub Service로 허브 정보 요청
-        HubResponse hub = hubClient.getHub(company.getHubId());
+        HubResponse hub = hubClient.getHub(company.getHubId()).getData();
 
         // [MSA 통신] 사용자 ID를 중복 없이 추출 → User Service로 사용자 정보 요청
         Set<UUID> userIds = Stream.of(company.getCreatedBy(), company.getUpdatedBy())
                 .filter(Objects::nonNull).collect(Collectors.toSet());
-        List<UserResponse> users = userClient.getUsers(userIds);
+        List<UserResponse> users = userClient.getUsers(userIds).getData();
 
         // O(1) 조회를 위한 사용자 Map 생성
         Map<UUID, UserResponse> userMap = users.stream().collect(Collectors.toMap(UserResponse::id, user -> user));
@@ -113,7 +113,7 @@ public class CompanyFacade {
         }
 
         // [MSA 통신] Hub Service로 허브 정보 요청
-        HubResponse hub = hubClient.getHub(request.getHubId());
+        HubResponse hub = hubClient.getHub(request.getHubId()).getData();
 
         // [외부 API 통신] 주소 변경 시 Kakao Map Service로 좌표 정보 요청
         CoordinateResponse coordinate = null;

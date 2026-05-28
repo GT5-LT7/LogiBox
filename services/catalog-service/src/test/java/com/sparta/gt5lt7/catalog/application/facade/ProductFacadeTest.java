@@ -1,5 +1,6 @@
 package com.sparta.gt5lt7.catalog.application.facade;
 
+import com.sparta.gt5lt7.common.dto.ApiResponse;
 import com.sparta.gt5lt7.catalog.domain.entity.ProductStatus;
 import com.sparta.gt5lt7.common.exception.BaseException;
 import com.sparta.gt5lt7.common.dto.PageResponse;
@@ -99,9 +100,10 @@ class ProductFacadeTest {
         Product mockProduct = createProduct(productId, "테스트 상품", mockCompany, 1500L, 10);
         Page<Product> mockPage = new PageImpl<>(List.of(mockProduct), pageable, 1);
         HubResponse mockHub = new HubResponse(hubId, "테스트 허브");
+        ApiResponse<List<HubResponse>> mockHubFeign = ApiResponse.success(List.of(mockHub));
 
         given(productService.searchProducts(keyword, true, companyId, hubId, pageable, principal)).willReturn(mockPage);
-        given(hubClient.getHubs(Set.of(hubId))).willReturn(List.of(mockHub));
+        given(hubClient.getHubs(Set.of(hubId))).willReturn(mockHubFeign);
 
         // when
         PageResponse<ProductResponse.Summary> response = productFacade.searchProducts(keyword, true, companyId, hubId, pageable, principal);
@@ -131,14 +133,17 @@ class ProductFacadeTest {
             ReflectionTestUtils.setField(mockProduct, "updatedBy", updateUserId);
 
             HubResponse mockHub = new HubResponse(hubId, "테스트 허브");
+            ApiResponse<HubResponse> mockHubFeign = ApiResponse.success(mockHub);
+
             UserResponse user1 = new UserResponse(createUserId, "생성자");
             UserResponse user2 = new UserResponse(updateUserId, "수정자");
+            ApiResponse<List<UserResponse>> mockUserFeign = ApiResponse.success(List.of(user1, user2));
 
             given(productService.getProduct(productId)).willReturn(mockProduct);
             given(principal.isAccessibleHub(hubId)).willReturn(true);
             given(principal.isAccessibleCompany(companyId)).willReturn(true);
-            given(hubClient.getHub(hubId)).willReturn(mockHub);
-            given(userClient.getUsers(Set.of(createUserId, updateUserId))).willReturn(List.of(user1, user2));
+            given(hubClient.getHub(hubId)).willReturn(mockHubFeign);
+            given(userClient.getUsers(Set.of(createUserId, updateUserId))).willReturn(mockUserFeign);
 
             // when
             ProductResponse.Detail response = productFacade.getProduct(productId, principal);

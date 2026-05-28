@@ -1,5 +1,6 @@
 package com.sparta.gt5lt7.catalog.infrastructure.client;
 
+import com.sparta.gt5lt7.common.dto.ApiResponse;
 import com.sparta.gt5lt7.catalog.global.exception.HubErrorCode;
 import com.sparta.gt5lt7.common.exception.CommonErrorCode;
 import com.sparta.gt5lt7.common.exception.BaseException;
@@ -20,7 +21,7 @@ public class HubClientFallbackFactory implements FallbackFactory<HubClient> {
     public HubClient create(Throwable cause) {
         return new HubClient() {
             @Override
-            public HubResponse getHub(UUID id) {
+            public ApiResponse<HubResponse> getHub(UUID id) {
                 if (cause instanceof FeignException feignException) {
                     // 404 Not Found
                     if (feignException.status() == 404) {
@@ -34,10 +35,11 @@ public class HubClientFallbackFactory implements FallbackFactory<HubClient> {
             }
 
             @Override
-            public List<HubResponse> getHubs(Set<UUID> ids) {
+            public ApiResponse<List<HubResponse>> getHubs(Set<UUID> ids) {
                 String errorMessage = (cause != null && cause.getMessage() != null) ? cause.getMessage() : "Unknown";
                 log.error("[HubClient] 목록 조회 실패로 인한 폴백 실행. 대상 ID: {}, 원인: {}", ids, errorMessage);
-                return ids.stream().map(id -> new HubResponse(id, "-")).toList();
+                List<HubResponse> responses = ids.stream().map(id -> new HubResponse(id, "-")).toList();
+                return ApiResponse.success(responses);
             }
         };
     }
