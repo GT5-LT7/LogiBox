@@ -4,19 +4,31 @@ server:
 spring:
   application:
     name: logistics-service
-  data:
-    redis:
-      host: redis
-      port: 6379
   datasource:
-    url: jdbc:postgresql://logistics-db:5432/logisticsdb
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5442}/logisticsdb
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:validate}
     show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+  rabbitmq:
+    listener:
+      simple:
+        missing-queues-fatal: false
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka/}
 
 kakao:
   local:
@@ -24,8 +36,3 @@ kakao:
     api-key: ${KAKAO_API_KEY}
   mobility:
     base-url: https://apis-navi.kakaomobility.com
-
-eureka:
-  client:
-    service-url:
-      defaultZone: http://eureka-server:8761/eureka/

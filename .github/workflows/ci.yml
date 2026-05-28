@@ -65,6 +65,14 @@ jobs:
           key: gradle-${{ matrix.project }}-${{ hashFiles('**/*.gradle*') }}
           restore-keys: gradle-
 
+      # Testcontainers 사전 준비 (PostgreSQL 사용 서비스 한정)
+      - name: Docker 환경 확인 및 PostgreSQL 이미지 사전 풀
+        if: matrix.project == 'logistics-service' || matrix.project == 'user-service' || matrix.project == 'catalog-service' || matrix.project == 'order-service'
+        run: |
+          docker --version
+          docker info
+          docker pull postgres:16
+
       # 3. Gradle 멀티모듈 및 프로젝트 경로를 환경변수로 정의
       - name: 빌드 타겟 및 경로 변수 설정
         id: vars
