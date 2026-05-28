@@ -43,3 +43,7 @@ management:
   tracing:
     sampling:
       probability: 1.0
+
+logging:
+  pattern:
+    level: "%5p [%X{traceId:-},%X{spanId:-}]"

@@ -28,6 +28,8 @@ logging:
     com.spatra.gt5lt7: INFO
   file:
     name: logs/user-service.log
+  pattern:
+    level: "%5p [%X{traceId:-},%X{spanId:-}]"
 
 management:
   zipkin:
