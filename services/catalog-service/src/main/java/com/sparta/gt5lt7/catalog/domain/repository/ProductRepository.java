@@ -29,9 +29,13 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, Product
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT p FROM Product p WHERE p.productId = :id")
-    Product findByIdInForUpdate(@Param("id") UUID id);
+    Product findByIdForUpdate(@Param("id") UUID id);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("SELECT p FROM Product p WHERE p.productId IN :ids")
-    List<Product> findAllByIdInForUpdate(@Param("ids") List<UUID> ids);
+    @Query("SELECT p FROM Product p WHERE p.productId IN :ids AND p.status = 'ON_SALE' ORDER BY p.productId ASC")
+    List<Product> findAllByIdsInForOrder(@Param("ids") List<UUID> ids);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT p FROM Product p WHERE p.productId IN :ids ORDER BY p.productId ASC")
+    List<Product> findAllByIdInsForRollback(@Param("ids") List<UUID> ids);
 }
