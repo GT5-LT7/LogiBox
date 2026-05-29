@@ -240,7 +240,7 @@ docker compose up logistics-db redis rabbitmq eureka-server -d
 ---
 
 ## 8️⃣ 팀 노션 링크
-{%preview https://www.notion.so/teamsparta/6-5-7-3562dc3ef5148068a465c9a29722388e %}
+https://www.notion.so/teamsparta/6-5-7-3562dc3ef5148068a465c9a29722388e
 
 ---
 
