@@ -18,6 +18,11 @@ spring:
       ddl-auto: create-drop
     show-sql: true
 
+  cloud:
+    openfeign:
+      circuitbreaker:
+        enabled: true  # 이게 없으면 fallbackFactory 무시됨
+
 feign:
   client:
     config:
