@@ -3,6 +3,7 @@ package com.spatra.gt5lt7.user.infrastructure.security;
 import com.spatra.gt5lt7.common.exception.BaseException;
 import com.spatra.gt5lt7.common.security.UserDetailsImpl;
 import com.spatra.gt5lt7.user.domain.entity.User;
+import com.spatra.gt5lt7.common.entity.UserRole;
 import com.spatra.gt5lt7.user.domain.repository.UserRepository;
 import com.spatra.gt5lt7.user.global.exception.UserErrorCode;
 import lombok.RequiredArgsConstructor;

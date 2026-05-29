@@ -6,8 +6,8 @@ spring:
     name: user-service
   datasource:
     url: jdbc:postgresql://user-db:5432/userdb
-    username: postgres
-    password: postgres
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -20,7 +20,7 @@ eureka:
       defaultZone: http://eureka-server:8761/eureka/
 
 jwt:
-  secret: "your-secret-key-here-must-be-long-enough"
+  secret: ${JWT_SECRET_KEY}
   expiration: 3600000
 
 logging:
@@ -28,3 +28,14 @@ logging:
     com.spatra.gt5lt7: INFO
   file:
     name: logs/user-service.log
+  pattern:
+    level: "%5p [%X{traceId:-},%X{spanId:-}]"
+
+management:
+  zipkin:
+    tracing:
+      endpoint: ${ZIPKIN_ENDPOINT:http://localhost:9411/api/v2/spans}
+
+  tracing:
+    sampling:
+      probability: 1.0

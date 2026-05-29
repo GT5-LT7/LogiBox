@@ -3,7 +3,7 @@ package com.spatra.gt5lt7.user.application;
 import com.spatra.gt5lt7.common.exception.BaseException;
 import com.spatra.gt5lt7.common.security.JwtTokenProvider;
 import com.spatra.gt5lt7.user.domain.entity.User;
-import com.spatra.gt5lt7.user.domain.entity.UserRole;
+import com.spatra.gt5lt7.common.entity.UserRole;
 import com.spatra.gt5lt7.user.domain.entity.UserStatus;
 import com.spatra.gt5lt7.user.domain.repository.UserRepository;
 import com.spatra.gt5lt7.user.global.exception.UserErrorCode;
@@ -13,6 +13,7 @@ import com.spatra.gt5lt7.user.presentation.dto.request.SignupRequest;
 import com.spatra.gt5lt7.user.presentation.dto.response.LoginResponse;
 import com.spatra.gt5lt7.user.presentation.dto.response.SignupResponse;
 import com.spatra.gt5lt7.user.presentation.dto.response.UserResponse;
+import com.spatra.gt5lt7.user.presentation.dto.request.UpdateUserRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -52,7 +53,7 @@ public class UserService {
                 .password(encodedPassword)
                 .email(request.getEmail())
                 .slackUserId(request.getSlackUserId())
-                .role(UserRole.COMPANY_MGR)   // 기본 역할
+                .role(UserRole.ROLE_COMPANY_MANAGER)   // 기본 역할
                 .status(UserStatus.PENDING)    // 승인 대기
                 .build();
 
@@ -82,8 +83,9 @@ public class UserService {
         // JWT 발급
         String token = jwtTokenProvider.createToken(
                 user.getUserId(),
-                user.getUsername(),
-                user.getRole().name()
+                user.getRole(),          // ← String 말고 UserRole enum 그대로
+                user.getHubId(),         // ← 수정
+                user.getCompanyId()      // ← 수정
         );
 
         log.info("[LOGIN] username={}, role={}", user.getUsername(), user.getRole());
@@ -124,5 +126,51 @@ public class UserService {
                 .orElseThrow(() -> new BaseException(UserErrorCode.USER_NOT_FOUND));
         user.softDelete(deletedBy);
         log.info("[DELETE] userId={}", userId);
+    }
+    // 사용자 수정 (MASTER 또는 본인만 가능)
+    @Transactional
+    public UserResponse updateUser(UUID userId, UpdateUserRequest request, UUID requesterId, String requesterRole) {
+
+        User user = userRepository.findByUserIdAndDeletedAtIsNull(userId)
+                .orElseThrow(() -> new BaseException(UserErrorCode.USER_NOT_FOUND));
+
+        // 본인 또는 MASTER만 수정 가능
+        if (!userId.equals(requesterId) && !requesterRole.equals("ROLE_MASTER")) {
+            throw new BaseException(UserErrorCode.UNAUTHORIZED_ACTION);
+        }
+
+        // 이메일 중복 검사 (본인 이메일 제외)
+        if (!user.getEmail().equals(request.getEmail())
+                && userRepository.existsByEmail(request.getEmail())) {
+            throw new BaseException(UserErrorCode.DUPLICATE_EMAIL);
+        }
+
+        // 기본 정보 수정
+        user.updateInfo(request.getEmail(), request.getSlackUserId());
+
+        // 비밀번호 변경 (요청한 경우만)
+        if (request.getPassword() != null && !request.getPassword().isBlank()) {
+            user.updatePassword(passwordEncoder.encode(request.getPassword()));
+        }
+
+        log.info("[UPDATE] userId={}", userId);
+
+        return UserResponse.from(user);
+    }
+    // 사용자 목록 + 검색
+    public Page<UserResponse> searchUsers(UserSearchCondition condition, Pageable pageable) {
+
+        // 페이지 사이즈 제한 (10, 30, 50만 허용)
+        int size = pageable.getPageSize();
+        if (size != 10 && size != 30 && size != 50) {
+            pageable = PageRequest.of(
+                    pageable.getPageNumber(),
+                    10,                          // 기본값 10
+                    pageable.getSort()
+            );
+        }
+
+        return userRepository.searchUsers(condition, pageable)
+                .map(UserResponse::from);
     }
 }

@@ -1,6 +1,6 @@
 package com.spatra.gt5lt7.user.presentation.dto.request;
 
-import com.spatra.gt5lt7.user.domain.entity.UserRole;
+import com.spatra.gt5lt7.common.entity.UserRole;
 import com.spatra.gt5lt7.user.domain.entity.UserStatus;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;

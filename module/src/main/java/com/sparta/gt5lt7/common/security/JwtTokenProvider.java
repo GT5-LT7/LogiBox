@@ -25,12 +25,12 @@ public class JwtTokenProvider {
         this.expiration = expiration;
     }
 
-    // JWT 생성
-    public String createToken(UUID userId, String username, String role) {
+    // JWT 생성 - username 제거, managementId 추가
+    public String createToken(UUID userId, String role, UUID managementId) {
         return Jwts.builder()
                 .subject(userId.toString())
-                .claim("username", username)
                 .claim("role", role)
+                .claim("managementId", managementId != null ? managementId.toString() : null)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(secretKey)
@@ -64,5 +64,10 @@ public class JwtTokenProvider {
         } catch (Exception e) {
             return false;
         }
+    }
+    // managementId 추출 추가
+    public UUID getManagementId(String token) {
+        String managementId = getClaims(token).get("managementId", String.class);
+        return managementId != null ? UUID.fromString(managementId) : null;
     }
 }
