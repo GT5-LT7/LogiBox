@@ -1,5 +1,6 @@
 package com.sparta.gt5lt7.catalog.application.facade;
 
+import com.sparta.gt5lt7.common.exception.CommonErrorCode;
 import com.sparta.gt5lt7.common.exception.BaseException;
 import com.sparta.gt5lt7.catalog.global.exception.ProductErrorCode;
 import com.sparta.gt5lt7.catalog.infrastructure.client.HubClient;
@@ -122,8 +123,16 @@ public class ProductFacade {
             return Collections.emptyList();
         }
 
+        // [일관성 검증] 모든 요청이 재고 차감이거나 원복인지 확인
+        boolean isAllNegative = stockItems.stream().allMatch(item -> item.getUpdateQuantity() < 0);
+        boolean isAllPositive = stockItems.stream().allMatch(item -> item.getUpdateQuantity() > 0);
+
+        if (!isAllNegative && !isAllPositive) {
+            throw new BaseException(CommonErrorCode.INVALID_REQUEST);
+        }
+
         // [Redis 활용] 롤백 요청일 때, 보상 트랜잭션 중복 검증
-        boolean isRollbackProcess = stockItems.stream().allMatch(item -> item.getUpdateQuantity() > 0);
+        boolean isRollbackProcess = isAllPositive;
         String redisKey = REDIS_ROLLBACK_KEY_PREFIX + requests.getOrderId();
 
         // 1. 주문 ID로 롤백되었는지 확인
