@@ -5,6 +5,7 @@ import com.sparta.gt5lt7.catalog.domain.entity.CompanyType;
 import com.sparta.gt5lt7.catalog.domain.entity.Product;
 import com.sparta.gt5lt7.catalog.global.config.QueryDslConfig;
 import com.sparta.gt5lt7.catalog.global.config.TestJpaConfig;
+import com.sparta.gt5lt7.catalog.presentation.dto.request.ActionType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -108,14 +109,17 @@ class ProductRepositoryTest {
     }
 
     @Test
-    @DisplayName("상품 재고 변경을 위한 상품 목록 비관적 락 조회 테스트")
-    void findAllByIdInForUpdateTest() {
+    @DisplayName("상품 재고 차감을 위한 비관적 락 조회 테스트")
+    void findAllByIdsInForOrderTest() {
         // given
         Company company = createCompany();
 
         Product product1 = createProduct(company);
         Product product2 = createProduct(company);
         Product product3 = createProduct(company);
+
+        product1.updateStatus(ActionType.HIDE);
+        product2.updateStatus(ActionType.STOP);
 
         UUID productId1 = product1.getProductId();
         UUID productId2 = product2.getProductId();
@@ -126,14 +130,40 @@ class ProductRepositoryTest {
         List<UUID> requests = List.of(productId1, productId2, productId3);
 
         // when
-        List<Product> result = productRepository.findAllByIdInForUpdate(requests);
+        List<Product> result = productRepository.findAllByIdsInForOrder(requests);
+
+        // then
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getProductId()).isEqualTo(productId3);
+    }
+
+    @Test
+    @DisplayName("상품 재고 원복을 위한 비관적 락 조회 테스트")
+    void findAllByIdInForRollbackTest() {
+        // given
+        Company company = createCompany();
+
+        Product product1 = createProduct(company);
+        Product product2 = createProduct(company);
+        Product product3 = createProduct(company);
+
+        product1.updateStatus(ActionType.HIDE);
+        product1.updateStatus(ActionType.STOP);
+
+        UUID productId1 = product1.getProductId();
+        UUID productId2 = product2.getProductId();
+        UUID productId3 = product3.getProductId();
+
+        flushAndClear();
+
+        List<UUID> requests = List.of(productId1, productId2, productId3);
+
+        // when
+        List<Product> result = productRepository.findAllByIdInsForRollback(requests);
 
         // then
         assertThat(result).hasSize(3);
-
-        // 상품 ID 오름차순으로 데이터 반환
-        assertThat(result).extracting(Product::getProductId)
-                .containsExactlyInAnyOrder(productId1, productId2, productId3);
+        assertThat(result).extracting(Product::getProductId).containsExactlyInAnyOrder(productId1, productId2, productId3);
     }
 
     private void flushAndClear() {

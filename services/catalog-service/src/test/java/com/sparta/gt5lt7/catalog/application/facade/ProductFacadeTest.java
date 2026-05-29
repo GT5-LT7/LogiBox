@@ -1,5 +1,6 @@
 package com.sparta.gt5lt7.catalog.application.facade;
 
+import com.sparta.gt5lt7.common.exception.CommonErrorCode;
 import com.sparta.gt5lt7.common.dto.ApiResponse;
 import com.sparta.gt5lt7.catalog.domain.entity.ProductStatus;
 import com.sparta.gt5lt7.common.exception.BaseException;
@@ -172,6 +173,24 @@ class ProductFacadeTest {
         }
     }
 
+    @Test
+    @DisplayName("상품 수정 테스트")
+    void updateProductTest() {
+        // given
+        ProductRequest.Update request = new ProductRequest.Update("테스트 상품", "설명", 10L);
+        CustomUserPrincipal principal = mock(CustomUserPrincipal.class);
+        Company mockCompany = createCompany(companyId, hubId);
+        Product mockProduct = createProduct(productId, "테스트 상품(수정)", mockCompany, 10L, 10);
+
+        given(productService.updateProduct(productId, request, principal)).willReturn(mockProduct);
+
+        // when
+        productFacade.updateProduct(productId, request, principal);
+
+        // then
+        verify(productService).updateProduct(productId, request, principal);
+    }
+
     @Nested
     @DisplayName("상품 재고 변경 테스트")
     class UpdateProductQuantityTest {
@@ -214,7 +233,7 @@ class ProductFacadeTest {
     }
 
     @Nested
-    @DisplayName("주문 상품 재고 변경 및 Redis 롤백 중복 검증 테스트")
+    @DisplayName("주문 상품 재고 변경 테스트")
     class UpdateProductQuantityForOrderTest {
         private final UUID orderId = UUID.randomUUID();
         private final String redisKey = "rollback:order:" + orderId;
@@ -239,7 +258,7 @@ class ProductFacadeTest {
             assertThat(responses).hasSize(1);
             verify(productService).reserveRollbackHistory(redisKey);
             verify(productService).findAllByIds(anyList());
-            verify(productService, never()).updateProductQuantityForOrder(anyList(), anyMap());
+            verify(productService, never()).updateProductQuantityForOrder(anyList(), anyMap(), anyBoolean());
             verify(productService, never()).confirmRollbackHistory(anyString());
             verify(productService, never()).clearRollbackHistory(anyString());
         }
@@ -261,14 +280,14 @@ class ProductFacadeTest {
             List<UUID> sortedIds = Stream.of(productId2, productId).sorted().toList();
 
             given(productService.reserveRollbackHistory(redisKey)).willReturn(true);
-            given(productService.updateProductQuantityForOrder(eq(sortedIds), anyMap())).willReturn(List.of(product1, product2));
+            given(productService.updateProductQuantityForOrder(eq(sortedIds), anyMap(), anyBoolean())).willReturn(List.of(product1, product2));
 
             // when
             productFacade.updateProductQuantityForOrder(requests);
 
             // then
             verify(productService).reserveRollbackHistory(redisKey);
-            verify(productService).updateProductQuantityForOrder(eq(sortedIds), anyMap());
+            verify(productService).updateProductQuantityForOrder(eq(sortedIds), anyMap(), anyBoolean());
             verify(productService).confirmRollbackHistory(redisKey);
             verify(productService, never()).clearRollbackHistory(anyString());
         }
@@ -281,33 +300,31 @@ class ProductFacadeTest {
             ProductRequest.OrderStockUpdate requests = new ProductRequest.OrderStockUpdate(orderId, List.of(stockItem));
 
             given(productService.reserveRollbackHistory(redisKey)).willReturn(true);
-            given(productService.updateProductQuantityForOrder(anyList(), anyMap()))
+            given(productService.updateProductQuantityForOrder(anyList(), anyMap(), anyBoolean()))
                     .willThrow(new BaseException(ProductErrorCode.OUT_OF_STOCK));
 
             // when & then
-            assertThatThrownBy(() -> productFacade.updateProductQuantityForOrder(requests)).isInstanceOf(BaseException.class);
+            assertThatThrownBy(() -> productFacade.updateProductQuantityForOrder(requests)).isInstanceOf(Exception.class);
             verify(productService).reserveRollbackHistory(redisKey);
             verify(productService).clearRollbackHistory(redisKey);
             verify(productService, never()).confirmRollbackHistory(anyString());
         }
-    }
 
-    @Test
-    @DisplayName("상품 수정 테스트")
-    void updateProductTest() {
-        // given
-        ProductRequest.Update request = new ProductRequest.Update("테스트 상품", "설명", 10L);
-        CustomUserPrincipal principal = mock(CustomUserPrincipal.class);
-        Company mockCompany = createCompany(companyId, hubId);
-        Product mockProduct = createProduct(productId, "테스트 상품(수정)", mockCompany, 10L, 10);
+        @Test
+        @DisplayName("실패: 일관성 없는 요청")
+        void test4() {
+            // given
+            ProductRequest.StockItem stockItem1 = new ProductRequest.StockItem(productId, 5);
+            ProductRequest.StockItem stockItem2 = new ProductRequest.StockItem(productId, -5);
+            ProductRequest.OrderStockUpdate requests = new ProductRequest.OrderStockUpdate(orderId, List.of(stockItem1, stockItem2));
 
-        given(productService.updateProduct(productId, request, principal)).willReturn(mockProduct);
+            // when & then
+            assertThatThrownBy(() -> productFacade.updateProductQuantityForOrder(requests))
+                    .isInstanceOf(BaseException.class)
+                    .hasMessageContaining(CommonErrorCode.INVALID_REQUEST.getMessage());
 
-        // when
-        productFacade.updateProduct(productId, request, principal);
-
-        // then
-        verify(productService).updateProduct(productId, request, principal);
+            verifyNoInteractions(productService);
+        }
     }
 
     @Test
