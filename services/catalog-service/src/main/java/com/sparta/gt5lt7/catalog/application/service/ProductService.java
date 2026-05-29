@@ -96,7 +96,7 @@ public class ProductService {
     @Transactional
     public Product updateProductQuantity(UUID id, Integer updateQuantity) {
         // 비관적 락을 걸고 데이터 조회
-        Product product = productRepository.findByIdInForUpdate(id);
+        Product product = productRepository.findByIdForUpdate(id);
 
         int quantity = product.getQuantity() + updateQuantity;
         if (quantity < 0) {
@@ -114,8 +114,11 @@ public class ProductService {
     }
 
     @Transactional
-    public List<Product> updateProductQuantityForOrder(List<UUID> productIds, Map<UUID, Integer> quantityMap) {
-        List<Product> products = productRepository.findAllByIdInForUpdate(productIds);
+    public List<Product> updateProductQuantityForOrder(List<UUID> productIds, Map<UUID, Integer> quantityMap, boolean isRollback) {
+        // 롤백 여부에 따라 비관적 락 메서드 분리 호출
+        List<Product> products = isRollback
+                ? productRepository.findAllByIdInsForRollback(productIds)
+                : productRepository.findAllByIdsInForOrder(productIds);
 
         // 요청된 상품 수와 조회된 상품 수 비교
         if (products.size() != productIds.size()) {
@@ -149,7 +152,7 @@ public class ProductService {
         redisTemplate.opsForValue().set(redisKey, "processed", totalTimeoutSeconds, TimeUnit.SECONDS);
     }
 
-    // [Redis 활용] 에외 발생 시 Redis 키 삭제
+    // [Redis 활용] 예외 발생 시 Redis 키 삭제
     public void clearRollbackHistory(String redisKey) {
         redisTemplate.delete(redisKey);
     }

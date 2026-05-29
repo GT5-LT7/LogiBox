@@ -14,6 +14,11 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+  zipkin:
+    image: openzipkin/zipkin:latest
+    container_name: logibox-zipkin
+    ports:
+      - "9411:9411"
 
   api-gateway:
     build: ./infrastructure/api-gateway
@@ -52,7 +57,7 @@ services:
     networks:
       - logibox-network
     healthcheck:
-      test: ["CMD-SHELL", "rabbitmqctl status || exit 1"]
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 10s
       timeout: 5s
       retries: 3

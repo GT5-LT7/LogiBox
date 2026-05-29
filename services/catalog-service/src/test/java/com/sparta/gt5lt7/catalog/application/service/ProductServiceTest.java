@@ -204,14 +204,14 @@ class ProductServiceTest {
             // given
             Company mockCompany = createCompany(companyId, hubId);
             Product mockProduct = createProduct(productId, "테스트 상품", mockCompany, 1000L, 10);
-            given(productRepository.findByIdInForUpdate(productId)).willReturn(mockProduct);
+            given(productRepository.findByIdForUpdate(productId)).willReturn(mockProduct);
 
             // when
             Product product = productService.updateProductQuantity(productId, -5);
 
             // then
             assertThat(product.getQuantity()).isEqualTo(5);
-            verify(productRepository).findByIdInForUpdate(productId);
+            verify(productRepository).findByIdForUpdate(productId);
         }
 
         @Test
@@ -220,7 +220,7 @@ class ProductServiceTest {
             // given
             Company mockCompany = createCompany(companyId, hubId);
             Product mockProduct = createProduct(productId, "상품", mockCompany, 1000L, 10);
-            given(productRepository.findByIdInForUpdate(productId)).willReturn(mockProduct);
+            given(productRepository.findByIdForUpdate(productId)).willReturn(mockProduct);
 
             // when & then
             assertThatThrownBy(() -> productService.updateProductQuantity(productId, -15))
@@ -247,28 +247,60 @@ class ProductServiceTest {
         verify(productRepository).findAllById(List.of(productId));
     }
 
-    @Test
+    @Nested
     @DisplayName("주문 상품 재고 변경 테스트")
-    void UpdateProductQuantityForOrderTest() {
-        // given
-        UUID product2Id = UUID.randomUUID();
+    class UpdateProductQuantityForOrderTest {
+        @Test
+        @DisplayName("성공: 상품 재고 차감")
+        void test1() {
+            // given
+            UUID product2Id = UUID.randomUUID();
 
-        Company mockCompany = createCompany(companyId, hubId);
-        Product product1 = createProduct(productId, "테스트 상품1", mockCompany, 1000L, 10);
-        Product product2 = createProduct(product2Id, "테스트 상품2", mockCompany, 2000L, 20);
+            Company mockCompany = createCompany(companyId, hubId);
+            Product product1 = createProduct(productId, "테스트 상품1", mockCompany, 1000L, 10);
+            Product product2 = createProduct(product2Id, "테스트 상품2", mockCompany, 2000L, 20);
 
-        List<UUID> productIds = List.of(productId, product2Id);
-        Map<UUID, Integer> quantityMap = Map.of(productId, -3, product2Id, 5);
+            List<UUID> productIds = List.of(productId, product2Id);
+            Map<UUID, Integer> quantityMap = Map.of(productId, -3, product2Id, -5);
 
-        given(productRepository.findAllByIdInForUpdate(productIds)).willReturn(List.of(product1, product2));
+            given(productRepository.findAllByIdsInForOrder(productIds)).willReturn(List.of(product1, product2));
 
-        // when
-        List<Product> products = productService.updateProductQuantityForOrder(productIds, quantityMap);
+            // when
+            List<Product> products = productService.updateProductQuantityForOrder(productIds, quantityMap, false);
 
-        // then
-        assertThat(products.size()).isEqualTo(2);
-        assertThat(product1.getQuantity()).isEqualTo(7);
-        assertThat(product2.getQuantity()).isEqualTo(25);
+            // then
+            assertThat(products.size()).isEqualTo(2);
+            assertThat(product1.getQuantity()).isEqualTo(7);
+            assertThat(product2.getQuantity()).isEqualTo(15);
+            verify(productRepository).findAllByIdsInForOrder(productIds);
+            verify(productRepository, never()).findAllByIdInsForRollback(productIds);
+        }
+
+        @Test
+        @DisplayName("성공: 상품 재고 원복")
+        void test2() {
+            // given
+            UUID product2Id = UUID.randomUUID();
+
+            Company mockCompany = createCompany(companyId, hubId);
+            Product product1 = createProduct(productId, "테스트 상품1", mockCompany, 1000L, 10);
+            Product product2 = createProduct(product2Id, "테스트 상품2", mockCompany, 2000L, 20);
+
+            List<UUID> productIds = List.of(productId, product2Id);
+            Map<UUID, Integer> quantityMap = Map.of(productId, 3, product2Id, 5);
+
+            given(productRepository.findAllByIdInsForRollback(productIds)).willReturn(List.of(product1, product2));
+
+            // when
+            List<Product> products = productService.updateProductQuantityForOrder(productIds, quantityMap, true);
+
+            // then
+            assertThat(products.size()).isEqualTo(2);
+            assertThat(product1.getQuantity()).isEqualTo(13);
+            assertThat(product2.getQuantity()).isEqualTo(25);
+            verify(productRepository).findAllByIdInsForRollback(productIds);
+            verify(productRepository, never()).findAllByIdsInForOrder(productIds);
+        }
     }
 
     @Nested

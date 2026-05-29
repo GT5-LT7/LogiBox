@@ -3,6 +3,11 @@ package com.sparta.gt5lt7.order.infrastructure.config;
 import org.springframework.amqp.core.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
+import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
+import org.springframework.amqp.support.converter.MessageConverter;
 
 @Configuration
 public class RabbitMqConfig {
@@ -64,5 +69,44 @@ public class RabbitMqConfig {
                 .bind(orderCanceledQueue())
                 .to(orderExchange())
                 .with(ORDER_CANCELED_ROUTING_KEY);
+    }
+
+    @Bean
+    public MessageConverter messageConverter() {
+        return new Jackson2JsonMessageConverter();
+    }
+
+    @Bean
+    public RabbitTemplate rabbitTemplate(
+            ConnectionFactory connectionFactory,
+            MessageConverter messageConverter
+    ) {
+        RabbitTemplate rabbitTemplate =
+                new RabbitTemplate(connectionFactory);
+
+        rabbitTemplate.setConnectionFactory(connectionFactory);
+        rabbitTemplate.setMessageConverter(messageConverter);
+
+        // Zipkin Trace 전파 활성화
+        rabbitTemplate.setObservationEnabled(true);
+
+        return rabbitTemplate;
+    }
+
+    @Bean
+    public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory(
+            ConnectionFactory connectionFactory,
+            MessageConverter messageConverter
+    ) {
+        SimpleRabbitListenerContainerFactory factory =
+                new SimpleRabbitListenerContainerFactory();
+
+        factory.setConnectionFactory(connectionFactory);
+        factory.setMessageConverter(messageConverter);
+
+        // Consumer Trace 전파 활성화
+        factory.setObservationEnabled(true);
+
+        return factory;
     }
 }
