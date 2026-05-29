@@ -132,11 +132,10 @@ public class ProductFacade {
         }
 
         // [Redis 활용] 롤백 요청일 때, 보상 트랜잭션 중복 검증
-        boolean isRollbackProcess = isAllPositive;
         String redisKey = REDIS_ROLLBACK_KEY_PREFIX + requests.getOrderId();
 
         // 1. 주문 ID로 롤백되었는지 확인
-        if (isRollbackProcess) {
+        if (isAllPositive) {
             // 최초 요청 시 임시 선점
             boolean isFirstRequest = productService.reserveRollbackHistory(redisKey);
 
@@ -160,17 +159,17 @@ public class ProductFacade {
 
         try {
             // 정렬된 순서대로 DB에서 비관적 락을 걸고 데이터 조회
-            List<Product> products = productService.updateProductQuantityForOrder(productIds, quantityMap);
+            List<Product> products = productService.updateProductQuantityForOrder(productIds, quantityMap, isAllPositive);
 
             // 2-1. 롤백 처리 성공 시, Redis에 주문 ID 저장 → TTL 만료 시간 분산 적용
-            if (isRollbackProcess) {
+            if (isAllPositive) {
                 productService.confirmRollbackHistory(redisKey);
             }
 
             return products.stream().map(ProductResponse.StockUpdate::from).toList();
         } catch (Exception e) {
             // 2-2. 예외 발생 시 Redis 키 삭제
-            if (isRollbackProcess) {
+            if (isAllPositive) {
                 productService.clearRollbackHistory(redisKey);
             }
             throw e;
