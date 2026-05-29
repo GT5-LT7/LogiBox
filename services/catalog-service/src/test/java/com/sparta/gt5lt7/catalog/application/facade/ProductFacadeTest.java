@@ -304,7 +304,10 @@ class ProductFacadeTest {
                     .willThrow(new BaseException(ProductErrorCode.OUT_OF_STOCK));
 
             // when & then
-            assertThatThrownBy(() -> productFacade.updateProductQuantityForOrder(requests)).isInstanceOf(Exception.class);
+            assertThatThrownBy(() -> productFacade.updateProductQuantityForOrder(requests))
+                    .isInstanceOf(BaseException.class)
+                    .hasMessageContaining(ProductErrorCode.OUT_OF_STOCK.getMessage());
+
             verify(productService).reserveRollbackHistory(redisKey);
             verify(productService).clearRollbackHistory(redisKey);
             verify(productService, never()).confirmRollbackHistory(anyString());
