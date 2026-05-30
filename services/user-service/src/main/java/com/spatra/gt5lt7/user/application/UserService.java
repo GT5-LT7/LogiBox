@@ -2,6 +2,7 @@ package com.spatra.gt5lt7.user.application;
 
 import com.spatra.gt5lt7.common.exception.BaseException;
 import com.spatra.gt5lt7.common.security.JwtTokenProvider;
+import com.spatra.gt5lt7.user.application.dto.UserSearchCondition;
 import com.spatra.gt5lt7.user.domain.entity.User;
 import com.spatra.gt5lt7.common.entity.UserRole;
 import com.spatra.gt5lt7.user.domain.entity.UserStatus;
@@ -16,6 +17,9 @@ import com.spatra.gt5lt7.user.presentation.dto.response.UserResponse;
 import com.spatra.gt5lt7.user.presentation.dto.request.UpdateUserRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -81,11 +85,12 @@ public class UserService {
         }
 
         // JWT 발급
+        UUID managementId = user.getHubId() != null ? user.getHubId() : user.getCompanyId();
+
         String token = jwtTokenProvider.createToken(
                 user.getUserId(),
-                user.getRole(),          // ← String 말고 UserRole enum 그대로
-                user.getHubId(),         // ← 수정
-                user.getCompanyId()      // ← 수정
+                user.getRole().name(),   // String으로 변환
+                managementId             // ← 하나로 통일
         );
 
         log.info("[LOGIN] username={}, role={}", user.getUsername(), user.getRole());
@@ -135,7 +140,7 @@ public class UserService {
                 .orElseThrow(() -> new BaseException(UserErrorCode.USER_NOT_FOUND));
 
         // 본인 또는 MASTER만 수정 가능
-        if (!userId.equals(requesterId) && !requesterRole.equals("ROLE_MASTER")) {
+        if (!userId.equals(requesterId) && !UserRole.ROLE_MASTER.name().equals(requesterRole)) {
             throw new BaseException(UserErrorCode.UNAUTHORIZED_ACTION);
         }
 
@@ -149,9 +154,8 @@ public class UserService {
         user.updateInfo(request.getEmail(), request.getSlackUserId());
 
         // 비밀번호 변경 (요청한 경우만)
-        if (request.getPassword() != null && !request.getPassword().isBlank()) {
-            user.updatePassword(passwordEncoder.encode(request.getPassword()));
-        }
+        user.updatePassword(passwordEncoder.encode(request.getPassword()));
+
 
         log.info("[UPDATE] userId={}", userId);
 

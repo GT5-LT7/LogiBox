@@ -15,6 +15,6 @@ public class UpdateUserRequest {
     @NotBlank
     private String slackUserId;
 
+    @NotBlank
     @Size(min = 8, max = 15, message = "비밀번호는 8~15자여야 합니다.")
-    private String password;   // 선택적 변경 (null이면 변경 안 함)
-}
+    private String password;   // 필수로 변경

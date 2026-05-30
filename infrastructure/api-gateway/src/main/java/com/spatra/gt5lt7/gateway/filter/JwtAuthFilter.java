@@ -54,17 +54,13 @@ public class JwtAuthFilter extends AbstractGatewayFilterFactory<JwtAuthFilter.Co
                 }
 
                 // 하위 서비스에 헤더로 유저 정보 전달
-                String hubId = claims.get("hubId", String.class);
-                String companyId = claims.get("companyId", String.class);
+                String managementId = claims.get("managementId", String.class);
 
                 ServerHttpRequest mutatedRequest = exchange.getRequest().mutate()
                         .header("X-User-Id", claims.getSubject())
                         .header("X-User-Role", role)
-                        .header("X-User-Management-Id",
-                                hubId != null ? hubId :
-                                        companyId != null ? companyId : "")
+                        .header("X-User-Management-Id", managementId != null ? managementId : "")
                         .build();
-
 
                 return chain.filter(exchange.mutate().request(mutatedRequest).build());
 

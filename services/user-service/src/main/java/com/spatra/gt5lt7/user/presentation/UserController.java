@@ -1,17 +1,25 @@
 package com.spatra.gt5lt7.user.presentation;
 
 import com.spatra.gt5lt7.common.dto.ApiResponse;
-import com.spatra.gt5lt7.common.security.UserDetailsImpl;
+import com.spatra.gt5lt7.common.dto.PageResponse;
 import com.spatra.gt5lt7.user.application.UserService;
+import com.spatra.gt5lt7.user.application.dto.UserSearchCondition;
 import com.spatra.gt5lt7.user.presentation.dto.request.ApproveRequest;
 import com.spatra.gt5lt7.user.presentation.dto.request.LoginRequest;
 import com.spatra.gt5lt7.user.presentation.dto.request.SignupRequest;
+import com.spatra.gt5lt7.user.presentation.dto.request.UpdateUserRequest;
+import com.spatra.gt5lt7.user.presentation.dto.response.LoginResponse;
+import com.spatra.gt5lt7.user.presentation.dto.response.SignupResponse;
+import com.spatra.gt5lt7.user.presentation.dto.response.UserResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -35,7 +43,7 @@ public class UserController {
 
     // 회원가입 승인/거절 (MASTER, HUB_MGR)
     @PostMapping("/signup/approve/{id}")
-    @PreAuthorize("hasAnyRole('MASTER', 'HUB_MGR')")
+    @PreAuthorize("hasAuthority('ROLE_MASTER') or hasAuthority('ROLE_HUB_MANAGER')")  // ← 추가
     public ResponseEntity<ApiResponse<UserResponse>> approve(
             @PathVariable UUID id,
             @Valid @RequestBody ApproveRequest request
@@ -53,7 +61,7 @@ public class UserController {
 
     // 단건 조회 (MASTER, 본인)
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('MASTER') or #id == #userDetails.userId")
+    @PreAuthorize("hasAuthority('ROLE_MASTER') or #id.toString() == #userId")  // ← 추가
     public ResponseEntity<ApiResponse<UserResponse>> getUser(
             @PathVariable UUID id,
             @AuthenticationPrincipal UserDetailsImpl userDetails
@@ -63,7 +71,7 @@ public class UserController {
 
     // 소프트 삭제 (MASTER)
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('MASTER')")
+    @PreAuthorize("hasAuthority('ROLE_MASTER')")  // ← 추가
     public ResponseEntity<ApiResponse<Void>> deleteUser(
             @PathVariable UUID id,
             @AuthenticationPrincipal UserDetailsImpl userDetails
@@ -73,6 +81,7 @@ public class UserController {
     }
     // 사용자 수정 (MASTER 또는 본인)
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('ROLE_MASTER') or #id.toString() == #userId")  // ← 추가
     public ResponseEntity<ApiResponse<UserResponse>> updateUser(
             @PathVariable UUID id,
             @Valid @RequestBody UpdateUserRequest request,
@@ -87,18 +96,16 @@ public class UserController {
     }
     // 사용자 목록 + 검색 (MASTER)
     @GetMapping
-    @PreAuthorize("hasRole('ROLE_MASTER')")
+    @PreAuthorize("hasAuthority('ROLE_MASTER')")  // ← 수정
     public ResponseEntity<ApiResponse<PageResponse<UserResponse>>> searchUsers(
             @ModelAttribute UserSearchCondition condition,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC)
             Pageable pageable
     ) {
+        Page<UserResponse> result = userService.searchUsers(condition, pageable);
         return ResponseEntity.ok(
                 ApiResponse.success(
-                        PageResponse.from(
-                                userRepository.searchUsers(condition, pageable),
-                                userService.searchUsers(condition, pageable).getContent()
-                        )
+                        PageResponse.from(result, result.getContent())  // ← 수정
                 )
         );
     }
