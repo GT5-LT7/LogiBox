@@ -135,11 +135,14 @@ services:
     ports:
       - "19091:19091"
     environment:
-      - JWT_SECRET=${JWT_SECRET_KEY}
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://user-db:5432/userdb
-      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
-      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - DB_HOST=user-db
+      - DB_PORT=5432
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - JPA_HIBERNATE_DDL_AUTO=update
+      - EUREKA_HOST=eureka-server
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - ZIPKIN_HOST=zipkin
     depends_on:
       eureka-server:
         condition: service_healthy
