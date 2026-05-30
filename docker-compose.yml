@@ -180,13 +180,15 @@ services:
     ports:
       - "19093:19093"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://catalog-db:5432/catalogdb
-      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
-      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
-      - SPRING_DATA_REDIS_HOST=redis
-      - SPRING_DATA_REDIS_PORT=6379
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - REDIS_HOST=redis
+      - DB_HOST=catalog-db
+      - DB_PORT=5432
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - JPA_HIBERNATE_DDL_AUTO=update
       - KAKAO_API_KEY=${KAKAO_API_KEY}
+      - EUREKA_HOST=eureka-server
+      - ZIPKIN_HOST=zipkin
     depends_on:
       eureka-server:
         condition: service_healthy
