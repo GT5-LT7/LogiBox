@@ -20,6 +20,8 @@ services:
     container_name: logibox-zipkin
     ports:
       - "9411:9411"
+    networks:
+      - logibox-network
 
   api-gateway:
     build: ./infrastructure/api-gateway
