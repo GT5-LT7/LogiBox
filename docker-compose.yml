@@ -14,19 +14,22 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+
   zipkin:
     image: openzipkin/zipkin:latest
     container_name: logibox-zipkin
     ports:
       - "9411:9411"
+    networks:
+      - logibox-network
 
   api-gateway:
     build: ./infrastructure/api-gateway
     ports:
       - "8080:8080"
     environment:
-      - JWT_SECRET=${JWT_SECRET_KEY}
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - EUREKA_HOST=eureka-server
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
     depends_on:
       eureka-server:
         condition: service_healthy
@@ -134,11 +137,14 @@ services:
     ports:
       - "19091:19091"
     environment:
-      - JWT_SECRET=${JWT_SECRET_KEY}
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://user-db:5432/userdb
-      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
-      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - DB_HOST=user-db
+      - DB_PORT=5432
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - JPA_HIBERNATE_DDL_AUTO=update
+      - EUREKA_HOST=eureka-server
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - ZIPKIN_HOST=zipkin
     depends_on:
       eureka-server:
         condition: service_healthy
@@ -152,16 +158,18 @@ services:
     ports:
       - "19092:19092"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://logistics-db:5432/logisticsdb
-      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
-      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
-      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
-      - SPRING_DATA_REDIS_HOST=redis
-      - SPRING_DATA_REDIS_PORT=6379
-      - SPRING_RABBITMQ_HOST=rabbitmq
-      - SPRING_RABBITMQ_PORT=5672
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - DB_HOST=logistics-db
+      - DB_PORT=5432
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - JPA_HIBERNATE_DDL_AUTO=update
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - EUREKA_HOST=eureka-server
       - KAKAO_API_KEY=${KAKAO_API_KEY}
+      - ZIPKIN_HOST=zipkin
     depends_on:
       eureka-server:
         condition: service_healthy
@@ -179,13 +187,15 @@ services:
     ports:
       - "19093:19093"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://catalog-db:5432/catalogdb
-      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
-      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
-      - SPRING_DATA_REDIS_HOST=redis
-      - SPRING_DATA_REDIS_PORT=6379
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - REDIS_HOST=redis
+      - DB_HOST=catalog-db
+      - DB_PORT=5432
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - JPA_HIBERNATE_DDL_AUTO=update
       - KAKAO_API_KEY=${KAKAO_API_KEY}
+      - EUREKA_HOST=eureka-server
+      - ZIPKIN_HOST=zipkin
     depends_on:
       eureka-server:
         condition: service_healthy
@@ -201,18 +211,19 @@ services:
     ports:
       - "19094:19094"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://order-db:5432/orderdb
-      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
-      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
-      - SPRING_DATA_REDIS_HOST=redis
-      - SPRING_DATA_REDIS_PORT=6379
-      - SPRING_RABBITMQ_HOST=rabbitmq
-      - SPRING_RABBITMQ_PORT=5672
+      - REDIS_HOST=redis
+      - DB_HOST=order-db
+      - DB_PORT=5432
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - JPA_HIBERNATE_DDL_AUTO=update
+      - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
       - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
+      - EUREKA_HOST=eureka-server
+      - ZIPKIN_HOST=zipkin
     depends_on:
       eureka-server:
         condition: service_healthy
