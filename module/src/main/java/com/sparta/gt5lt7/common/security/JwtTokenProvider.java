@@ -1,4 +1,4 @@
-package com.spatra.gt5lt7.common.security;
+package com.sparta.gt5lt7.common.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
