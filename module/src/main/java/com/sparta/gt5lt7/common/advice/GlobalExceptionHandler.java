@@ -5,6 +5,7 @@ import com.sparta.gt5lt7.common.exception.CommonErrorCode;
 import com.sparta.gt5lt7.common.exception.ErrorCode;
 import com.sparta.gt5lt7.common.dto.ApiResponse;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.authorization.AuthorizationDeniedException;
@@ -67,6 +68,7 @@ public class GlobalExceptionHandler {
 
     private ResponseEntity<ApiResponse<Void>> buildResponse(ErrorCode errorCode) {
         String message = String.format("[%s] %s", errorCode.getCode(), errorCode.getMessage());
-        return ResponseEntity.status(errorCode.getStatus()).body(ApiResponse.error(message));
+        HttpStatusCode status = errorCode.getStatus();
+        return ResponseEntity.status(status).body(ApiResponse.error(status, message));
     }
 }

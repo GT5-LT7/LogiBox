@@ -37,7 +37,7 @@ public class ProductFacade {
     private static final String REDIS_ROLLBACK_KEY_PREFIX = "rollback:order:";
 
     public ProductResponse.Create createProduct(ProductRequest.Create request, CustomUserPrincipal principal) {
-        Company company = companyService.getCompany(request.getCompanyId());
+        Company company = companyService.getCompany(request.companyId());
         Product product = productService.createProduct(company, request, principal);
         return ProductResponse.Create.from(product);
     }
@@ -99,7 +99,7 @@ public class ProductFacade {
     }
 
     public ProductResponse.StatusUpdate updateProductStatus(UUID id, ProductRequest.StatusUpdate request, CustomUserPrincipal principal) {
-        Product product = productService.updateProductStatus(id, request.getAction(), principal);
+        Product product = productService.updateProductStatus(id, request.action(), principal);
         return ProductResponse.StatusUpdate.from(product);
     }
 
@@ -112,27 +112,27 @@ public class ProductFacade {
             throw new BaseException(ProductErrorCode.PRODUCT_UPDATE_DENIED);
         }
 
-        product = productService.updateProductQuantity(id, request.getUpdateQuantity());
+        product = productService.updateProductQuantity(id, request.updateQuantity());
         return ProductResponse.StockUpdate.from(product);
     }
 
     public List<ProductResponse.StockUpdate> updateProductQuantityForOrder(ProductRequest.OrderStockUpdate requests) {
-        List<ProductRequest.StockItem> stockItems = requests.getStockItems();
+        List<ProductRequest.StockItem> stockItems = requests.stockItems();
 
         if (stockItems.isEmpty()) {
             return Collections.emptyList();
         }
 
         // [일관성 검증] 모든 요청이 재고 차감이거나 원복인지 확인
-        boolean isAllNegative = stockItems.stream().allMatch(item -> item.getUpdateQuantity() < 0);
-        boolean isAllPositive = stockItems.stream().allMatch(item -> item.getUpdateQuantity() > 0);
+        boolean isAllNegative = stockItems.stream().allMatch(item -> item.updateQuantity() < 0);
+        boolean isAllPositive = stockItems.stream().allMatch(item -> item.updateQuantity() > 0);
 
         if (!isAllNegative && !isAllPositive) {
             throw new BaseException(CommonErrorCode.INVALID_REQUEST);
         }
 
         // [Redis 활용] 롤백 요청일 때, 보상 트랜잭션 중복 검증
-        String redisKey = REDIS_ROLLBACK_KEY_PREFIX + requests.getOrderId();
+        String redisKey = REDIS_ROLLBACK_KEY_PREFIX + requests.orderId();
 
         // 1. 주문 ID로 롤백되었는지 확인
         if (isAllPositive) {
@@ -149,8 +149,8 @@ public class ProductFacade {
         // O(1) 조회를 위한 요청 Map 생성 → 중복되는 상품 ID의 변경 재고량을 병합해 안정성 확보
         Map<UUID, Integer> quantityMap = stockItems.stream()
                 .collect(Collectors.toMap(
-                        ProductRequest.StockItem::getProductId,
-                        ProductRequest.StockItem::getUpdateQuantity,
+                        ProductRequest.StockItem::productId,
+                        ProductRequest.StockItem::updateQuantity,
                         Integer::sum
                 ));
 

@@ -3,6 +3,7 @@ package com.sparta.gt5lt7.common.dto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import org.springframework.http.HttpStatusCode;
 
 import java.util.List;
 
@@ -40,8 +41,8 @@ public class ApiResponse<T> {
     }
 
     // 에러 응답
-    public static <T> ApiResponse<T> error(String message) {
-        return ApiResponse.<T>builder().status(400).message(message).build();
+    public static <T> ApiResponse<T> error(HttpStatusCode status, String message) {
+        return ApiResponse.<T>builder().status(status.value()).message(message).build();
     }
 
     public static <T> ApiResponse<T> error(String message, List<ValidationError> errors) {

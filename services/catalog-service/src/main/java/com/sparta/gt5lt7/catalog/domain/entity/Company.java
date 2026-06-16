@@ -78,15 +78,15 @@ public class Company extends BaseEntity {
     }
 
     public void update(CompanyRequest request) {
-        String detailAddress = request.getDetailAddress();
+        String detailAddress = request.detailAddress();
 
-        this.name = request.getName().trim();
-        this.type = request.getType();
-        this.phone = request.getPhone();
-        this.hubId = request.getHubId();
-        this.baseAddress = request.getBaseAddress().trim();
+        this.name = request.name().trim();
+        this.type = request.type();
+        this.phone = request.phone();
+        this.hubId = request.hubId();
+        this.baseAddress = request.baseAddress().trim();
         this.detailAddress = (detailAddress != null && !detailAddress.isBlank()) ? detailAddress.trim() : null;
-        this.zipcode = request.getZipcode();
+        this.zipcode = request.zipcode();
     }
 
     public void updateCoordinate(BigDecimal latitude, BigDecimal longitude) {

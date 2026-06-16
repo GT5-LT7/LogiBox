@@ -5,6 +5,7 @@ import com.sparta.gt5lt7.common.dto.ApiResponse;
 import com.sparta.gt5lt7.common.exception.ErrorCode;
 import feign.FeignException;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -28,6 +29,7 @@ public class CatalogExceptionHandler {
 
     private ResponseEntity<ApiResponse<Void>> buildResponse(ErrorCode errorCode) {
         String message = String.format("[%s] %s", errorCode.getCode(), errorCode.getMessage());
-        return ResponseEntity.status(errorCode.getStatus()).body(ApiResponse.error(message));
+        HttpStatusCode status = errorCode.getStatus();
+        return ResponseEntity.status(status).body(ApiResponse.error(status, message));
     }
 }

@@ -204,7 +204,7 @@ class ProductFacadeTest {
         void test1() {
             // given
             given(productService.getProduct(productId)).willReturn(mockProduct);
-            given(productService.updateProductQuantity(productId, request.getUpdateQuantity())).willReturn(mockProduct);
+            given(productService.updateProductQuantity(productId, request.updateQuantity())).willReturn(mockProduct);
             given(principal.isAccessibleHub(hubId)).willReturn(true);
             given(principal.isAccessibleCompany(companyId)).willReturn(true);
 
@@ -214,7 +214,7 @@ class ProductFacadeTest {
             // then
             assertThat(response).isNotNull();
             verify(productService).getProduct(productId);
-            verify(productService).updateProductQuantity(productId, request.getUpdateQuantity());
+            verify(productService).updateProductQuantity(productId, request.updateQuantity());
         }
 
         @Test

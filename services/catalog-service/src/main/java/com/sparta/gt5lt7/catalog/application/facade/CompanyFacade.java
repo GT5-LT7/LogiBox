@@ -39,15 +39,15 @@ public class CompanyFacade {
 
     public CompanyResponse.Create createCompany(CompanyRequest request, CustomUserPrincipal principal) {
         // [권한 검증] Master가 아니면 담당 허브인지 검증
-        if (!principal.isAccessibleHub(request.getHubId())) {
+        if (!principal.isAccessibleHub(request.hubId())) {
             throw new BaseException(CompanyErrorCode.COMPANY_CREATE_DENIED);
         }
 
         // [MSA 통신] Hub Service로 허브 정보 요청
-        hubClient.getHub(request.getHubId());
+        hubClient.getHub(request.hubId());
 
         // [외부 API 통신] Kakao Map Service로 좌표 정보 요청
-        CoordinateResponse coordinate = kakaoMapService.getCoordinate(request.getBaseAddress());
+        CoordinateResponse coordinate = kakaoMapService.getCoordinate(request.baseAddress());
 
         // [서비스 레이어] 업체 생성
         Company company = companyService.createCompany(request, coordinate);
@@ -103,7 +103,7 @@ public class CompanyFacade {
         Company company = companyService.getCompany(id);
 
         // [권한 검증] 허브 변경 시 Master가 아니면 불가
-        if (!company.getHubId().equals(request.getHubId()) && !principal.isMaster()) {
+        if (!company.getHubId().equals(request.hubId()) && !principal.isMaster()) {
             throw new BaseException(CompanyErrorCode.COMPANY_UPDATE_DENIED);
         }
 
@@ -113,12 +113,12 @@ public class CompanyFacade {
         }
 
         // [MSA 통신] Hub Service로 허브 정보 요청
-        HubResponse hub = hubClient.getHub(request.getHubId()).getData();
+        HubResponse hub = hubClient.getHub(request.hubId()).getData();
 
         // [외부 API 통신] 주소 변경 시 Kakao Map Service로 좌표 정보 요청
         CoordinateResponse coordinate = null;
-        if (!company.getBaseAddress().equals(request.getBaseAddress())) {
-            coordinate = kakaoMapService.getCoordinate(request.getBaseAddress());
+        if (!company.getBaseAddress().equals(request.baseAddress())) {
+            coordinate = kakaoMapService.getCoordinate(request.baseAddress());
         }
 
         // [서비스 레이어] 업체 수정
