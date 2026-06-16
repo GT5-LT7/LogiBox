@@ -39,17 +39,15 @@ class ProductControllerTest {
     @Nested
     @DisplayName("게이트웨이 인증 필터 동작 테스트")
     class GatewayAuthenticationFilterTest {
+        ProductRequest.Create request = new ProductRequest.Create(
+                "테스트 상품", null, UUID.randomUUID(), 10000L, 100
+        );
+
         @Test
         @DisplayName("성공: 게이트웨이 보안 헤더가 있으면 인증에 성공해 201 반환")
         void test1() throws Exception {
             // given
             String userId = UUID.randomUUID().toString();
-            ProductRequest.Create request = ProductRequest.Create.builder()
-                    .name("테스트 상품")
-                    .companyId(UUID.randomUUID())
-                    .price(10000L)
-                    .quantity(100)
-                    .build();
             ProductResponse.Create response = new ProductResponse.Create(UUID.randomUUID(), "테스트 상품", LocalDateTime.now());
             when(productFacade.createProduct(any(), any())).thenReturn(response);
 
@@ -65,14 +63,6 @@ class ProductControllerTest {
         @Test
         @DisplayName("실패: 보안 헤더가 없으면 시큐리티 필터에서 인증에 실패해 403 반환")
         void test2() throws Exception {
-            // given
-            ProductRequest.Create request = ProductRequest.Create.builder()
-                    .name("테스트 상품")
-                    .companyId(UUID.randomUUID())
-                    .price(10000L)
-                    .quantity(100)
-                    .build();
-
             // when & then
             mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/products")
                             .contentType(MediaType.APPLICATION_JSON)

@@ -56,7 +56,7 @@ class CompanyServiceTest {
         Company company = companyService.createCompany(request, mockCoordinate);
 
         // then
-        assertThat(company.getName()).isEqualTo(request.getName());
+        assertThat(company.getName()).isEqualTo(request.name());
         verify(companyRepository).save(any(Company.class));
     }
 
@@ -112,7 +112,7 @@ class CompanyServiceTest {
             Company company = companyService.updateCompany(mockCompany, request, null);
 
             // then
-            assertThat(company.getName()).isEqualTo(request.getName());
+            assertThat(company.getName()).isEqualTo(request.name());
             assertThat(company.getLatitude()).isEqualTo(BigDecimal.valueOf(37.503));
             assertThat(company.getLongitude()).isEqualTo(BigDecimal.valueOf(127.044));
         }
@@ -128,7 +128,7 @@ class CompanyServiceTest {
             Company company = companyService.updateCompany(mockCompany, request, mockCoordinate);
 
             // then
-            assertThat(company.getName()).isEqualTo(request.getName());
+            assertThat(company.getName()).isEqualTo(request.name());
             assertThat(company.getLatitude()).isEqualTo(mockCoordinate.latitude());
             assertThat(company.getLongitude()).isEqualTo(mockCoordinate.longitude());
         }
@@ -196,13 +196,13 @@ class CompanyServiceTest {
 
     private Company createCompany(UUID id, CompanyRequest request) {
         Company company =  Company.builder()
-                .name(request.getName())
-                .type(request.getType())
-                .phone(request.getPhone())
-                .hubId(request.getHubId())
-                .baseAddress(request.getBaseAddress())
-                .detailAddress(request.getDetailAddress())
-                .zipcode(request.getZipcode())
+                .name(request.name())
+                .type(request.type())
+                .phone(request.phone())
+                .hubId(request.hubId())
+                .baseAddress(request.baseAddress())
+                .detailAddress(request.detailAddress())
+                .zipcode(request.zipcode())
                 .latitude(BigDecimal.valueOf(37.503))
                 .longitude(BigDecimal.valueOf(127.044))
                 .build();

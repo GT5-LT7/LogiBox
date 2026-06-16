@@ -36,16 +36,16 @@ public class ProductService {
     @Transactional
     public Product createProduct(Company company, ProductRequest.Create request, CustomUserPrincipal principal) {
         // Master가 아니면 담당 허브 또는 본인 업체인지 검증
-        if (!principal.isAccessibleHub(company.getHubId()) && !principal.isAccessibleCompany(request.getCompanyId())) {
+        if (!principal.isAccessibleHub(company.getHubId()) && !principal.isAccessibleCompany(request.companyId())) {
             throw new BaseException(ProductErrorCode.PRODUCT_CREATE_DENIED);
         }
 
         Product product = Product.builder()
-                .name(request.getName())
-                .description(request.getDescription())
+                .name(request.name())
+                .description(request.description())
                 .company(company)
-                .price(request.getPrice())
-                .quantity(request.getQuantity())
+                .price(request.price())
+                .quantity(request.quantity())
                 .build();
         return productRepository.save(product);
     }
@@ -109,7 +109,7 @@ public class ProductService {
 
     // 상품 ID 기반 상품 목록 조회
     public List<Product> findAllByIds(List<ProductRequest.StockItem> stockItems) {
-        List<UUID> productIds = stockItems.stream().map(ProductRequest.StockItem::getProductId).collect(Collectors.toList());
+        List<UUID> productIds = stockItems.stream().map(ProductRequest.StockItem::productId).collect(Collectors.toList());
         return productRepository.findAllById(productIds);
     }
 

@@ -25,13 +25,13 @@ public class CompanyService {
     @Transactional
     public Company createCompany(CompanyRequest request, CoordinateResponse coordinate) {
         Company company = Company.builder()
-                .name(request.getName())
-                .type(request.getType())
-                .phone(request.getPhone())
-                .hubId(request.getHubId())
-                .baseAddress(request.getBaseAddress())
-                .detailAddress(request.getDetailAddress())
-                .zipcode(request.getZipcode())
+                .name(request.name())
+                .type(request.type())
+                .phone(request.phone())
+                .hubId(request.hubId())
+                .baseAddress(request.baseAddress())
+                .detailAddress(request.detailAddress())
+                .zipcode(request.zipcode())
                 .latitude(coordinate.latitude())
                 .longitude(coordinate.longitude())
                 .build();

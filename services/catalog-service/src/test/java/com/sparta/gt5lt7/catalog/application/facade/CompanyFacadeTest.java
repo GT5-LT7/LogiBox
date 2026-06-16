@@ -83,16 +83,16 @@ class CompanyFacadeTest {
             // given
             CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_MASTER, null);
             given(hubClient.getHub(hubId)).willReturn(mockHubFeign);
-            given(kakaoMapService.getCoordinate(companyRequest.getBaseAddress())).willReturn(mockCoordinate);
+            given(kakaoMapService.getCoordinate(companyRequest.baseAddress())).willReturn(mockCoordinate);
             given(companyService.createCompany(companyRequest, mockCoordinate)).willReturn(mockCompany);
 
             // when
             CompanyResponse.Create response = companyFacade.createCompany(companyRequest, principal);
 
             // then
-            assertThat(response.name()).isEqualTo(companyRequest.getName());
+            assertThat(response.name()).isEqualTo(companyRequest.name());
             verify(hubClient).getHub(hubId);
-            verify(kakaoMapService).getCoordinate(companyRequest.getBaseAddress());
+            verify(kakaoMapService).getCoordinate(companyRequest.baseAddress());
             verify(companyService).createCompany(companyRequest, mockCoordinate);
         }
 
@@ -101,8 +101,8 @@ class CompanyFacadeTest {
         void test2() {
             // given
             CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_HUB_MANAGER, hubId);
-            given(hubClient.getHub(companyRequest.getHubId())).willReturn(mockHubFeign);
-            given(kakaoMapService.getCoordinate(companyRequest.getBaseAddress())).willReturn(mockCoordinate);
+            given(hubClient.getHub(companyRequest.hubId())).willReturn(mockHubFeign);
+            given(kakaoMapService.getCoordinate(companyRequest.baseAddress())).willReturn(mockCoordinate);
             given(companyService.createCompany(companyRequest, mockCoordinate)).willReturn(mockCompany);
 
             // when
@@ -110,8 +110,8 @@ class CompanyFacadeTest {
 
             // then
             assertThat(response).isNotNull();
-            verify(hubClient).getHub(companyRequest.getHubId());
-            verify(kakaoMapService).getCoordinate(companyRequest.getBaseAddress());
+            verify(hubClient).getHub(companyRequest.hubId());
+            verify(kakaoMapService).getCoordinate(companyRequest.baseAddress());
             verify(companyService).createCompany(companyRequest, mockCoordinate);
         }
 
@@ -227,7 +227,7 @@ class CompanyFacadeTest {
             CompanyResponse.Update response = companyFacade.updateCompany(companyId, request, principal);
 
             // then
-            assertThat(response.info().name()).isEqualTo(request.getName());
+            assertThat(response.info().name()).isEqualTo(request.name());
             verify(companyService).getCompany(companyId);
             verify(companyService).updateCompany(mockCompany, request, null);
             verify(hubClient).getHub(hubId);
@@ -281,12 +281,11 @@ class CompanyFacadeTest {
             CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_MASTER, null);
             CoordinateResponse mockCoordinate = new CoordinateResponse(BigDecimal.valueOf(35.1234), BigDecimal.valueOf(129.1234));
 
-            CompanyRequest request = createCompanyRequest("스파르타 물류");
-            ReflectionTestUtils.setField(request, "baseAddress", "새로운 주소");
+            CompanyRequest request = createCompanyRequest("스파르타 물류", "새로운 주소");
 
             given(companyService.getCompany(companyId)).willReturn(mockCompany);
             given(companyService.updateCompany(mockCompany, request, mockCoordinate)).willReturn(mockCompany);
-            given(kakaoMapService.getCoordinate(request.getBaseAddress())).willReturn(mockCoordinate);
+            given(kakaoMapService.getCoordinate(request.baseAddress())).willReturn(mockCoordinate);
             given(hubClient.getHub(hubId)).willReturn(mockHubFeign);
 
             // when
@@ -297,7 +296,7 @@ class CompanyFacadeTest {
             verify(companyService).getCompany(companyId);
             verify(companyService).updateCompany(mockCompany, request, mockCoordinate);
             verify(hubClient).getHub(hubId);
-            verify(kakaoMapService).getCoordinate(request.getBaseAddress());
+            verify(kakaoMapService).getCoordinate(request.baseAddress());
         }
 
         @Test
@@ -307,8 +306,7 @@ class CompanyFacadeTest {
             CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_MASTER, null);
 
             UUID newHubId = UUID.randomUUID();
-            CompanyRequest request = createCompanyRequest("스파르타 물류");
-            ReflectionTestUtils.setField(request, "hubId", newHubId);
+            CompanyRequest request = createCompanyRequest("스파르타 물류", newHubId);
 
             given(companyService.getCompany(companyId)).willReturn(mockCompany);
             given(companyService.updateCompany(mockCompany, request, null)).willReturn(mockCompany);
@@ -368,8 +366,7 @@ class CompanyFacadeTest {
             CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_HUB_MANAGER, UUID.randomUUID());
             given(companyService.getCompany(companyId)).willReturn(mockCompany);
 
-            CompanyRequest request = createCompanyRequest("스파르타 물류");
-            ReflectionTestUtils.setField(request, "hubId", UUID.randomUUID());
+            CompanyRequest request = createCompanyRequest("스파르타 물류", UUID.randomUUID());
 
             // when & then
             assertThatThrownBy(() -> companyFacade.updateCompany(companyId, request, principal))
@@ -389,8 +386,7 @@ class CompanyFacadeTest {
             CustomUserPrincipal principal = CustomUserPrincipal.of(UUID.randomUUID(), UserRole.ROLE_COMPANY_MANAGER, UUID.randomUUID());
             given(companyService.getCompany(companyId)).willReturn(mockCompany);
 
-            CompanyRequest request = createCompanyRequest("스파르타 물류");
-            ReflectionTestUtils.setField(request, "hubId", UUID.randomUUID());
+            CompanyRequest request = createCompanyRequest("스파르타 물류", UUID.randomUUID());
 
             // when & then
             assertThatThrownBy(() -> companyFacade.updateCompany(companyId, request, principal))
@@ -423,21 +419,33 @@ class CompanyFacadeTest {
     }
 
     private CompanyRequest createCompanyRequest(String name) {
+        return createCompanyRequest(name, hubId);
+    }
+
+    private CompanyRequest createCompanyRequest(String name, String baseAddress) {
+        return createCompanyRequest(name, hubId, baseAddress);
+    }
+
+    private CompanyRequest createCompanyRequest(String name, UUID hubId) {
+        return createCompanyRequest(name, hubId, "서울시 강남구 테헤란로311");
+    }
+
+    private CompanyRequest createCompanyRequest(String name, UUID hubId, String baseAddress) {
         return new CompanyRequest(
                 name, CompanyType.SUPPLIER, "010-1234-5678", hubId,
-                "서울시 강남구 테헤란로311", "3층 301호", "12345"
+                baseAddress, "3층 301호", "12345"
         );
     }
 
     private Company createCompany(UUID id, CompanyRequest request) {
         Company company =  Company.builder()
-                .name(request.getName())
-                .type(request.getType())
-                .phone(request.getPhone())
-                .hubId(request.getHubId())
-                .baseAddress(request.getBaseAddress())
-                .detailAddress(request.getDetailAddress())
-                .zipcode(request.getZipcode())
+                .name(request.name())
+                .type(request.type())
+                .phone(request.phone())
+                .hubId(request.hubId())
+                .baseAddress(request.baseAddress())
+                .detailAddress(request.detailAddress())
+                .zipcode(request.zipcode())
                 .latitude(BigDecimal.valueOf(37.503))
                 .longitude(BigDecimal.valueOf(127.044))
                 .build();

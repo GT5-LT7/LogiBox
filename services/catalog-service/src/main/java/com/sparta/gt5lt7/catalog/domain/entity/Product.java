@@ -56,11 +56,11 @@ public class Product extends BaseEntity {
     }
 
     public void update(ProductRequest.Update request) {
-        String description = request.getDescription();
+        String description = request.description();
 
-        this.name = request.getName().trim();
+        this.name = request.name().trim();
         this.description = (description != null && !description.isBlank()) ? description.trim() : null;
-        this.price = request.getPrice();
+        this.price = request.price();
     }
     
     public void updateStatus(ActionType action) {

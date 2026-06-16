@@ -65,7 +65,7 @@ class ProductServiceTest {
         @DisplayName("성공: 업체 생성 권한 있음")
         void test1() {
             // given
-            Product mockProduct = createProduct(productId, request.getName(), mockCompany, request.getPrice(), request.getQuantity());
+            Product mockProduct = createProduct(productId, request.name(), mockCompany, request.price(), request.quantity());
             given(principal.isAccessibleHub(hubId)).willReturn(true);
             given(productRepository.save(any(Product.class))).willReturn(mockProduct);
 
@@ -73,7 +73,7 @@ class ProductServiceTest {
             Product product = productService.createProduct(mockCompany, request, principal);
 
             // then
-            assertThat(product.getName()).isEqualTo(request.getName());
+            assertThat(product.getName()).isEqualTo(request.name());
             verify(productRepository).save(any(Product.class));
         }
 
@@ -82,7 +82,7 @@ class ProductServiceTest {
         void test2() {
             // given
             given(principal.isAccessibleHub(hubId)).willReturn(false);
-            given(principal.isAccessibleCompany(request.getCompanyId())).willReturn(false);
+            given(principal.isAccessibleCompany(request.companyId())).willReturn(false);
 
             // when & then
             assertThatThrownBy(() -> productService.createProduct(mockCompany, request, principal))
@@ -138,9 +138,9 @@ class ProductServiceTest {
             Product product = productService.updateProduct(productId, request, principal);
 
             // then
-            assertThat(product.getName()).isEqualTo(request.getName());
-            assertThat(product.getDescription()).isEqualTo(request.getDescription());
-            assertThat(product.getPrice()).isEqualTo(request.getPrice());
+            assertThat(product.getName()).isEqualTo(request.name());
+            assertThat(product.getDescription()).isEqualTo(request.description());
+            assertThat(product.getPrice()).isEqualTo(request.price());
         }
 
         @Test
